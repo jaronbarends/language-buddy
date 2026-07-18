@@ -9,6 +9,11 @@ main {
   gap: 2em;
 }
 
+.actions {
+  display: flex;
+  gap: 1em;
+}
+
 button {
   padding: 0.5em 1em;
 }
