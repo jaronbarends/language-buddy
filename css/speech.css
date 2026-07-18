@@ -1,0 +1,20 @@
+.o-content-width {
+  margin: 0 auto;
+  max-width: min(60rem, 90vw);
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  gap: 2em;
+}
+
+button {
+  padding: 0.5em 1em;
+}
+
+.output {
+  border: 1px dotted;
+  padding: 0.5em;
+  min-height: 3em;
+}
