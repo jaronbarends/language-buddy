@@ -26,6 +26,7 @@ stay deferred.
 - open app with vocab suggestion of the day
 - be able to choose language level
 - let app assert language level
+- safari takes some time to start listening the first time after it requests permission. Can we ask for permission beforehand?
 - troubleshooting
   - error "Speech recognition service permission check has failed" op iOs: Settings → Privacy & Security → Speech Recognition — is Safari toggled on there?
   - if no speech voice found, add instructions how to add it

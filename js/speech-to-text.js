@@ -4,7 +4,12 @@ const language = CONSTANTS.language;
 
 const output = document.getElementById('output');
 const startBtn = document.getElementById('start-button');
-const startBtnLabelDefault = startBtn.textContent;
+const startBtnLabel = document.getElementById('start-button-label');
+const startBtnLabelTextDefault = startBtnLabel.textContent;
+const countdownElm = document.getElementById('countdown');
+let recognitionShouldBeActive = false;
+let countdownInterval;
+const MAX_DURATION_SEC = 15;
 
 let recognition;
 init();
@@ -12,14 +17,13 @@ init();
 function init() {
   recognition = initRecognition();
   initUI();
-  // addEventLogging();
 }
 
 function initRecognition() {
   const CrossBrowserSpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   const recognition = new CrossBrowserSpeechRecognition();
 
-  recognition.continuous = false;
+  recognition.continuous = true;
   recognition.lang = language;
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
@@ -43,23 +47,36 @@ function initRecognition() {
 
 function handleResult(event) {
   log('result');
-  console.log(event);
-  const result = event.results[0][0];
+  for (let i = event.resultIndex; i < event.results.length; i++) {
+    const result = event.results[i];
+    if (!result.isFinal) continue; // not necessary when interimResults=false, but keep it in case we change that
+
+    renderResult(result[0]);
+  }
+}
+
+function renderResult(result) {
   const p = document.createElement('p');
-  p.textContent = result.transcript;
-  const span = document.createElement('span');
-  span.textContent = `confidence: ${result.confidence.toFixed(2)}`;
-  span.classList.add('confidence');
-  p.appendChild(span);
+  const transcriptSpan = document.createElement('span');
+  const confidenceSpan = document.createElement('span');
+  const transcript = result.transcript;
+  if (!transcript) {
+    // when you say only one short word, it gives empty transcript.
+    return;
+  }
+  transcriptSpan.textContent = transcript;
+  transcriptSpan.classList.add('transcript');
+  p.appendChild(transcriptSpan);
+  confidenceSpan.textContent = `confidence: ${result.confidence.toFixed(2)}`;
+  confidenceSpan.classList.add('confidence');
+  p.appendChild(confidenceSpan);
   output.appendChild(p);
 }
 
 // recognition event handlers
 
 function handleStart() {
-  startBtn.classList.add('is-active');
-  startBtn.textContent = `Listening for ${recognition.lang}`;
-  log(`start - start listening - Ready to receive speech in ${recognition.lang}`);
+  log(`start - start listening`);
 }
 
 function handleAudioStart() {
@@ -98,25 +115,60 @@ function handleAudioEnd() {
 }
 
 function handleEnd() {
-  startBtn.classList.remove('is-active');
-  startBtn.textContent = startBtnLabelDefault;
-  log('end - recognition service has disconnected');
+  if (recognitionShouldBeActive) {
+    log('prevent end');
+    recognition.start(); // end was triggered by silence timeout, not wanted
+  } else {
+    startBtn.classList.remove('is-active');
+    startBtnLabel.textContent = startBtnLabelTextDefault;
+    log('end - recognition service has disconnected');
+  }
 }
 
 function initUI() {
   const stopBtn = document.getElementById('stop-button');
   const cancelBtn = document.getElementById('cancel-button');
-  startBtn.onclick = () => {
-    recognition.start();
-  };
+  const clearBtn = document.getElementById('clear-button');
+  startBtn.onclick = handleStartFromUI;
 
-  stopBtn.onclick = () => {
-    // stop recognition and try to return SpeechRecognitionResult
-    recognition.stop();
-  };
+  stopBtn.onclick = handleStopRequest;
 
   cancelBtn.onclick = () => {
     // stop recognition without trying to return SpeechRecognitionResult
     recognition.abort();
   };
+
+  clearBtn.onclick = () => {
+    output.innerHTML = '';
+  };
+}
+
+function handleStartFromUI() {
+  recognitionShouldBeActive = true;
+  startBtn.classList.add('is-active');
+  startBtnLabel.textContent = `Listening for ${recognition.lang}`;
+  recognition.start();
+  // maxDurationTimer = setTimeout(handleStopRequest, 1000 * MAX_DURATION_SEC);
+  startCountdown();
+}
+
+function startCountdown() {
+  let timeRemaining = 1000 * MAX_DURATION_SEC;
+  countdownElm.textContent = Math.round(timeRemaining / 1000);
+
+  countdownInterval = setInterval(() => {
+    timeRemaining -= 1000;
+    countdownElm.textContent = Math.round(timeRemaining / 1000);
+    if (timeRemaining <= 0) {
+      clearInterval(countdownInterval);
+      handleStopRequest();
+    }
+  }, 1000);
+}
+
+function handleStopRequest() {
+  // stop recognition and try to return SpeechRecognitionResult
+  recognitionShouldBeActive = false;
+  recognition.stop();
+  countdownElm.textContent = '';
 }

@@ -13,8 +13,8 @@ section {
 .stt-actions {
   display: grid;
   grid-template-areas:
-    'start start'
-    'stop  cancel';
+    'start start  start'
+    'stop  cancel clear';
   gap: 1em;
   max-width: 25rem;
 }
@@ -32,16 +32,35 @@ button {
 
 .start-button {
   grid-area: start;
+  display: flex;
+  justify-content: center;
+  gap: 0.5em;
 
   &.is-active {
     background: black;
   }
 }
 
-.re .output {
-  border: 1px dotted;
-  padding: 0.5em;
-  min-height: 3em;
+.output {
+  --bg-color: rgba(from hotpink r g b / 0.1);
+  position: relative;
+  padding: 1em;
+  border-radius: 0.5em;
+  background: var(--bg-color);
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 20%;
+    display: block;
+    border: 10px solid transparent;
+    border-top-color: var(--bg-color);
+  }
+}
+
+.transcript {
+  font-style: italic;
 }
 
 .confidence {

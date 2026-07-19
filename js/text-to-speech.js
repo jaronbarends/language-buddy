@@ -13,7 +13,6 @@ init();
 function init() {
   initSpeech();
   initUI();
-  console.log(document.getElementById('text-source').textContent);
 }
 
 function initSpeech() {
@@ -48,7 +47,6 @@ function voiceschangedHandler() {
   synth.removeEventListener('voiceschanged', voiceschangedHandler);
   log(`✅ voice found for ${language}`);
   voice = v;
-  console.log(v);
   speechIsDisabled = false;
 }
 
@@ -105,5 +103,5 @@ function startSpeech() {
 }
 
 function handleSpeechEnd() {
-  console.log('klaar met praten');
+  console.log('Done talking');
 }
