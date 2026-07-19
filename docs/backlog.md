@@ -7,16 +7,8 @@ when work starts.
 
 ## High priority (deferred from MVP, not "someday")
 
-### Text-to-speech output
-
-The app speaking its responses back, not just the user speaking to it. Explicitly scoped as
-"shortly after MVP," not a someday item.
-
-### STT transcript review/edit step
-
-Deferred pending Spike 2 findings. If Norwegian B1/B2 learner speech transcribes poorly via the
-Web Speech API, this moves out of backlog and into MVP scope immediately — it isn't guaranteed to
-stay deferred.
+Nothing here currently — TTS output moved into MVP scope and the STT transcript review step was
+decided against, both after Spike 2 (see decisions.md).
 
 ---
 

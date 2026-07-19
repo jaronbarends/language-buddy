@@ -112,3 +112,27 @@ enough to send straight to the LLM, or rough enough that the deferred review ste
 requirement immediately?
 **Why it matters:** Determines whether the STT review step (currently deferred) needs to move into
 MVP scope.
+**Date run:** 2026-07-19
+**Outcome:** STT accuracy is good enough to send transcription straight to the LLM. TTS output also
+turned out to be relatively easy to implement during the spike. See decisions below for how this
+resolves the two open items.
+
+---
+
+## Post-spike-2 decisions
+
+### STT transcript review step: not needed for MVP
+
+**Date:** 2026-07-19
+**Decision:** No transcript review/edit step before sending STT output to the AI.
+**Rationale:** Spike 2 showed Web Speech API accuracy for Norwegian B1/B2 learner speech is good
+enough to send straight to the LLM. This resolves the deferred decision from 2026-07-17 — the
+condition that would have pulled this into MVP (poor accuracy) did not materialize.
+
+### TTS output moved into MVP scope
+
+**Date:** 2026-07-19
+**Decision:** TTS (the app speaking its responses) is now part of MVP scope, not deferred.
+**Rationale:** Supersedes the 2026-07-17 decision. Spike 2 showed TTS is relatively easy to
+implement, and it meaningfully improves UX for a speaking-practice product. Given the low
+implementation cost and high UX value, it belongs in MVP rather than "shortly after."
