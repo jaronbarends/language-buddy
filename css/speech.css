@@ -3,23 +3,49 @@
   max-width: min(60rem, 90vw);
 }
 
-main {
+main,
+section {
   display: flex;
   flex-direction: column;
   gap: 2em;
 }
 
-.actions {
-  display: flex;
+.stt-actions {
+  display: grid;
+  grid-template-areas:
+    'start start'
+    'stop  cancel';
   gap: 1em;
+  max-width: 25rem;
 }
 
 button {
   padding: 0.5em 1em;
+  border-radius: 0.25em;
 }
 
-.output {
+.start-button,
+.read-button {
+  background: hotpink;
+  color: white;
+}
+
+.start-button {
+  grid-area: start;
+
+  &.is-active {
+    background: black;
+  }
+}
+
+.re .output {
   border: 1px dotted;
   padding: 0.5em;
   min-height: 3em;
+}
+
+.confidence {
+  display: inline-block;
+  margin-left: 0.5em;
+  color: #999;
 }

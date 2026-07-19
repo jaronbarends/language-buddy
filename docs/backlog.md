@@ -26,6 +26,10 @@ stay deferred.
 - open app with vocab suggestion of the day
 - be able to choose language level
 - let app assert language level
+- troubleshooting
+  - error "Speech recognition service permission check has failed" op iOs: Settings → Privacy & Security → Speech Recognition — is Safari toggled on there?
+  - if no speech voice found, add instructions how to add it
+- add setting for speech rate
 
 ## Icebox
 

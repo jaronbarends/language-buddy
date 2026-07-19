@@ -1,11 +1,12 @@
-const output = document.getElementById("output");
-const logWin = document.getElementById("log");
-const language = "nl-NL";
-// const language = "nb-NO";
-// const language = "en-US";
+import CONSTANTS from './constants.js';
+import { log } from './utils.js';
+const language = CONSTANTS.language;
+
+const output = document.getElementById('output');
+const startBtn = document.getElementById('start-button');
+const startBtnLabelDefault = startBtn.textContent;
 
 let recognition;
-
 init();
 
 function init() {
@@ -15,8 +16,7 @@ function init() {
 }
 
 function initRecognition() {
-  const CrossBrowserSpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
+  const CrossBrowserSpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   const recognition = new CrossBrowserSpeechRecognition();
 
   recognition.continuous = false;
@@ -41,61 +41,71 @@ function initRecognition() {
   return recognition;
 }
 
-// recognition event handlers
-
-function handleStart() {
-  log(
-    `start - start listening - Ready to receive speech in ${recognition.lang}`,
-  );
-}
-
-function handleAudioStart() {
-  log("audio start - start capturing");
-}
-
-function handleSoundStart() {
-  log("sound start - show soundwave");
-}
-
-function handleSpeechStart() {
-  log("speech start - sound recognized as speech");
-}
-
 function handleResult(event) {
-  const result = event.results[0][0].transcript;
-  const p = document.createElement("p");
-  p.textContent = result;
+  log('result');
+  console.log(event);
+  const result = event.results[0][0];
+  const p = document.createElement('p');
+  p.textContent = result.transcript;
+  const span = document.createElement('span');
+  span.textContent = `confidence: ${result.confidence.toFixed(2)}`;
+  span.classList.add('confidence');
+  p.appendChild(span);
   output.appendChild(p);
 }
 
-function handleNoMatch() {
-  log("no match - service returned result without recognition");
+// recognition event handlers
+
+function handleStart() {
+  startBtn.classList.add('is-active');
+  startBtn.textContent = `Listening for ${recognition.lang}`;
+  log(`start - start listening - Ready to receive speech in ${recognition.lang}`);
 }
 
-function handleError() {
-  log("error - an error occurred");
+function handleAudioStart() {
+  log('audio start - start capturing');
+}
+
+function handleSoundStart() {
+  log('sound start - show soundwave');
+}
+
+function handleSpeechStart() {
+  log('speech start - sound recognized as speech');
+}
+
+function handleNoMatch() {
+  log('no match - service returned result without recognition');
+}
+
+function handleError(error) {
+  log(`An error occurred. Message: ${error.message}; Error: ${error.error}`);
+  if (error.error === 'service-not-allowed') {
+    log('On iOs, check Privacy & Security → Speech Recognition — is Safari toggled on there?');
+  }
 }
 
 function handleSpeechEnd() {
-  log("speech end - no more speech detected");
+  log('speech end - no more speech detected');
 }
 
 function handleSoundEnd() {
-  log("sound end - hide soundwave");
+  log('sound end - hide soundwave');
 }
 
 function handleAudioEnd() {
-  log("audio end - stop capturing");
+  log('audio end - stop capturing');
 }
 
 function handleEnd() {
-  log("end - recognition service has disconnected");
+  startBtn.classList.remove('is-active');
+  startBtn.textContent = startBtnLabelDefault;
+  log('end - recognition service has disconnected');
 }
 
 function initUI() {
-  const startBtn = document.getElementById("start-button");
-  const stopBtn = document.getElementById("stop-button");
-  const cancelBtn = document.getElementById("cancel-button");
+  const stopBtn = document.getElementById('stop-button');
+  const cancelBtn = document.getElementById('cancel-button');
   startBtn.onclick = () => {
     recognition.start();
   };
@@ -109,11 +119,4 @@ function initUI() {
     // stop recognition without trying to return SpeechRecognitionResult
     recognition.abort();
   };
-}
-
-function log(msg) {
-  console.log(msg);
-  const p = document.createElement("p");
-  p.textContent = msg;
-  logWin.appendChild(p);
 }
