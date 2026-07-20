@@ -20,7 +20,9 @@
 
 ### Open — pending spike results or further scoping
 
-- [ ] Max number of turns per session (depends on Gemini free-tier coherence spike)
+- [ ] AI provider: Gemini vs OpenAI — Spike 1 will be run against both for comparison before this
+  is decided (see decisions.md, 2026-07-20)
+- [ ] Max number of turns per session (depends on Spike 1 scenario-coherence results)
 - [ ] Number of scenarios shipping at v1 launch
 - [ ] Whether MVP has any auth/user concept at all
 - [ ] Exact fields/depth of the structured evaluation output
@@ -41,5 +43,10 @@
 - LLM-based language evaluation is inherently fuzzy/inconsistent. This is a known limitation to
   state plainly in the eventual case study, not something the evaluator's output should imply is
   authoritative.
-- Google AI Studio / Gemini free tier has real reliability constraints (rate limits, cold starts)
-  that must be designed around, not treated as edge cases.
+- AI API cost is capped at $5/month by design (see decisions.md). At this project's scale this is
+  not expected to be a binding constraint — token-level cost modeling puts a full conversation at a
+  small fraction of a cent for the candidate providers — but it is a deliberate ceiling, not an
+  unlimited budget, and should be named as such in the case study.
+- Free-tier usage was ruled out for both dev and MVP after discovering Gemini's free-tier daily
+  request cap (20 RPD on the account used) is too restrictive for normal development, not just
+  edge-case bursts. The app runs on a paid tier with a hard monthly spend cap instead.

@@ -83,6 +83,9 @@ redundant with the types.
 **Rationale:** Zero-cost development. Explicit tradeoff: free-tier reliability (rate limits, cold
 starts) is a real constraint to design around (e.g. middleware quota protection, candidate), not
 an edge case to dismiss.
+**Status:** Superseded 2026-07-20 — see "Provider & cost decisions" below. The free tier was
+abandoned after the actual account dashboard showed a 20 requests/day (RPD) cap for Gemini 2.5
+Flash, which blocks normal development, not just edge-case bursts.
 
 ---
 
@@ -104,6 +107,10 @@ Flagged for revisit once MVP scope is fully set — not decided now:
 coherently across ~5–10 turns without drifting or breaking character, in Norwegian?
 **Why it matters:** Directly determines the MVP max-turns limit — this isn't a UX choice until the
 technical ceiling is known.
+**Status:** Scope updated 2026-07-20 — see "Provider & cost decisions" below. No longer free-tier
+only; will run against paid-tier Gemini first, then likely re-run against OpenAI for comparison.
+Execution approach also decided: a standalone Node script, not built inside the Next.js app (see
+below).
 
 ### Spike 2: Browser STT accuracy for Norwegian learner speech
 
@@ -136,3 +143,63 @@ condition that would have pulled this into MVP (poor accuracy) did not materiali
 **Rationale:** Supersedes the 2026-07-17 decision. Spike 2 showed TTS is relatively easy to
 implement, and it meaningfully improves UX for a speaking-practice product. Given the low
 implementation cost and high UX value, it belongs in MVP rather than "shortly after."
+
+---
+
+## Provider & cost decisions (pre-Spike 1)
+
+### Gemini free tier abandoned as dev/runtime baseline
+
+**Date:** 2026-07-20
+**Decision:** Stop relying on Gemini's free tier, including for Spike 1. Free tier will not be used
+for MVP development or production.
+**Rationale:** The account's actual Google AI Studio dashboard showed a 20 requests/day (RPD) cap
+for Gemini 2.5 Flash — far below what even a single normal dev session needs, let alone Spike 1's
+~15–50 planned requests. This is a harder constraint than the general "free tier has reliability
+caveats" framing originally logged in this doc and in requirements.md — at this level, RPD blocks
+routine development, not just edge cases.
+
+### Monthly AI API budget ceiling: $5
+
+**Date:** 2026-07-20
+**Decision:** Cap total AI API spend (dev, spikes, and MVP usage combined) at $5/month.
+**Rationale:** Token-level cost modeling for both Gemini 2.5 Flash-Lite ($0.10/$0.40 per million
+tokens) and OpenAI GPT-4o-mini ($0.15/$0.60 per million tokens) puts a full 10-turn conversation at
+a small fraction of a cent — thousands of conversations fit inside $5/month for either provider.
+Cost is not a meaningful constraint at this project's scale.
+
+### Claude ruled out as MVP provider
+
+**Date:** 2026-07-20
+**Decision:** Not spiking or building against Claude (Anthropic) for this project.
+**Rationale:** Claude Haiku 4.5 pricing (~$1.00/$5.00 per million tokens) is roughly 10x
+Gemini/OpenAI's cheap-tier models. Not disqualifying on its own at this scale, but with no stated
+preference for Claude specifically, cost tips the choice toward Gemini/OpenAI.
+
+### Spike 1 will evaluate two providers: Gemini and OpenAI
+
+**Date:** 2026-07-20
+**Decision:** Run Spike 1 (scenario coherence) against Gemini (paid tier) first. Plan to re-run the
+same spike against OpenAI (GPT-4o-mini) afterward for comparison before making a final MVP provider
+decision.
+**Rationale:** Token pricing and rate-limit numbers don't capture what Spike 1 is actually testing —
+persona/scenario coherence quality in Norwegian across turns. That's a per-provider empirical
+question, not something resolvable from pricing pages alone.
+
+### Gemini spend cap set before paid-tier usage
+
+**Date:** 2026-07-20
+**Decision:** Set a monthly Project Spend Cap in Google AI Studio (Spend tab → Monthly spend cap)
+before running any paid-tier Gemini requests, set slightly below the $5 ceiling.
+**Rationale:** Google's Project Spend Caps (launched March 2026) have a ~10 minute enforcement
+delay; setting the cap a little under the true budget ceiling avoids a small overshoot.
+
+### Spike 1 execution: plain Node script, not Next.js
+
+**Date:** 2026-07-20
+**Decision:** Spike 1 will be built as a standalone Node script (live, typed-in-terminal
+conversation, human types the "user" side), not inside the Next.js app.
+**Rationale:** Spike 1's question is about model behavior, not architecture. A Next.js Route
+Handler solves a client/server API-key-exposure problem that doesn't exist in a local script run
+from the terminal. Keeping the spike in plain Node isolates "does the model hold the scenario"
+from "did I configure Next.js correctly" — relevant since this is also a first-time Next.js build.
