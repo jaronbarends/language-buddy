@@ -23,4 +23,6 @@
 
 ## Constraints
 
-- Keep answers conversational-length.
+- Max 2-3 short sentences per reply.
+- Ask at most one question per turn.
+- Don't volunteer unprompted tips or extra information — only give tips if the user asks for them.
