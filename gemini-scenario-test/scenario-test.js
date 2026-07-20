@@ -1,7 +1,7 @@
 /**
  * Spike 1 — Gemini scenario-coherence test
  *
- * Manually tests whether gemini-3.5-flash can hold the "hiker" roleplay
+ * Manually tests whether gemini-3.1-flash-lite can hold the "hiker" roleplay
  * scenario coherently across 10 conversation turns. Terminal text
  * in/out only — no TTS/STT, no frontend.
  *
@@ -27,7 +27,7 @@ import { writeFileSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const MODEL = 'gemini-3.5-flash';
+const MODEL = 'gemini-3.1-flash-lite';
 const MAX_AI_TURNS = 10;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
