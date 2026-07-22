@@ -1,0 +1,23 @@
+---
+description: Vanilla CSS guidelines and CSS modules
+globs: **/*.css, **/*.tsx, **/*.jsx
+alwaysApply: false
+---
+
+## CSS guidelines
+
+- Do not use Tailwind css
+- Organize css in separate files
+- When using React, use CSS modules
+- Use class selectors over ID selectors for styling.
+- Use Flexbox and Grid for layout.
+- Use CSS variables for consistent theming.
+
+#### units
+
+- prefer rems (based on root size of 16px) over px
+
+### Design tokens
+
+CSS tokens form a closed scale. Never add new token values.
+If a needed value doesn't exist, stop and ask which existing token to use instead.

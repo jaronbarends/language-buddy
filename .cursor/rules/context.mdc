@@ -1,0 +1,38 @@
+---
+description: Project context for language-buddy
+alwaysApply: true
+---
+
+## AI used in this project
+
+- claude.ai: Peer developer discussions: architecture, code, UX/interaction design, and writing prompts for Claude Code.
+- Claude Code: implementation, through extension for Cursor or VSCode
+
+## The project
+
+Building "the Conversational Sparring Partner" — a low-stakes web app for higher-B1/lower-B2 language learners (starting with my own case: Norwegian) to practice real-world conversational scenarios (e.g. calling a landlord) against an AI persona, followed by an async structured evaluation (grammar, vocabulary upgrades, semantic nuance) after the session ends.
+
+Scope decision already made: this is a scenario library from the start, not a single hardcoded scenario. Preparing/prompting the LLM to hold a persona across a scenario is itself a deliberate learning goal, not incidental.
+
+## Why this project (for context, don't re-litigate)
+
+Chosen over several alternatives (language-drill dashboards, dev-tooling dashboards, a job-application tracker) specifically because I have a genuine personal need for it — I'm learning Norwegian myself — which should read as authentic rather than manufactured in a case study.
+
+## Stack and why (justify, don't assume)
+
+- Next.js App Router: Route Handlers proxy the LLM so the API key never reaches the client. Confirm any other Next.js feature choice is driven by an actual product need, not "wanted to learn it."
+- TypeScript: strict schemas for conversation state and the structured evaluation payload. Note: TS types don't validate untrusted LLM JSON at runtime — a runtime validator (e.g. Zod) is a separate, necessary decision, not redundant with the types.
+- AI backend: **Gemini** (paid tier), decided. Gemini's free tier was abandoned after the account dashboard showed a 20 requests/day (RPD) cap — too restrictive for normal development, not just edge-case bursts. Monthly AI API spend is capped at $5 (across dev, spikes, and MVP usage), enforced via a Google AI Studio Project Spend Cap. Spike 1 (2026-07-21) tested scenario/persona coherence in Norwegian on Gemini and held cleanly through 10 turns with no drift — judged good enough to proceed. The planned OpenAI (GPT-4o-mini) comparison spike was deliberately skipped rather than spend further to confirm an already-satisfactory result. Claude was considered and ruled out for this project specifically due to ~10x the token cost of Gemini/OpenAI's cheap-tier models, with no other stated reason to prefer it.
+
+## Known weak spots to own explicitly, not hide
+
+- LLM-based language evaluation is inherently fuzzy/inconsistent — name this as a known limitation in the eventual case study rather than presenting the evaluator as authoritative.
+- Current framework depth is thin (proxy + pages). Candidates to deliberately add real justification-driven depth, to revisit once MVP scope is set, not decide now: streaming responses (Route Handlers + Suspense), static/dynamic rendering split (static scenario library vs dynamic session pages, ISR), middleware (quota protection, relevant now for paid-tier budget/rate-limit protection rather than free-tier reliability specifically).
+
+## Primary goal for this project cycle
+
+Demonstrate professional workflow to NL recruiters during my job-market re-entry: stack choices justified by actual problem shape, meaningful git history, some testing, CI, accessibility considered from the start, and a case-study write-up including how AI was used in the build. Weight this more heavily than raw portfolio polish, though this project should score reasonably on both axes given the personal motivation behind it.
+
+## Define done
+
+Before starting any piece of work (a phase, a feature, a spike), make sure explicit, checkable done criteria are defined first. If I haven't done this, prompt me before proceeding.

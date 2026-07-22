@@ -1,0 +1,32 @@
+---
+description: React component patterns and architecture
+globs: **/*.tsx, **/*.jsx
+alwaysApply: false
+---
+
+## React guidelines
+
+- The project uses React 19.
+
+### Generic React guidelines
+
+- Use Suspense for async operations
+- Optimize for performance and Web Vitals
+  
+### Component architecture
+
+- When writing React components, always place its return statement as early as possible in the component body, and define any internal functions after the return statement (hoisted function declarations), rather than before it.
+- Structure components logically: keep exports, subcomponents, helpers, and types well-organized. Extract subcomponents when JSX is complex, reused, or has its own behavior; keep simple, one-off JSX inline for readability. When a subcomponent is only used once, keep it in the same file.
+
+### importing
+
+- Use absolute paths for imports with the `@/` prefix, unless you are importing a CSS module with the same base name as the current file from the same directory (use `./` then). e.g. in `@/app/components/someFeature/SomeComponent.jsx`:
+  - ✅ `import AnotherComponent from '@/app/components/someFeature/AnotherComponent'`
+  - ❌ `import AnotherComponent from './AnotherComponent'`
+  - ✅ `import YetAnotherComponent from '@/app/components/YetAnotherComponent'`
+  - ❌ `import YetAnotherComponent from '../YetAnotherComponent'`
+  - ✅ `import styles from './SomeComponent.module.css'` (CSS module matching current file)
+  - ❌ `import styles from '@/app/components/someFeature/SomeComponent.module.css'`
+  - ✅ `import styles from '@/app/components/someFeature/AnotherComponent.module.css'` (different file's CSS module)
+  - ❌ `import styles from './AnotherComponent.module.css'`
+  - Note: `@/` requires bundler config (automatic in Next.js; manual in Vite via `resolve.alias`)
