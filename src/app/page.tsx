@@ -1,12 +1,16 @@
-import './globals.css';
-import styles from './page.module.css';
+import { redirect } from 'next/navigation';
 
-export default function Home() {
-  return (
-    <div className={styles.component}>
-      <main>
-        <h1>yay</h1>
-      </main>
-    </div>
-  );
+import './globals.css';
+
+// import styles from './page.module.css';
+
+export default function HomePage() {
+  // redirect to conversation until we get real home page
+  redirect('/conversation');
+
+  // return (
+  //   <div className={styles.component}>
+  //     <main>Home page</main>
+  //   </div>
+  // );
 }
