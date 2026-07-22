@@ -18,11 +18,17 @@
 - [ ] STT transcript review/edit step before sending to AI — spike 2 showed STT accuracy is good
   enough that this is not needed (see decisions.md)
 
-### Open — pending spike results or further scoping
+### Resolved
 
-- [ ] AI provider: Gemini vs OpenAI — Spike 1 will be run against both for comparison before this
-  is decided (see decisions.md, 2026-07-20)
-- [ ] Max number of turns per session (depends on Spike 1 scenario-coherence results)
+- [x] AI provider: **Gemini** (paid tier). Spike 1 held cleanly through 10 turns with no drift;
+  the planned OpenAI comparison spike was deliberately skipped rather than spend further to confirm
+  an already-satisfactory result (see decisions.md, 2026-07-21).
+- [x] Max number of turns per session: no fixed number from Spike 1 — no drift/breaking point
+  appeared within the 10 turns tested, so this will be tuned during build rather than derived from
+  a spike ceiling (see decisions.md, 2026-07-21).
+
+### Open — pending further scoping
+
 - [ ] Number of scenarios shipping at v1 launch
 - [ ] Whether MVP has any auth/user concept at all
 - [ ] Exact fields/depth of the structured evaluation output

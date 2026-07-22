@@ -101,16 +101,15 @@ Flagged for revisit once MVP scope is fully set — not decided now:
 
 ## Spikes (planned, not yet run)
 
-### Spike 1: Gemini free-tier scenario coherence
+### Spike 1: Gemini scenario coherence
 
-**Question:** Can Gemini free tier hold a lightweight scenario (situation + goal, no rich persona)
-coherently across ~5–10 turns without drifting or breaking character, in Norwegian?
+**Question:** Can Gemini (paid tier) hold a lightweight scenario (situation + goal, no rich
+persona) coherently across ~5–10 turns without drifting or breaking character, in Norwegian?
 **Why it matters:** Directly determines the MVP max-turns limit — this isn't a UX choice until the
 technical ceiling is known.
-**Status:** Scope updated 2026-07-20 — see "Provider & cost decisions" below. No longer free-tier
-only; will run against paid-tier Gemini first, then likely re-run against OpenAI for comparison.
-Execution approach also decided: a standalone Node script, not built inside the Next.js app (see
-below).
+**Date run:** 2026-07-21
+**Outcome:** Held cleanly through 10 turns, no drift or character breaks observed. Result judged
+good enough to proceed. See "Post-spike-1 decisions" below for what this resolves.
 
 ### Spike 2: Browser STT accuracy for Norwegian learner speech
 
@@ -185,6 +184,8 @@ decision.
 **Rationale:** Token pricing and rate-limit numbers don't capture what Spike 1 is actually testing —
 persona/scenario coherence quality in Norwegian across turns. That's a per-provider empirical
 question, not something resolvable from pricing pages alone.
+**Status:** Superseded 2026-07-21 — see "Post-spike-1 decisions" below. Gemini's result was good
+enough that the OpenAI comparison spike was skipped rather than run.
 
 ### Gemini spend cap set before paid-tier usage
 
@@ -203,3 +204,31 @@ conversation, human types the "user" side), not inside the Next.js app.
 Handler solves a client/server API-key-exposure problem that doesn't exist in a local script run
 from the terminal. Keeping the spike in plain Node isolates "does the model hold the scenario"
 from "did I configure Next.js correctly" — relevant since this is also a first-time Next.js build.
+
+---
+
+## Post-spike-1 decisions
+
+### AI provider for MVP: Gemini
+
+**Date:** 2026-07-21
+**Decision:** Use Gemini (paid tier) as the MVP AI provider. The planned OpenAI (GPT-4o-mini)
+comparison spike is skipped, not deferred.
+**Rationale:** Spike 1 held cleanly through 10 turns on Gemini with no drift or character breaks —
+good enough to proceed. Running the same spike against OpenAI would cost additional real money
+(OpenAI has no free/no-commitment tier to spike against — see 2026-07-20 rate-limit discussion)
+for a comparison that isn't needed now that Gemini's result is satisfactory. This closes the
+"Spike 1 will evaluate two providers" decision below without a second data point — a deliberate
+scope cut, not an oversight.
+
+### Max turns per session: not fixed from Spike 1, decided on the go
+
+**Date:** 2026-07-21
+**Decision:** Spike 1 does not produce a hard max-turns number. Coherence held through all 10
+tested turns with no observed ceiling, so the limit will be set/tuned during build rather than
+derived from a spike-observed breaking point.
+**Rationale:** The original done criteria (see Spike 1 question above) expected the spike to
+surface a drift/break point that would directly set the limit. Since no such point appeared within
+the tested range, there's nothing to derive a number from yet — inventing one now would be
+guessing, not deciding. Revisit if longer sessions are tested later or if real usage surfaces
+drift beyond 10 turns.

@@ -20,22 +20,22 @@
  * when the script ends, for manual pass/fail review.
  */
 
-import 'dotenv/config';
-import { GoogleGenAI } from '@google/genai';
-import readline from 'node:readline/promises';
-import { writeFileSync, readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import path from 'node:path';
+import "dotenv/config";
+import { GoogleGenAI } from "@google/genai";
+import readline from "node:readline/promises";
+import { writeFileSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 
-const MODEL = 'gemini-3.1-flash-lite';
+const MODEL = "gemini-3.1-flash-lite";
 const MAX_AI_TURNS = 10;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SCENARIO_PATH = path.join(__dirname, '..', 'docs', 'scenarios', 'hiker.md');
-const SYSTEM_INSTRUCTION = readFileSync(SCENARIO_PATH, 'utf-8');
+const SCENARIO_PATH = path.join(__dirname, "..", "scenarios", "hiker.md");
+const SYSTEM_INSTRUCTION = readFileSync(SCENARIO_PATH, "utf-8");
 
 function timestampForFilename() {
-  return new Date().toISOString().replace(/[:.]/g, '-');
+  return new Date().toISOString().replace(/[:.]/g, "-");
 }
 
 function writeTranscript(transcript, endedEarly) {
@@ -43,7 +43,7 @@ function writeTranscript(transcript, endedEarly) {
   const footer = endedEarly
     ? '_Session ended early — user typed "exit"._'
     : `_Session ended after ${MAX_AI_TURNS} AI turns._`;
-  const content = `# Scenario transcript — hiker (${MODEL})\n\n${lines.join('\n\n')}\n\n${footer}\n`;
+  const content = `# Scenario transcript — hiker (${MODEL})\n\n${lines.join("\n\n")}\n\n${footer}\n`;
   const filename = `transcript-${timestampForFilename()}.md`;
 
   writeFileSync(filename, content);
@@ -54,7 +54,9 @@ async function main() {
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
-    console.error('Missing GEMINI_API_KEY. Add it to a .env file in this folder.');
+    console.error(
+      "Missing GEMINI_API_KEY. Add it to a .env file in this folder.",
+    );
     process.exit(1);
   }
 
@@ -64,7 +66,10 @@ async function main() {
     config: { systemInstruction: SYSTEM_INSTRUCTION },
   });
 
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
   const transcript = [];
   let endedEarly = false;
 
@@ -75,16 +80,17 @@ async function main() {
       if (aiTurn === 1) {
         // Kickoff only — triggers the model's opening line per the system
         // instruction. Not a real human turn, so it isn't logged as USER.
-        messageToSend = 'Begin the conversation as instructed by the system prompt.';
+        messageToSend =
+          "Begin the conversation as instructed by the system prompt.";
       } else {
-        const userInput = await rl.question('You: ');
+        const userInput = await rl.question("You: ");
 
-        if (userInput.trim().toLowerCase() === 'exit') {
+        if (userInput.trim().toLowerCase() === "exit") {
           endedEarly = true;
           break;
         }
 
-        transcript.push({ speaker: 'USER', text: userInput });
+        transcript.push({ speaker: "USER", text: userInput });
         messageToSend = userInput;
       }
 
@@ -92,10 +98,10 @@ async function main() {
       const aiText = response.text;
 
       console.log(`\nAI: ${aiText}\n`);
-      transcript.push({ speaker: 'AI', text: aiText });
+      transcript.push({ speaker: "AI", text: aiText });
     }
   } catch (error) {
-    console.error('API call failed:', error);
+    console.error("API call failed:", error);
   } finally {
     rl.close();
     writeTranscript(transcript, endedEarly);
