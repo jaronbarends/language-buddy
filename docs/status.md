@@ -1,9 +1,10 @@
 # Project status
 
-**Last updated:** 2026-07-20
+**Last updated:** 2026-07-21
 **Current phase:** Pre-code. Concept locked (scenario-library based conversational sparring
 partner, Norwegian, multi-turn sessions + async structured evaluation). MVP scoping in progress;
-Spike 2 complete, Spike 1 about to start (scope just revised — see decisions.md).
+Spike 1 and Spike 2 both complete. AI provider now decided (Gemini). Remaining open items being
+closed before moving to data structures and route/boundary architecture.
 
 ---
 
@@ -25,31 +26,39 @@ Spike 2 complete, Spike 1 about to start (scope just revised — see decisions.m
 - Framework: Next.js App Router + TypeScript (see decisions.md for rationale)
 - AI backend: paid tier, not free tier — Gemini free tier abandoned after hitting a 20 RPD account
   cap; monthly AI API budget capped at $5 (see decisions.md)
-- Spike 1 will run as a plain Node script (not inside Next.js), human types the "user" side live
+- Spike 1 ran as a plain Node script (not inside Next.js), human typed the "user" side live
   (see decisions.md)
-- A Gemini Project Spend Cap must be set (Google AI Studio → Spend tab) before running any
-  paid-tier requests (see decisions.md)
+- A Gemini Project Spend Cap was set (Google AI Studio → Spend tab) before running paid-tier
+  requests (see decisions.md)
+- **AI provider for MVP: Gemini** — Spike 1 (2026-07-21) held cleanly through 10 turns with no
+  drift; OpenAI comparison spike deliberately skipped rather than spend more to confirm a result
+  already judged good enough (see decisions.md)
+- Max turns per session: not derived from a spike-observed breaking point (none appeared within 10
+  tested turns) — will be set/tuned during build instead of fixed up front (see decisions.md)
+  Auth: none for MVP — explicitly decided, not just deferred (see decisions.md)
+- v0 scope: build against a single hardcoded scenario first; generalize to the scenario library
+  once the core loop works (see decisions.md — this sequences the library concept, it doesn't
+  replace it)
+- Evaluation: build after the basic conversation loop is working, not in parallel and not spiked
+  first — feasibility judged well-established enough to skip a spike (see decisions.md)
 
 ## What's open
 
-- **AI provider for MVP: Gemini vs OpenAI** — Spike 1 will run against Gemini first, then likely
-  against OpenAI (GPT-4o-mini) for comparison, before this is decided (see decisions.md)
-- Max turns per session (pending Spike 1 results, across whichever provider(s) it's run against)
-- Number of scenarios shipping at v1
-- Whether MVP has any auth/user concept at all
 - Structured evaluation output fields/depth
-- Core data structures (session state, evaluation schema) — deliberately deferred until scope is
-  final and spike results are in
+- Core data structures (session state, evaluation schema) — deliberately deferred until v0
+  interaction/state design is done
 - Component/route boundary diagram — same as above
-- Whether/how to mock LLM responses during regular dev, to protect the $5/month budget and avoid
-  burning real API calls on routine UI/flow testing (flagged, not committed — see backlog.md)
+- Whether/how to mock LLM responses during regular dev (flagged, not committed — see backlog.md)
+- Scenario count at v1 launch (v0 itself is settled at one hardcoded scenario — this is only about
+  what ships after v0)
 
 ## Next step
 
-1. Set a Gemini Project Spend Cap in AI Studio (a little under $5, to allow for the ~10 min
-   enforcement delay — see decisions.md).
-2. Build Spike 1 as a standalone Node script, run live against Gemini (paid tier) — see
-   decisions.md for the spike question and done criteria.
-3. Likely re-run the same spike against OpenAI (GPT-4o-mini) for comparison.
-4. Use combined results to close the remaining open MVP scope items above, then proceed to data
-   structures and route/boundary architecture.
+1. Implement v0 state machine (useReducer + discriminated union) per decisions.md interaction
+   design.
+2. Define core data structures (session state shape, transcript shape) consistent with the state
+   model — transcript must exclude the hidden opening instruction.
+3. Build v0 conversation loop: one hardcoded scenario, STT in / TTS out, Gemini calls per state.
+4. Add evaluation as a second slice once v0 loop works.
+5. Decide whether/how to mock LLM responses during dev (see backlog.md).
+6. Revisit scenario count for v1 once v0 exists.

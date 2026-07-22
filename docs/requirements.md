@@ -13,19 +13,37 @@
 - [ ] Async structured evaluation after session ends: grammar, vocabulary upgrades, semantic nuance
 - [ ] Session state is in-memory only for MVP — no persistence across refresh/tab close/return visits
 
+#### v0 interaction/state model
+
+- [ ] 10-state model implemented via useReducer + discriminated union (see decisions.md,
+      2026-07-22, for full state list and transitions)
+- [ ] Error/retry, end-conversation-from-anywhere, and listening-timeout behaviors implemented per
+      decisions.md
+- [ ] Hidden AI-opening instruction excluded from transcript and from future evaluation input
+
 ### Explicitly deferred (tracked, not MVP)
 
 - [ ] STT transcript review/edit step before sending to AI — spike 2 showed STT accuracy is good
-  enough that this is not needed (see decisions.md)
+      enough that this is not needed (see decisions.md)
 
-### Open — pending spike results or further scoping
+### Resolved
 
-- [ ] AI provider: Gemini vs OpenAI — Spike 1 will be run against both for comparison before this
-  is decided (see decisions.md, 2026-07-20)
-- [ ] Max number of turns per session (depends on Spike 1 scenario-coherence results)
-- [ ] Number of scenarios shipping at v1 launch
-- [ ] Whether MVP has any auth/user concept at all
+- [x] AI provider: **Gemini** (paid tier). Spike 1 held cleanly through 10 turns with no drift;
+      the planned OpenAI comparison spike was deliberately skipped rather than spend further to confirm
+      an already-satisfactory result (see decisions.md, 2026-07-21).
+- [x] Max number of turns per session: no fixed number from Spike 1 — no drift/breaking point
+      appeared within the 10 turns tested, so this will be tuned during build rather than derived from
+      a spike ceiling (see decisions.md, 2026-07-21).
+- [x] Auth: none for MVP (see decisions.md, 2026-07-22).
+- [x] v0 scenario scope: one hardcoded scenario for the first build; scenario library remains the
+      eventual target, generalized after v0 (see decisions.md, 2026-07-22).
+- [x] Evaluation feasibility: no spike needed — judged well-established LLM capability, not a
+      behavioral unknown like Spike 1/2 (see decisions.md, 2026-07-22).
+
+### Open — pending further scoping
+
 - [ ] Exact fields/depth of the structured evaluation output
+- [ ] Number of scenarios shipping at v1 launch (post-v0 decision, not a v0 blocker)
 
 ### Pages (MVP)
 

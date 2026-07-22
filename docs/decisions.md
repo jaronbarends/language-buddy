@@ -101,16 +101,15 @@ Flagged for revisit once MVP scope is fully set — not decided now:
 
 ## Spikes (planned, not yet run)
 
-### Spike 1: Gemini free-tier scenario coherence
+### Spike 1: Gemini scenario coherence
 
-**Question:** Can Gemini free tier hold a lightweight scenario (situation + goal, no rich persona)
-coherently across ~5–10 turns without drifting or breaking character, in Norwegian?
+**Question:** Can Gemini (paid tier) hold a lightweight scenario (situation + goal, no rich
+persona) coherently across ~5–10 turns without drifting or breaking character, in Norwegian?
 **Why it matters:** Directly determines the MVP max-turns limit — this isn't a UX choice until the
 technical ceiling is known.
-**Status:** Scope updated 2026-07-20 — see "Provider & cost decisions" below. No longer free-tier
-only; will run against paid-tier Gemini first, then likely re-run against OpenAI for comparison.
-Execution approach also decided: a standalone Node script, not built inside the Next.js app (see
-below).
+**Date run:** 2026-07-21
+**Outcome:** Held cleanly through 10 turns, no drift or character breaks observed. Result judged
+good enough to proceed. See "Post-spike-1 decisions" below for what this resolves.
 
 ### Spike 2: Browser STT accuracy for Norwegian learner speech
 
@@ -185,6 +184,8 @@ decision.
 **Rationale:** Token pricing and rate-limit numbers don't capture what Spike 1 is actually testing —
 persona/scenario coherence quality in Norwegian across turns. That's a per-provider empirical
 question, not something resolvable from pricing pages alone.
+**Status:** Superseded 2026-07-21 — see "Post-spike-1 decisions" below. Gemini's result was good
+enough that the OpenAI comparison spike was skipped rather than run.
 
 ### Gemini spend cap set before paid-tier usage
 
@@ -203,3 +204,130 @@ conversation, human types the "user" side), not inside the Next.js app.
 Handler solves a client/server API-key-exposure problem that doesn't exist in a local script run
 from the terminal. Keeping the spike in plain Node isolates "does the model hold the scenario"
 from "did I configure Next.js correctly" — relevant since this is also a first-time Next.js build.
+
+---
+
+## Post-spike-1 decisions
+
+### AI provider for MVP: Gemini
+
+**Date:** 2026-07-21
+**Decision:** Use Gemini (paid tier) as the MVP AI provider. The planned OpenAI (GPT-4o-mini)
+comparison spike is skipped, not deferred.
+**Rationale:** Spike 1 held cleanly through 10 turns on Gemini with no drift or character breaks —
+good enough to proceed. Running the same spike against OpenAI would cost additional real money
+(OpenAI has no free/no-commitment tier to spike against — see 2026-07-20 rate-limit discussion)
+for a comparison that isn't needed now that Gemini's result is satisfactory. This closes the
+"Spike 1 will evaluate two providers" decision below without a second data point — a deliberate
+scope cut, not an oversight.
+
+### Max turns per session: not fixed from Spike 1, decided on the go
+
+**Date:** 2026-07-21
+**Decision:** Spike 1 does not produce a hard max-turns number. Coherence held through all 10
+tested turns with no observed ceiling, so the limit will be set/tuned during build rather than
+derived from a spike-observed breaking point.
+**Rationale:** The original done criteria (see Spike 1 question above) expected the spike to
+surface a drift/break point that would directly set the limit. Since no such point appeared within
+the tested range, there's nothing to derive a number from yet — inventing one now would be
+guessing, not deciding. Revisit if longer sessions are tested later or if real usage surfaces
+drift beyond 10 turns.
+
+## v0 sequencing decisions (2026-07-22)
+
+### No auth for MVP
+
+**Decision:** No auth/user concept for MVP, including v0.
+**Rationale:** No stated need for it yet; can be added later without reworking the core loop.
+
+### v0 builds against a single hardcoded scenario
+
+**Decision:** First build targets one hardcoded scenario (situation + goal + constraints, generic
+persona), not the full scenario library.
+**Rationale:** Prioritizes getting the core conversation loop working and getting a feel for the
+app quickly. Does not reverse the "scenario library from the start" concept decision — it sequences
+it: prove the loop against one scenario, generalize to a library afterward, rather than building
+library infrastructure before the loop itself exists.
+
+### Evaluation sequenced after the basic loop, no feasibility spike
+
+**Decision:** Build the basic conversation loop first, with no evaluation. Add evaluation as a
+second slice afterward. No spike run to test evaluation feasibility first.
+**Rationale:** Evaluation is judged low-risk technically — read a transcript, ask the LLM for
+structured JSON — unlike Spike 1/2's genuine behavioral unknowns (persona coherence, STT accuracy).
+The remaining uncertainty (reliable JSON conformance, pedagogical quality of feedback) is an
+implementation/iteration concern, not a go/no-go question, so it doesn't meet the bar that justified
+Spike 1 and 2. Condition for this to stay low-cost: session state must capture the full turn-by-turn
+transcript from the start, since the conversation loop needs this anyway.
+
+## v0 interaction/state design (2026-07-22)
+
+### State model
+
+v0 conversation loop is a single-flow state machine with these states:
+
+- `idle` — start conversation button
+- `initializing` — create Gemini chat with scenario systemInstruction, determine who opens
+- `waitingForAI` — either the hidden opening instruction (if AI opens) or the user's just-sent
+  message (if user opens) is in flight
+- `aiTurnSpeaking` — AI's reply added to transcript + chat balloon, TTS playing
+- `aiTurnReady` — TTS finished, Reply button enabled
+- `listening` — STT active (`continuous = true`), countdown running, Send hidden until timeout
+- `listeningTimedOut` — STT force-stopped at countdown zero; transcript-so-far stays editable,
+  user must manually click Send (no auto-send, no auto-end)
+- `sending` — user message sent to Gemini
+- `ended` — terminal state, "Conversation is ended" message in chat area
+- `error` — transient, not terminal; shown as a system message in chat area with Retry
+
+Loop: `sending` → `waitingForAI` again for the next turn, until max-turns is reached, then →
+`ended`.
+
+### Turn counting
+
+One turn = one user message + one AI reply pair. Whichever side does _not_ open the conversation
+also closes it — i.e. the turn-limit check fires right after the non-opening side's Nth message
+completes, not on a fixed side. **Only successful turns count** — a failed/retried request does
+not consume turn budget.
+
+### Hidden opening instruction
+
+The synthetic "start the scene" instruction sent to the AI when it opens (see interaction step 3)
+is NOT part of the transcript and must not be sent to evaluation later. Only real user/AI turns are
+stored.
+
+### Error handling
+
+- Can occur in `initializing`, `waitingForAI`, `sending`, and STT failure in `listening`.
+- Shown as a system-style message in the chat area (not a separate banner), with a Retry action.
+- Retry re-attempts only the specific failed operation (same chat creation call, same Gemini
+  request, same message, same STT activation) — never restarts the whole conversation.
+- v0 error messaging is generic (no per-failure-type UI) — deliberate scope cut, not an oversight.
+
+### End conversation (always live)
+
+Available from every state, including mid-turn. On click: abort in-flight Gemini request, stop TTS
+playback, stop STT recognition, clear any countdown timer, transition to `ended`.
+
+### User-turn timeout behavior
+
+At countdown zero: force-stop STT, keep whatever was transcribed, let the user manually hit Send.
+No auto-send, no auto-discard, no auto-end. (See backlog: discard/restart-reply as a possible
+future improvement, not v0.)
+
+### State management approach: useReducer + discriminated union, not XState
+
+**Decision:** Implement the v0 state machine with `useReducer` and a TypeScript discriminated union
+(`type State = { status: 'idle' } | { status: 'aiTurnSpeaking'; ... } | ...`), switch-based reducer.
+Not XState.
+**Rationale:** The model above is a mostly-linear flow with a few well-defined branches
+(error/retry, timeout, end-from-anywhere) — no parallel states, nested/hierarchical states, or
+history states, which is where XState's cost starts paying for itself. Adding XState now would
+layer a third unfamiliar concept on top of the two already-active learning goals (Next.js,
+TypeScript) rather than reinforcing them. The discriminated-union + switch approach directly
+exercises the TypeScript learning goal (exhaustiveness checking via a `never` default case).
+**Known risk to guard against:** the reducer must explicitly no-op on actions that don't apply to
+the current state (e.g. a stray `SEND_MESSAGE` dispatch while in `idle`), rather than assuming the
+UI only ever dispatches valid actions — races between async callbacks (TTS finishing, STT events)
+and fast user clicks (e.g. End conversation) are a realistic failure mode otherwise.
+**Revisit if:** parallel/nested states are needed later, or a team context makes XState's tooling
+(visualizer, guards) worth the added concept surface.

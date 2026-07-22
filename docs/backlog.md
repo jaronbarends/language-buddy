@@ -14,14 +14,15 @@ when work starts.
 consume real API budget or hit rate limits.
 **Why it's flagged, not decided:** Raised after moving off Gemini's free tier and setting a
 $5/month spend cap — every dev-loop reload otherwise draws from that same budget. Not committed as
-an MVP requirement; worth deciding once Spike 1 (and the resulting provider choice) is done, since
-the shape of the mock depends partly on which provider's response format it needs to imitate.
+an MVP requirement. Provider is now decided (Gemini, see decisions.md 2026-07-21), so the mock can
+target Gemini's actual response shape — still not yet decided whether/how to build it.
 
 ---
 
-## Random ideas - To be decided upon
+## Ideas to be decided upon
 
 - countdown for time remaining to speak
+- upon user-turn timeout: give user chance to discard text and restart reply
 - open app with vocab suggestion of the day
 - be able to choose language level
 - let app assert language level
