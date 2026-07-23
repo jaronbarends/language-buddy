@@ -1,12 +1,5 @@
-import ControlsArea from './components/ControlsArea';
-
-import styles from './page.module.css';
+import ConversationClient from './components/ConversationClient';
 
 export default function ConversationPage() {
-  return (
-    <div className={styles.page}>
-      <div className={styles.chatArea}>chat</div>
-      <ControlsArea />
-    </div>
-  );
+  return <ConversationClient />;
 }

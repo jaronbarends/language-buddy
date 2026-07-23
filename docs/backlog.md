@@ -5,17 +5,14 @@ when work starts.
 
 ---
 
-## High priority (deferred from MVP, not "someday")
+## High priority
 
 ### Mock LLM responses during dev
 
 **Added:** 2026-07-20
-**What:** A fake/mock response layer for the LLM, so routine UI and flow development doesn't
-consume real API budget or hit rate limits.
-**Why it's flagged, not decided:** Raised after moving off Gemini's free tier and setting a
-$5/month spend cap — every dev-loop reload otherwise draws from that same budget. Not committed as
-an MVP requirement. Provider is now decided (Gemini, see decisions.md 2026-07-21), so the mock can
-target Gemini's actual response shape — still not yet decided whether/how to build it.
+**Resolved:** 2026-07-24 — see decisions.md. Small real-API spike first (Route Handler mechanics,
+response/error shapes), then mock built against that shape behind a shared interface, state machine
+wired to the mock for all UI dev.
 
 ---
 

@@ -348,3 +348,20 @@ two states:
   the reason the button is enabled differ between them. `Ready` is used as a prefix (not suffix, as
   in the original `aiTurnReady`) specifically so busy/in-flight states (`waitingForAI`) and
   idle/ready states (`readyForUser*`) stay visually distinguishable at a glance in the state list.
+### Mock LLM responses during dev: small real-API spike first, then mock behind shared interface
+
+**Date:** 2026-07-24
+**Decision:** Before building the mock, do a small isolated integration (Route Handler + single
+round-trip Gemini call, not wired into the state machine) to learn real request/response shape,
+multi-turn session handling, and error shapes (rate limit, timeout, malformed JSON). Use that to
+define the real `ConversationApiResult` type. Then build a mock implementation against that same
+type/function signature, and wire the v0 state machine to the mock — not to live Gemini — for all
+UI/reducer development. Swap in the real implementation behind the same signature once the state
+machine is proven out against the mock.
+**Rationale:** Spike 1 already validated model behavior (coherence across turns); what's still
+unknown is SDK/Route Handler mechanics, not model quality — worth a small dedicated look rather than
+skipping straight to either full integration or a guessed mock shape. Wiring the reducer to live
+Gemini directly would recreate the problem the mock was meant to solve: every dev-loop reload during
+UI/reducer debugging burns real requests against the $5/month cap, and couples two separable
+unknowns (does the reducer transition correctly? does the API call behave correctly?) back together.
+A shared function signature (mock vs real) means swapping implementations later isn't a redesign.

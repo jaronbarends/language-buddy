@@ -1,8 +1,11 @@
-.page {
+.component {
   display: grid;
   grid-template-rows: 1fr auto;
   height: calc(100dvh - var(--header-height));
 }
 
-.chatArea {
+.status {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
 }
