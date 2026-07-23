@@ -266,6 +266,8 @@ transcript from the start, since the conversation loop needs this anyway.
 
 v0 conversation loop is a single-flow state machine with these states:
 
+**Note (2026-07-23):** `aiTurnReady` split into two states — see "State model correction" below.
+
 - `idle` — start conversation button
 - `initializing` — create Gemini chat with scenario systemInstruction, determine who opens
 - `waitingForAI` — either the hidden opening instruction (if AI opens) or the user's just-sent
@@ -331,3 +333,18 @@ UI only ever dispatches valid actions — races between async callbacks (TTS fin
 and fast user clicks (e.g. End conversation) are a realistic failure mode otherwise.
 **Revisit if:** parallel/nested states are needed later, or a team context makes XState's tooling
 (visualizer, guards) worth the added concept surface.
+
+### State model correction: split `aiTurnReady` into two states
+
+**Date:** 2026-07-23
+**Decision:** The original `aiTurnReady` state ("TTS finished, Reply button enabled") is split into
+two states:
+
+- `readyForUserStart` — user opens the conversation; button reads "Start speaking". No AI turn has
+  happened yet, so there's no TTS to have finished.
+- `readyForUserReply` — AI has just finished speaking (TTS done); button reads "Reply".
+  **Rationale:** Caught while implementing the reducer: the original 10-state model conflated "user
+  goes first" and "AI just finished speaking" under one state name, even though the button label and
+  the reason the button is enabled differ between them. `Ready` is used as a prefix (not suffix, as
+  in the original `aiTurnReady`) specifically so busy/in-flight states (`waitingForAI`) and
+  idle/ready states (`readyForUser*`) stay visually distinguishable at a glance in the state list.

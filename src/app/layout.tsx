@@ -16,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <div className={styles.layout}>
+        <div className={styles.wrapper}>
           <Header />
           <main className={styles.main}>{children}</main>
         </div>

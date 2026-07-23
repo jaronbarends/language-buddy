@@ -1,0 +1,19 @@
+:root {
+  /* spacing */
+  --size-2: 0.125rem;
+  --size-4: 0.25rem;
+  --size-8: 0.5rem;
+  --size-12: 0.75rem;
+  --size-16: 1rem;
+  --size-24: 1.5rem;
+  --size-32: 2rem;
+  --size-48: 3rem;
+  --size-54: 3.375rem;
+  --size-64: 4rem;
+
+  /* radii */
+  --radius-4: 0.25rem;
+  --radius-8: 0.5rem;
+  --radius-pill: 999rem;
+  --radius-circle: 50%;
+}
