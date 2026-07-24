@@ -1,0 +1,12 @@
+{
+  "name": "gemini-scenario-test",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Spike 1 - throwaway script to manually test Gemini scenario coherence across 10 turns",
+  "main": "scenario-test.js",
+  "dependencies": {
+    "@google/genai": "^2.12.0",
+    "dotenv": "^16.4.5"
+  }
+}

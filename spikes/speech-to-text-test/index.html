@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <title>Speech spike</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="css/reset.css" />
+    <link rel="stylesheet" href="css/elements.css" />
+    <link rel="stylesheet" href="css/speech.css" />
+  </head>
+  <body>
+    <div class="o-content-width">
+      <main>
+        <h1>Speech spike</h1>
+        <section>
+          <h2>Speech to text</h2>
+          <div class="stt-actions">
+            <button id="start-button" class="start-button">
+              <span id="start-button-label">Start</span>
+              <span id="countdown"></span>
+            </button>
+            <button id="stop-button" class="stop">Stop</button>
+            <button id="cancel-button" class="cancel">Cancel</button>
+            <button id="clear-button" class="clear">Clear</button>
+          </div>
+          <div id="output" class="output"></div>
+        </section>
+        <section>
+          <h2>Text to speech</h2>
+          <div id="text-source" lang="nb-NO">
+            Denne basestasjonen eies av Telias leverandør, og kablene kan først byttes ut når
+            området blir frigjort, opplyser Scheen. Kunder som opplever dårligere mobildekning og
+            har tilgang til internett via fastnettet anbefales å bruke Wifi tale på mobilen som en
+            alternativ løsning.
+          </div>
+          <div class="tts-actions">
+            <button id="read-button" class="read-button">Read out</button>
+          </div>
+        </section>
+        <div id="log" class="log"></div>
+      </main>
+    </div>
+    <script src="js/speech-to-text.js" type="module"></script>
+    <script src="js/text-to-speech.js" type="module"></script>
+  </body>
+</html>
