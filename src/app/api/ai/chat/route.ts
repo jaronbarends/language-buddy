@@ -11,17 +11,28 @@ export async function POST(request: NextRequest) {
   const message = 'what is the capital of the netherlands?';
 
   const ai = await createAI();
-  const response = await ai.interactions.create({
-    model: MODEL,
-    input: message,
-  });
 
-  console.log(response);
-  const data = {
-    id: response.id,
-    text: response.output_text,
-  };
-  return NextResponse.json(data);
+  if (!ai) {
+    return NextResponse.json({ error: 'Could not create ai object' });
+  }
+
+  try {
+    const response = await ai.interactions.create({
+      model: MODEL,
+      // model: 'zup',
+      input: message,
+    });
+
+    // console.log('route response', response);
+    const data = {
+      id: response.id,
+      text: response.output_text,
+    };
+
+    return NextResponse.json(data);
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: error.status });
+  }
 }
 
 async function createAI() {

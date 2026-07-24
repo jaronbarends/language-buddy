@@ -1,20 +1,33 @@
 // export async function sendChatMessage(systemInstruction, previousInteractionId): Promise {
+export type AIChatResult =
+  | {
+      success: true;
+      interactionId: string;
+      message: string;
+    }
+  | {
+      success: false;
+    };
+
 export async function sendChatMessage() {
   const res = await fetch('/api/ai/chat', {
     method: 'POST',
-    // body: JSON.stringify('')
     headers: {
       'Content-Type': 'application/json',
     },
   });
-  console.log(res);
+  console.log('response in service', res);
   if (!res.ok) {
     const body = await res.json();
     // eslint-disable-next-line no-console
     console.error(body.error);
-    throw new Error('Cannot send message');
+    return { success: false };
   }
-  return res.json();
-  // check result
-  // return ai response text or error
+
+  const { id, text } = await res.json();
+  return {
+    success: true,
+    interactionId: id,
+    message: text,
+  };
 }

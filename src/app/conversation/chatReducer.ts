@@ -15,6 +15,7 @@ export type ChatAction =
   | { type: 'START_CHAT' }
   | { type: 'STOP_CHAT' }
   | { type: 'AI_CHAT_CREATED'; payload: { firstTurn: 'ai' | 'user' } }
+  | { type: 'START_LISTENING' }
   | { type: 'ERROR'; payload: { message: string } };
 
 // initial state should be { status: 'idle' }
