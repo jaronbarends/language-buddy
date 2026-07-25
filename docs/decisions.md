@@ -167,6 +167,14 @@ tokens) and OpenAI GPT-4o-mini ($0.15/$0.60 per million tokens) puts a full 10-t
 a small fraction of a cent — thousands of conversations fit inside $5/month for either provider.
 Cost is not a meaningful constraint at this project's scale.
 
+**Update (2026-07-24):** Gemini 2.5 Flash-Lite was not actually available — Google restricts it
+(and other models) from new projects/accounts without prior usage, and the 2.5 generation is
+separately mid-deprecation ahead of its official Oct 16 2026 shutdown. Actual model in use is
+`gemini-3.1-flash-lite` ($0.25/$1M input, $1.50/$1M output — pricier than the $0.10/$0.40 originally
+assumed for 2.5 Flash-Lite). Re-checked: a 10-turn conversation is still a small fraction of a cent
+at these rates, so the $5/month conclusion is unchanged — only the per-token figures in the original
+entry were stale.
+
 ### Claude ruled out as MVP provider
 
 **Date:** 2026-07-20
@@ -348,6 +356,7 @@ two states:
   the reason the button is enabled differ between them. `Ready` is used as a prefix (not suffix, as
   in the original `aiTurnReady`) specifically so busy/in-flight states (`waitingForAI`) and
   idle/ready states (`readyForUser*`) stay visually distinguishable at a glance in the state list.
+
 ### Mock LLM responses during dev: small real-API spike first, then mock behind shared interface
 
 **Date:** 2026-07-24
@@ -365,3 +374,93 @@ Gemini directly would recreate the problem the mock was meant to solve: every de
 UI/reducer debugging burns real requests against the $5/month cap, and couples two separable
 unknowns (does the reducer transition correctly? does the API call behave correctly?) back together.
 A shared function signature (mock vs real) means swapping implementations later isn't a redesign.
+
+### Spike 3: Gemini SDK mechanics inside a Next.js Route Handler
+
+**Question:** How does the Gemini SDK behave when called from a Next.js Route Handler using
+`interactions.create` — turn creation with `system_instruction`, multi-turn continuity via
+`previous_interaction_id` across separate stateless requests, and the actual shape of a
+successful response object (`output_text`, `steps`)?
+
+**Why it matters:** Spike 1 validated model behavior (persona/scenario coherence) via a plain Node
+script using `chats.create`, which relies on an in-memory JS object holding conversation history —
+a pattern that doesn't map cleanly onto a stateless Route Handler, where there's no long-lived
+process to hold that object between turns. `interactions.create` is Google's recommended API for
+new development and stores conversation state server-side via `previous_interaction_id`, meaning
+the Route Handler only needs to persist one ID per session rather than reconstruct/resend full
+history on every request. This spike tests whether that mechanic actually behaves as documented
+when called from a Route Handler, and confirms the real `ConversationApiResult` shape the later
+mock (see 2026-07-24 mock decision) depends on.
+
+**Scope:** Happy path only — button triggers a Route Handler call to `interactions.create` (model
+`gemini-3.1-flash-lite` — confirm still available under this endpoint before running; the docs
+example shows `gemini-3.6-flash`, which is not our model), placeholder `system_instruction`;
+textarea + send triggers a second Route Handler call using `previous_interaction_id` from the
+first response; confirm session context carries over. No error handling, retry, styling, or
+TypeScript rigor — throwaway learning code.
+
+**Date run:** 2026-07-25
+
+**Outcome:**
+
+- `gemini-3.1-flash-lite` is available under the `interactions.create` endpoint — confirms the
+  model choice from the 2026-07-24 pricing correction, resolves the scope note above.
+- `system_instruction` is **not** carried over server-side via `previous_interaction_id` — it must
+  be sent on every `interactions.create` call, including follow-up turns, or the persona/scenario
+  framing is lost after the first turn. This is the opposite of what the spike's premise assumed
+  (that `previous_interaction_id` would let the Route Handler avoid resending setup).
+- Conversation history/context itself **does** carry over correctly via
+  `previous_interaction_id` — a follow-up call referencing the first response's id continues the
+  same interaction without needing prior turns resent.
+
+**Consequence:** The Route Handler (and later `ConversationApiResult`/mock work) must treat
+`systemInstruction` as a required field on every request, not a first-turn-only field. The
+scenario's system instruction needs to be available client-side (or re-derivable server-side) for
+the full session lifetime, not just at session start.
+
+**Status:** Done. Supersedes the original `chats.create`-based scoping — decided 2026-07-24, before
+running the spike, specifically because the statelessness mismatch was caught during planning
+rather than discovered mid-spike.
+
+### Spike 4: Gemini error shapes
+
+**Question:** What do Gemini SDK failures actually look like — malformed/unexpected response,
+rate limit, and timeout?
+**Why it matters:** Defines the error/failure branch of `ConversationApiResult`, needed before the
+mock and the real error-state UI (per the v0 `error` state in the interaction design) can be built
+against a real shape rather than a guess.
+**Scope:**
+
+- Malformed/unexpected response: triggered live against the real API.
+- Rate limit: not triggered live (impractical/wasteful against the $5 cap) — documented shape
+  pulled from Gemini API docs instead.
+- Timeout: not triggered live — either documented shape from Gemini API docs, or a self-simulated
+  timeout via client-side AbortController. If simulated, note explicitly that this only shows what
+  Claude's own abort code produces, not Gemini's real behavior under a genuinely slow response.
+- For the live-triggered case, confirm whether it's a catchable exception or a silently
+  "successful" but empty/invalid response.
+
+**Date run:** 2026-07-25
+
+**Outcome:**
+
+- Live-triggered SDK failures throw a plain object shaped `{ name, status, error: { code, message
+  } }` — there is no importable/exported error class to `instanceof`-check against, so
+  discrimination must be structural (check `.name` / `.status`), not class-based.
+- The SDK's own timeout option is unreliable for testing: it interacts with the SDK's built-in
+  retry behavior, so a configured timeout doesn't deterministically fail the call once. Passing an
+  `AbortSignal` via `fetchOptions: { signal }` is the reliable way to force a timeout-like failure
+  on demand.
+- Client-side aborts (via that `AbortSignal`) throw `APIUserAbortError` — confirmed both as
+  `error.name` and `error.constructor.name`. This is reliably distinguishable from a 404
+  "not found" failure (e.g. bad model name) by `name` alone, which is exactly the discrimination
+  `ConversationApiResult`'s error branch needs.
+- Rate limit shape was not live-triggered (per the scope decision above — impractical against the
+  $5 cap) and still relies on documented shape from Gemini API docs, not empirical confirmation.
+
+**Consequence:** `ConversationApiResult`'s error branch must be designed around structural checks
+(`name`/`status`/`error.code`) rather than `instanceof` against SDK error classes — there aren't
+any to check against. Route Handler timeout handling should use `fetchOptions: { signal }` with a
+manual `AbortController`/timer, not the SDK's own timeout config.
+
+**Status:** Done.

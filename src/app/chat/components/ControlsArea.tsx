@@ -1,5 +1,5 @@
-import { type ChatState } from '@/app/conversation/chatReducer';
-import { canStartChat, canStartFirstTurn, canReply } from '@/app/conversation/chatReducer';
+import { type ChatState } from '@/app/chat/chatReducer';
+import { canStartChat, canStartFirstTurn, canReply } from '@/app/chat/chatReducer';
 import Button from '@/components/button/Button';
 
 import styles from './ControlsArea.module.css';

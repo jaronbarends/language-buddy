@@ -28,6 +28,7 @@ wired to the mock for all UI dev.
   - error "Speech recognition service permission check has failed" op iOs: Settings → Privacy & Security → Speech Recognition — is Safari toggled on there?
   - if no speech voice found, add instructions how to add it
 - add setting for speech rate
+- use generation_config.thinking_level: "low" for genAI (https://ai.google.dev/gemini-api/docs/text-generation) in regular chat; omit it in evaluation
 
 ## Icebox
 

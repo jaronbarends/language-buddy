@@ -1,10 +1,10 @@
 # Project status
 
-**Last updated:** 2026-07-21
+**Last updated:** 2026-07-25
 **Current phase:** Pre-code. Concept locked (scenario-library based conversational sparring
 partner, Norwegian, multi-turn sessions + async structured evaluation). MVP scoping in progress;
-Spike 1 and Spike 2 both complete. AI provider now decided (Gemini). Remaining open items being
-closed before moving to data structures and route/boundary architecture.
+Spikes 1–4 all complete. AI provider decided (Gemini). Next: define the real
+`ConversationApiResult` type from the Spike 3/4 findings and build the mock behind it.
 
 ---
 
@@ -41,6 +41,16 @@ closed before moving to data structures and route/boundary architecture.
   replace it)
 - Evaluation: build after the basic conversation loop is working, not in parallel and not spiked
   first — feasibility judged well-established enough to skip a spike (see decisions.md)
+- Spike 3 (2026-07-25): `gemini-3.1-flash-lite` is available via `interactions.create`;
+  `system_instruction` is NOT carried over via `previous_interaction_id` and must be sent on every
+  request; conversation context itself does carry over via `previous_interaction_id` (see
+  decisions.md)
+- Spike 4 (2026-07-25): live SDK failures throw a plain `{ name, status, error: { code, message } }`
+  object with no importable error class — discrimination must be structural (`.name`/`.status`),
+  not `instanceof`; the SDK's own timeout option is unreliable (interacts with built-in retries),
+  `fetchOptions: { signal }` with an `AbortController` is the reliable way to force one; client
+  aborts throw `APIUserAbortError`, distinguishable from a 404 by `name` alone; rate-limit shape is
+  still doc-sourced, not live-triggered (see decisions.md)
 
 ## What's open
 
@@ -48,17 +58,25 @@ closed before moving to data structures and route/boundary architecture.
 - Core data structures (session state, evaluation schema) — deliberately deferred until v0
   interaction/state design is done
 - Component/route boundary diagram — same as above
-- Whether/how to mock LLM responses during regular dev (flagged, not committed — see backlog.md)
 - Scenario count at v1 launch (v0 itself is settled at one hardcoded scenario — this is only about
   what ships after v0)
+- Where `systemInstruction` lives/is re-derived for the full session lifetime, now that Spike 3
+  showed it must be resent on every request rather than only at session start
+- Rate-limit error shape is still doc-sourced only, not empirically confirmed (accepted gap, see
+  Spike 4 scope in decisions.md)
 
 ## Next step
 
-1. Implement v0 state machine (useReducer + discriminated union) per decisions.md interaction
-   design.
-2. Define core data structures (session state shape, transcript shape) consistent with the state
+1. Define the real `ConversationApiResult` type from Spike 3 + Spike 4 findings (success shape;
+   error shape as a structural discriminated union on `name`/`status`, not `instanceof`;
+   `systemInstruction` required on every call).
+2. Build the mock implementation against that same type/signature (see 2026-07-24 mock decision in
+   decisions.md).
+3. Implement v0 state machine (useReducer + discriminated union) per decisions.md interaction
+   design, wired to the mock, not live Gemini.
+4. Define core data structures (session state shape, transcript shape) consistent with the state
    model — transcript must exclude the hidden opening instruction.
-3. Build v0 conversation loop: one hardcoded scenario, STT in / TTS out, Gemini calls per state.
-4. Add evaluation as a second slice once v0 loop works.
-5. Decide whether/how to mock LLM responses during dev (see backlog.md).
-6. Revisit scenario count for v1 once v0 exists.
+5. Build v0 conversation loop for real: one hardcoded scenario, STT in / TTS out, swap in the real
+   Gemini implementation behind the proven-out mock interface.
+6. Add evaluation as a second slice once v0 loop works.
+7. Revisit scenario count for v1 once v0 exists.
