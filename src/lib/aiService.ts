@@ -1,4 +1,9 @@
+import 'dotenv/config';
+
 import { type chatMessageParams } from '@/app/api/ai/chat/route';
+
+const CHAT_ENDPOINT =
+  process.env.NEXT_PUBLIC_USE_MOCK_AI === 'true' ? '/api/aiMock/chat' : '/api/ai/chat';
 
 export type AIChatResult =
   | {
@@ -9,7 +14,6 @@ export type AIChatResult =
   | {
       success: false;
       error: string;
-      code: number;
       status: number;
       name: string;
     };
@@ -37,7 +41,7 @@ async function postChatMessage({
   body: BodyInit;
   abortSignal: AbortSignal | undefined;
 }) {
-  const res = await fetch('/api/ai/chat', {
+  const res = await fetch(CHAT_ENDPOINT, {
     method: 'POST',
     body,
     headers: {
@@ -48,13 +52,12 @@ async function postChatMessage({
   return res;
 }
 
-async function toAIChatResult(res: Response): Promise<AIChatResult> {
+export async function toAIChatResult(res: Response): Promise<AIChatResult> {
   if (!res.ok) {
     const body = await res.json();
     return {
       success: false,
       error: body.error,
-      code: body.code,
       name: body.name,
       status: res.status,
     };

@@ -6,7 +6,6 @@ import { NextRequest, NextResponse } from 'next/server';
 type GeminiApiError = Error & { status?: number; error?: { code?: string } };
 
 const MODEL = 'gemini-3.1-flash-lite';
-// const MODEL = 'non-exsiting-to-force-error';
 
 export type chatMessageParams = {
   input: string;
@@ -29,7 +28,10 @@ export async function POST(request: NextRequest) {
   const ai = await createAI();
 
   if (!ai) {
-    return NextResponse.json({ error: 'Could not create ai object' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Could not create ai object', name: 'aiCreationError' },
+      { status: 500 }
+    );
   }
 
   const config: InteractionConfig = {
@@ -45,7 +47,6 @@ export async function POST(request: NextRequest) {
   try {
     const response = await ai.interactions.create(config, options);
 
-    // console.log('route response', response);
     const data = {
       id: response.id,
       text: response.output_text,
@@ -55,9 +56,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const name = error instanceof Error ? error.name : undefined;
     const status = error instanceof Error ? (error as GeminiApiError).status : 500;
-    const code = error instanceof Error ? (error as GeminiApiError).error?.code : undefined;
     const message = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: message, code, name }, { status: status ?? 500 });
+    return NextResponse.json({ error: message, name }, { status: status ?? 500 });
   }
 }
 
