@@ -5,8 +5,8 @@ import './globals.css';
 // import styles from './page.module.css';
 
 export default function HomePage() {
-  // redirect to conversation until we get real home page
-  redirect('/conversation');
+  // redirect to chat until we get real home page
+  redirect('/chat');
 
   // return (
   //   <div className={styles.component}>

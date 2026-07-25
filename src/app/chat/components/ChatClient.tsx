@@ -5,19 +5,19 @@ import { useReducer, useEffect } from 'react';
 import { sendChatMessage, type AIChatResult } from '@/lib/aiService';
 
 import { chatReducer, type ChatState, type ChatAction } from '../chatReducer';
-import ChatArea from './ChatArea';
+import ChatView from './ChatView';
 import ControlsArea from './ControlsArea';
 
-import styles from './ConversationClient.module.css';
+import styles from './ChatClient.module.css';
 
-export default function ConversationClient() {
+export default function ChatClient() {
   const initialState: ChatState = { status: 'idle' };
   const [state, dispatch] = useReducer(chatReducer, initialState);
 
   return (
     <>
       <div className={styles.component}>
-        <ChatArea {...{ state }} />
+        <ChatView {...{ state }} />
         <ControlsArea
           onStartChat={handleStartChat}
           onStopChat={handleStopChat}
