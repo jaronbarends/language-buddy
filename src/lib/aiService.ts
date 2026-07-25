@@ -1,4 +1,5 @@
-// export async function sendChatMessage(systemInstruction, previousInteractionId): Promise {
+import { type chatMessageParams } from '@/app/api/ai/chat/route';
+
 export type AIChatResult =
   | {
       success: true;
@@ -9,9 +10,18 @@ export type AIChatResult =
       success: false;
     };
 
-export async function sendChatMessage() {
+export async function sendChatMessage({
+  systemInstruction,
+  previousInteractionId,
+  input,
+}: chatMessageParams): Promise<AIChatResult> {
   const res = await fetch('/api/ai/chat', {
     method: 'POST',
+    body: JSON.stringify({
+      systemInstruction,
+      previousInteractionId,
+      input,
+    }),
     headers: {
       'Content-Type': 'application/json',
     },

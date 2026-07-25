@@ -1,12 +1,12 @@
 export type ChatState =
   | { status: 'idle' }
   | { status: 'initializing' }
-  | { status: 'waitingForAI' }
   | { status: 'aiTurnSpeaking' }
   | { status: 'readyForUserStart' }
   | { status: 'readyForUserReply' }
   | { status: 'listening' }
   | { status: 'listeningTimedOut' }
+  | { status: 'waitingForAI' }
   | { status: 'sending' }
   | { status: 'ended' }
   | { status: 'error'; message: string };
@@ -16,6 +16,8 @@ export type ChatAction =
   | { type: 'STOP_CHAT' }
   | { type: 'AI_CHAT_CREATED'; payload: { firstTurn: 'ai' | 'user' } }
   | { type: 'START_LISTENING' }
+  | { type: 'LISTENING_TIMED_OUT' }
+  | { type: 'USER_REPLY_SENT' }
   | { type: 'ERROR'; payload: { message: string } };
 
 // initial state should be { status: 'idle' }
@@ -27,6 +29,11 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
           return {
             status: 'initializing',
           };
+        case 'STOP_CHAT': {
+          return {
+            status: 'idle',
+          };
+        }
         default:
           return state;
       }
@@ -35,7 +42,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         case 'AI_CHAT_CREATED':
           if (action.payload.firstTurn === 'ai') {
             return {
-              status: 'waitingForAI',
+              status: 'readyForUserReply',
             };
           }
           return {
@@ -68,6 +75,10 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
     case 'readyForUserReply':
       switch (action.type) {
         // TODO
+        case 'USER_REPLY_SENT':
+          return {
+            status: 'waitingForAI',
+          };
         default:
           return state;
       }

@@ -377,8 +377,6 @@ A shared function signature (mock vs real) means swapping implementations later 
 
 ### Spike 3: Gemini SDK mechanics inside a Next.js Route Handler
 
-### Spike 3: Gemini SDK mechanics inside a Next.js Route Handler
-
 **Question:** How does the Gemini SDK behave when called from a Next.js Route Handler using
 `interactions.create` — turn creation with `system_instruction`, multi-turn continuity via
 `previous_interaction_id` across separate stateless requests, and the actual shape of a
@@ -401,9 +399,28 @@ textarea + send triggers a second Route Handler call using `previous_interaction
 first response; confirm session context carries over. No error handling, retry, styling, or
 TypeScript rigor — throwaway learning code.
 
-**Status:** Planned, not yet run. Supersedes the original `chats.create`-based scoping — decided
-2026-07-24, before running the spike, specifically because the statelessness mismatch was caught
-during planning rather than discovered mid-spike.
+**Date run:** 2026-07-25
+
+**Outcome:**
+
+- `gemini-3.1-flash-lite` is available under the `interactions.create` endpoint — confirms the
+  model choice from the 2026-07-24 pricing correction, resolves the scope note above.
+- `system_instruction` is **not** carried over server-side via `previous_interaction_id` — it must
+  be sent on every `interactions.create` call, including follow-up turns, or the persona/scenario
+  framing is lost after the first turn. This is the opposite of what the spike's premise assumed
+  (that `previous_interaction_id` would let the Route Handler avoid resending setup).
+- Conversation history/context itself **does** carry over correctly via
+  `previous_interaction_id` — a follow-up call referencing the first response's id continues the
+  same interaction without needing prior turns resent.
+
+**Consequence:** The Route Handler (and later `ConversationApiResult`/mock work) must treat
+`systemInstruction` as a required field on every request, not a first-turn-only field. The
+scenario's system instruction needs to be available client-side (or re-derivable server-side) for
+the full session lifetime, not just at session start.
+
+**Status:** Done. Supersedes the original `chats.create`-based scoping — decided 2026-07-24, before
+running the spike, specifically because the statelessness mismatch was caught during planning
+rather than discovered mid-spike.
 
 ### Spike 4: Gemini error shapes
 

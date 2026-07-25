@@ -3,25 +3,46 @@ import 'dotenv/config';
 import { NextRequest, NextResponse } from 'next/server';
 
 const MODEL = 'gemini-3.1-flash-lite';
+// const MODEL = 'non-exsiting-to-force-error';
+
+export type chatMessageParams = {
+  input: string;
+  systemInstruction: string;
+  previousInteractionId?: string;
+};
+
+type InteractionConfig = {
+  model: string;
+  input: string;
+  previous_interaction_id?: string;
+  system_instruction?: string;
+};
 
 export async function POST(request: NextRequest) {
   // do we need to send systemInstruction?
   // or always send it in request params, but only use it if we don't have prevId
   // const { systemInstruction, message, previousInteractionId } = await request.json();
-  const message = 'what is the capital of the netherlands?';
+  const { systemInstruction, previousInteractionId, input } =
+    (await request.json()) as chatMessageParams;
+  // const message = 'what is the capital of the netherlands?';
 
   const ai = await createAI();
 
   if (!ai) {
-    return NextResponse.json({ error: 'Could not create ai object' });
+    return NextResponse.json({ error: 'Could not create ai object' }, { status: 500 });
+  }
+
+  const config: InteractionConfig = {
+    model: MODEL,
+    input,
+    system_instruction: systemInstruction,
+  };
+  if (previousInteractionId) {
+    config.previous_interaction_id = previousInteractionId;
   }
 
   try {
-    const response = await ai.interactions.create({
-      model: MODEL,
-      // model: 'zup',
-      input: message,
-    });
+    const response = await ai.interactions.create(config);
 
     // console.log('route response', response);
     const data = {
@@ -31,7 +52,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: error.status });
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useReducer, useEffect } from 'react';
+import { useReducer, useState } from 'react';
 
 import { sendChatMessage, type AIChatResult } from '@/lib/aiService';
 
@@ -10,9 +10,13 @@ import ControlsArea from './ControlsArea';
 
 import styles from './ChatClient.module.css';
 
+const systemInstruction =
+  'you are a norwegian speaker. no matter the input language, always reply in norwegian bokmal';
+
 export default function ChatClient() {
-  const initialState: ChatState = { status: 'idle' };
-  const [state, dispatch] = useReducer(chatReducer, initialState);
+  const [previousInteractionId, setPreviousInteractionId] = useState<string | undefined>();
+  const initalChatState: ChatState = { status: 'idle' };
+  const [state, dispatch] = useReducer(chatReducer, initalChatState);
 
   return (
     <>
@@ -29,11 +33,9 @@ export default function ChatClient() {
     </>
   );
 
-  async function handleStartChat() {
+  function handleStartChat() {
     dispatch({ type: 'START_CHAT' });
-    console.log('call sendChatMessage');
-    const reply: AIChatResult = await sendChatMessage();
-    console.log('reply:', reply);
+    startChat();
   }
 
   function handleStopChat() {
@@ -41,6 +43,45 @@ export default function ChatClient() {
   }
 
   function handleStartListening() {
-    dispatch({ type: 'START_LISTENING' });
+    // dispatch({ type: 'START_LISTENING' });
+    // TODO: set up listening
+
+    dispatch({ type: 'USER_REPLY_SENT' });
+    sendUserReply();
+  }
+
+  async function startChat() {
+    const input = 'what is the capital of the netherlands?';
+    console.log('startChat - call sendChatMessage');
+    const reply: AIChatResult = await sendChatMessage({ input, systemInstruction });
+    console.log('reply:', reply);
+    if (!reply.success) {
+      // TODO
+      console.log('dispatch stop');
+      dispatch({ type: 'ERROR', payload: { message: 'oops' } });
+      return;
+    }
+    const { interactionId, message } = reply;
+    setPreviousInteractionId(interactionId);
+    dispatch({ type: 'AI_CHAT_CREATED', payload: { firstTurn: 'ai' } });
+  }
+
+  async function sendUserReply() {
+    const input = 'tell me more about the city you just mentioned';
+    console.log('sendUserReply - call sendChatMessage');
+    const reply: AIChatResult = await sendChatMessage({
+      input,
+      previousInteractionId,
+      systemInstruction,
+    });
+    console.log('reply:', reply);
+    if (!reply.success) {
+      // TODO
+      console.log('dispatch stop');
+      dispatch({ type: 'ERROR', payload: { message: 'oops' } });
+      return;
+    }
+    const { interactionId, message } = reply;
+    setPreviousInteractionId(interactionId);
   }
 }
