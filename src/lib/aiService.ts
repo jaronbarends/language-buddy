@@ -8,6 +8,8 @@ export type AIChatResult =
     }
   | {
       success: false;
+      error: string;
+      status: number;
     };
 
 export async function sendChatMessage({
@@ -29,9 +31,7 @@ export async function sendChatMessage({
   console.log('response in service', res);
   if (!res.ok) {
     const body = await res.json();
-    // eslint-disable-next-line no-console
-    console.error(body.error);
-    return { success: false };
+    return { success: false, error: body.error, status: body.status };
   }
 
   const { id, text } = await res.json();
