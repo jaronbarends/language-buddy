@@ -2,6 +2,9 @@ import { GoogleGenAI } from '@google/genai';
 import 'dotenv/config';
 import { NextRequest, NextResponse } from 'next/server';
 
+// genai no longer uses a single ApiError, but generated hierarchy of specific error classes. Define what we need
+type GeminiApiError = Error & { status?: number; error?: { code?: string } };
+
 const MODEL = 'gemini-3.1-flash-lite';
 // const MODEL = 'non-exsiting-to-force-error';
 
@@ -9,6 +12,7 @@ export type chatMessageParams = {
   input: string;
   systemInstruction: string;
   previousInteractionId?: string;
+  abortSignal?: AbortSignal;
 };
 
 type InteractionConfig = {
@@ -19,12 +23,8 @@ type InteractionConfig = {
 };
 
 export async function POST(request: NextRequest) {
-  // do we need to send systemInstruction?
-  // or always send it in request params, but only use it if we don't have prevId
-  // const { systemInstruction, message, previousInteractionId } = await request.json();
   const { systemInstruction, previousInteractionId, input } =
     (await request.json()) as chatMessageParams;
-  // const message = 'what is the capital of the netherlands?';
 
   const ai = await createAI();
 
@@ -40,9 +40,10 @@ export async function POST(request: NextRequest) {
   if (previousInteractionId) {
     config.previous_interaction_id = previousInteractionId;
   }
+  const options = { fetchOptions: { signal: request.signal } };
 
   try {
-    const response = await ai.interactions.create(config);
+    const response = await ai.interactions.create(config, options);
 
     // console.log('route response', response);
     const data = {
@@ -52,8 +53,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    const status = error instanceof Error ? (error as any).status : undefined;
-    const code = error instanceof Error ? (error as any).error?.code : undefined;
+    const name = error instanceof Error ? error.name : undefined;
+    const status = error instanceof Error ? (error as GeminiApiError).status : undefined;
+    const code = error instanceof Error ? (error as GeminiApiError).error?.code : undefined;
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ error: message, status, code }, { status: status ?? 500 });
   }

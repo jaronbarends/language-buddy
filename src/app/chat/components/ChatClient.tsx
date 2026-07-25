@@ -1,6 +1,6 @@
 'use client';
 
-import { useReducer, useState } from 'react';
+import { useReducer, useState, useRef } from 'react';
 
 import { sendChatMessage, type AIChatResult } from '@/lib/aiService';
 
@@ -17,6 +17,7 @@ export default function ChatClient() {
   const [previousInteractionId, setPreviousInteractionId] = useState<string | undefined>();
   const initalChatState: ChatState = { status: 'idle' };
   const [state, dispatch] = useReducer(chatReducer, initalChatState);
+  const abortControllerRef = useRef<AbortController | undefined>(undefined);
 
   return (
     <>
@@ -40,6 +41,8 @@ export default function ChatClient() {
 
   function handleStopChat() {
     dispatch({ type: 'STOP_CHAT' });
+    console.log('stop');
+    abortControllerRef.current?.abort();
   }
 
   function handleStartListening() {
@@ -51,9 +54,14 @@ export default function ChatClient() {
   }
 
   async function startChat() {
+    abortControllerRef.current = new AbortController();
     const input = 'what is the capital of the netherlands?';
-    console.log('startChat - call sendChatMessage');
-    const reply: AIChatResult = await sendChatMessage({ input, systemInstruction });
+
+    const reply: AIChatResult = await sendChatMessage({
+      input,
+      systemInstruction,
+      abortSignal: abortControllerRef.current.signal,
+    });
     console.log('reply:', reply);
     if (!reply.success) {
       // TODO

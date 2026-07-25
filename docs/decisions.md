@@ -439,5 +439,28 @@ against a real shape rather than a guess.
   Claude's own abort code produces, not Gemini's real behavior under a genuinely slow response.
 - For the live-triggered case, confirm whether it's a catchable exception or a silently
   "successful" but empty/invalid response.
-  **Status:** Planned, not yet run. Depends on Spike 3 being done first (needs the same Route Handler
-  scaffolding).
+
+**Date run:** 2026-07-25
+
+**Outcome:**
+
+- Live-triggered SDK failures throw a plain object shaped `{ name, status, error: { code, message
+  } }` — there is no importable/exported error class to `instanceof`-check against, so
+  discrimination must be structural (check `.name` / `.status`), not class-based.
+- The SDK's own timeout option is unreliable for testing: it interacts with the SDK's built-in
+  retry behavior, so a configured timeout doesn't deterministically fail the call once. Passing an
+  `AbortSignal` via `fetchOptions: { signal }` is the reliable way to force a timeout-like failure
+  on demand.
+- Client-side aborts (via that `AbortSignal`) throw `APIUserAbortError` — confirmed both as
+  `error.name` and `error.constructor.name`. This is reliably distinguishable from a 404
+  "not found" failure (e.g. bad model name) by `name` alone, which is exactly the discrimination
+  `ConversationApiResult`'s error branch needs.
+- Rate limit shape was not live-triggered (per the scope decision above — impractical against the
+  $5 cap) and still relies on documented shape from Gemini API docs, not empirical confirmation.
+
+**Consequence:** `ConversationApiResult`'s error branch must be designed around structural checks
+(`name`/`status`/`error.code`) rather than `instanceof` against SDK error classes — there aren't
+any to check against. Route Handler timeout handling should use `fetchOptions: { signal }` with a
+manual `AbortController`/timer, not the SDK's own timeout config.
+
+**Status:** Done.

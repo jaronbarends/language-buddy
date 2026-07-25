@@ -16,6 +16,7 @@ export async function sendChatMessage({
   systemInstruction,
   previousInteractionId,
   input,
+  abortSignal,
 }: chatMessageParams): Promise<AIChatResult> {
   const res = await fetch('/api/ai/chat', {
     method: 'POST',
@@ -27,6 +28,7 @@ export async function sendChatMessage({
     headers: {
       'Content-Type': 'application/json',
     },
+    signal: abortSignal,
   });
   console.log('response in service', res);
   if (!res.ok) {
