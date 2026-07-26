@@ -445,7 +445,7 @@ against a real shape rather than a guess.
 **Outcome:**
 
 - Live-triggered SDK failures throw a plain object shaped `{ name, status, error: { code, message
-  } }` — there is no importable/exported error class to `instanceof`-check against, so
+} }` — there is no importable/exported error class to `instanceof`-check against, so
   discrimination must be structural (check `.name` / `.status`), not class-based.
 - The SDK's own timeout option is unreliable for testing: it interacts with the SDK's built-in
   retry behavior, so a configured timeout doesn't deterministically fail the call once. Passing an
@@ -464,3 +464,34 @@ any to check against. Route Handler timeout handling should use `fetchOptions: {
 manual `AbortController`/timer, not the SDK's own timeout config.
 
 **Status:** Done.
+
+### Result type built as `AIChatResult`, not `ConversationApiResult`
+
+**Date:** 2026-07-25
+**Decision:** The result type planned in the 2026-07-24 mock decision and named
+`ConversationApiResult` throughout Spike 3/4 planning was implemented as `AIChatResult`
+(`src/lib/aiService.ts`), matching the earlier "conversation → chat" renaming
+(`f8dd754 rename conversation to chat`).
+**Rationale:** Naming consistency with the rest of the codebase (`sendChatMessage`, `/api/ai/chat`,
+`/api/aiMock/chat`) — no functional difference from the shape planned in Spike 3/4. Earlier
+decisions in this log referring to `ConversationApiResult` describe the same type under its old
+planned name.
+**Status:** Done. Mock implementation (`/api/aiMock/chat`) built against this type, toggled via
+`NEXT_PUBLIC_USE_MOCK_AI`.
+
+### Conversation always ends with AI speaking last
+
+**Date:** 2026-07-26
+**Decision:** Regardless of which side opens, the conversation always ends with an AI turn. This
+overrules the 2026-07-22 "Turn counting" decision, which stated "whichever side does not open the
+conversation also closes it" — under that rule, an AI-opens-first session would have ended on an
+unanswered user turn.
+**Rationale:** Ending on the user's line with no AI reply would feel abrupt/unfinished for a
+conversation-practice product — the AI should always have the last word. This only changes behavior
+for the AI-opens-first case; user-opens-first sessions already ended with the AI per the prior rule.
+**Consequence:** The max-turns check changes from "fires after the non-opening side's Nth message
+completes" to a check that fires before sending what would be the closing AI request — meaning a
+turn counter needs to exist in state, which it doesn't yet. Not designing that mechanism now (see
+backlog: separate closing-instruction for the AI's final turn, deferred).
+**Status:** Turn-counter mechanism and any "wrap up the conversation" instruction are open — tracked
+in backlog.md, not designed here.

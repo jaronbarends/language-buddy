@@ -1,16 +1,25 @@
 # Project status
 
 **Last updated:** 2026-07-25
-**Current phase:** Pre-code. Concept locked (scenario-library based conversational sparring
+**Current phase:** Early build. Concept locked (scenario-library based conversational sparring
 partner, Norwegian, multi-turn sessions + async structured evaluation). MVP scoping in progress;
-Spikes 1–4 all complete. AI provider decided (Gemini). Next: define the real
-`ConversationApiResult` type from the Spike 3/4 findings and build the mock behind it.
+Spikes 1–4 all complete. AI provider decided (Gemini). The real result type and its mock
+implementation are done (see below); next is wiring the v0 state machine to the mock for real.
 
 ---
 
 ## What exists
 
-- Nothing built yet — no repo, no code.
+- `AIChatResult` type (`src/lib/aiService.ts`) — the real result type planned as
+  `ConversationApiResult` in decisions.md, built and named `AIChatResult` instead (see decisions.md
+  for the rename note). Discriminated union: `{ success: true; interactionId; message }` or
+  `{ success: false; error; status; name }`, matching Spike 3/4's structural (non-`instanceof`)
+  error shape.
+- Mock chat API route (`src/app/api/aiMock/chat`), toggled via `NEXT_PUBLIC_USE_MOCK_AI`, built
+  against the same `AIChatResult`/`sendChatMessage` signature as the real `/api/ai/chat` route.
+- `ChatClient.tsx` has a `useReducer`-based skeleton (states: `idle`, chat-created, error, etc.)
+  wired to `sendChatMessage`, currently calling the mock with hardcoded placeholder input rather
+  than real user input — start/reply flow is not yet wired to STT or the UI controls for real.
 - Spike code for STT/TTS exists on branch `spike-speech-to-text` (spike-only, not production code).
 
 ## What's decided
@@ -67,13 +76,12 @@ Spikes 1–4 all complete. AI provider decided (Gemini). Next: define the real
 
 ## Next step
 
-1. Define the real `ConversationApiResult` type from Spike 3 + Spike 4 findings (success shape;
-   error shape as a structural discriminated union on `name`/`status`, not `instanceof`;
-   `systemInstruction` required on every call).
-2. Build the mock implementation against that same type/signature (see 2026-07-24 mock decision in
-   decisions.md).
-3. Implement v0 state machine (useReducer + discriminated union) per decisions.md interaction
-   design, wired to the mock, not live Gemini.
+1. ~~Define the real `ConversationApiResult` type~~ — done, as `AIChatResult` (see decisions.md).
+2. ~~Build the mock implementation against that same type/signature~~ — done
+   (`/api/aiMock/chat`, toggled via `NEXT_PUBLIC_USE_MOCK_AI`).
+3. Finish wiring the v0 state machine (useReducer skeleton already exists in `ChatClient.tsx`) to
+   real user input and UI controls, per decisions.md interaction design — still wired to hardcoded
+   placeholder strings, not STT input or the Reply/Send controls.
 4. Define core data structures (session state shape, transcript shape) consistent with the state
    model — transcript must exclude the hidden opening instruction.
 5. Build v0 conversation loop for real: one hardcoded scenario, STT in / TTS out, swap in the real

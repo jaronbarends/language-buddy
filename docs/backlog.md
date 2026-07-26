@@ -23,6 +23,7 @@ wired to the mock for all UI dev.
 - open app with vocab suggestion of the day
 - be able to choose language level
 - let app assert language level
+- add separate instruction to end conversation on ai's last turn
 - safari takes some time to start listening the first time after it requests permission. Can we ask for permission beforehand?
 - troubleshooting
   - error "Speech recognition service permission check has failed" op iOs: Settings → Privacy & Security → Speech Recognition — is Safari toggled on there?

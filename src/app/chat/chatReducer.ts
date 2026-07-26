@@ -1,20 +1,20 @@
 export type ChatState =
   | { status: 'idle' }
-  | { status: 'initializing' }
-  | { status: 'aiTurnSpeaking' }
+  | { status: 'waitingForAI' }
+  | { status: 'aiTurnSpeaking'; message: string }
   | { status: 'readyForUserStart' }
   | { status: 'readyForUserReply' }
   | { status: 'listening' }
   | { status: 'listeningTimedOut' }
-  | { status: 'waitingForAI' }
-  | { status: 'sending' }
   | { status: 'ended' }
   | { status: 'error'; message: string };
 
 export type ChatAction =
-  | { type: 'START_CHAT' }
+  | { type: 'AI_START_INPUT_SENT' }
+  | { type: 'START_CHAT_WITH_USER' }
+  | { type: 'AI_RESPONSE_RECEIVED'; payload: { message: string } }
+  | { type: 'AI_FINISHED_SPEAKING' }
   | { type: 'STOP_CHAT' }
-  | { type: 'AI_CHAT_CREATED'; payload: { firstTurn: 'ai' | 'user' } }
   | { type: 'START_LISTENING' }
   | { type: 'LISTENING_TIMED_OUT' }
   | { type: 'USER_REPLY_SENT' }
@@ -25,28 +25,23 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
   switch (state.status) {
     case 'idle':
       switch (action.type) {
-        case 'START_CHAT':
+        case 'AI_START_INPUT_SENT':
           return {
-            status: 'initializing',
+            status: 'waitingForAI',
           };
-        case 'STOP_CHAT': {
+        case 'START_CHAT_WITH_USER':
           return {
-            status: 'idle',
+            status: 'readyForUserStart',
           };
-        }
         default:
           return state;
       }
-    case 'initializing':
+    case 'waitingForAI': {
       switch (action.type) {
-        case 'AI_CHAT_CREATED':
-          if (action.payload.firstTurn === 'ai') {
-            return {
-              status: 'readyForUserReply',
-            };
-          }
+        case 'AI_RESPONSE_RECEIVED':
           return {
-            status: 'readyForUserStart',
+            status: 'aiTurnSpeaking',
+            message: action.payload.message,
           };
         case 'ERROR':
           return {
@@ -56,13 +51,13 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         default:
           return state;
       }
-    case 'waitingForAI': {
-      // TODO
-      return state;
     }
     case 'aiTurnSpeaking':
       switch (action.type) {
-        // TODO
+        case 'AI_FINISHED_SPEAKING':
+          return {
+            status: 'readyForUserReply',
+          };
         default:
           return state;
       }
