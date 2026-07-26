@@ -4,9 +4,10 @@ import { useReducer, useState, useRef, useEffect } from 'react';
 
 import { sendChatMessage, type AIChatResult } from '@/lib/aiService';
 
-import { chatReducer, type ChatState, type ChatAction } from '../chatReducer';
+import { chatReducer, type ChatState } from '../chatReducer';
 import ChatView from './ChatView';
 import ControlsArea from './ControlsArea';
+import MockTTS from './MockTTS';
 
 import styles from './ChatClient.module.css';
 
@@ -14,7 +15,7 @@ import styles from './ChatClient.module.css';
 const systemInstruction =
   'you are a norwegian speaker. no matter the input language, always reply in norwegian bokmal';
 
-const aiHasFirstTurn = true;
+const aiHasFirstTurn = false;
 
 export default function ChatClient() {
   const [previousInteractionId, setPreviousInteractionId] = useState<string | undefined>();
@@ -33,10 +34,12 @@ export default function ChatClient() {
     <>
       <div className={styles.component}>
         <ChatView {...{ state }} />
+        <MockTTS />
         <ControlsArea
           onStartChat={handleStartChat}
           onStopChat={handleStopChat}
           onStartListening={handleStartListening}
+          onSendUserMessage={handleSendUserMessage}
           {...{ state }}
         />
       </div>
@@ -59,11 +62,7 @@ export default function ChatClient() {
   }
 
   function handleStartListening() {
-    // dispatch({ type: 'START_LISTENING' });
-    // TODO: set up listening
-
-    dispatch({ type: 'USER_REPLY_SENT' });
-    sendUserReply();
+    startListening();
   }
 
   async function startChatWithAI() {
@@ -90,11 +89,28 @@ export default function ChatClient() {
     dispatch({ type: 'AI_RESPONSE_RECEIVED', payload: { message } });
   }
 
-  function startChatWithUser() {}
+  function startChatWithUser() {
+    console.log('start chat with user');
+    dispatch({ type: 'START_CHAT_WITH_USER' });
+  }
 
-  async function sendUserReply() {
-    const input = 'tell me more about the city you just mentioned';
-    console.log('sendUserReply - call sendChatMessage');
+  function startListening() {
+    console.log('start listening');
+    dispatch({ type: 'START_LISTENING' });
+    // create speech thing here
+  }
+
+  async function handleSendUserMessage() {
+    // stop listening; parse results
+    const defaultInput = 'tell me more about the city you just mentioned';
+    const mockTTS = document.getElementById('mockTTS');
+    const mockTTSValue = mockTTS?.value;
+    const input = mockTTSValue || defaultInput;
+    if (mockTTS) {
+      mockTTS.value = '';
+    }
+
+    dispatch({ type: 'USER_MESSAGE_SENT' });
     const reply: AIChatResult = await sendChatMessage({
       input,
       previousInteractionId,
@@ -109,11 +125,13 @@ export default function ChatClient() {
     }
     const { interactionId, message } = reply;
     setPreviousInteractionId(interactionId);
+    dispatch({ type: 'AI_RESPONSE_RECEIVED', payload: { message } });
   }
 
   function speakAIResponse(message) {
     console.log('speak ai response: ', message);
     // use TTS finish event
+    console.log(`[SpeechToText's last utterance's end event fires]`);
     setTimeout(() => {
       dispatch({ type: 'AI_FINISHED_SPEAKING' });
     }, 500);

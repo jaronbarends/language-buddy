@@ -1,6 +1,6 @@
 import 'dotenv/config';
 
-import { type chatMessageParams } from '@/app/api/ai/chat/route';
+import { type ChatMessageParams } from '@/app/api/ai/chat/route';
 
 const CHAT_ENDPOINT =
   process.env.NEXT_PUBLIC_USE_MOCK_AI === 'true' ? '/api/aiMock/chat' : '/api/ai/chat';
@@ -23,7 +23,7 @@ export async function sendChatMessage({
   previousInteractionId,
   input,
   abortSignal,
-}: chatMessageParams): Promise<AIChatResult> {
+}: ChatMessageParams): Promise<AIChatResult> {
   const body = JSON.stringify({
     systemInstruction,
     previousInteractionId,

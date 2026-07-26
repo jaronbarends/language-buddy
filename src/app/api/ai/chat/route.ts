@@ -7,7 +7,7 @@ type GeminiApiError = Error & { status?: number; error?: { code?: string } };
 
 const MODEL = 'gemini-3.1-flash-lite';
 
-export type chatMessageParams = {
+export type ChatMessageParams = {
   input: string;
   systemInstruction: string;
   previousInteractionId?: string;
@@ -23,7 +23,7 @@ type InteractionConfig = {
 
 export async function POST(request: NextRequest) {
   const { systemInstruction, previousInteractionId, input } =
-    (await request.json()) as chatMessageParams;
+    (await request.json()) as ChatMessageParams;
 
   const ai = await createAI();
 

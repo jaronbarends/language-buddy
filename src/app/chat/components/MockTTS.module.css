@@ -1,0 +1,4 @@
+.textarea {
+  width: min(90vw, 40rem);
+  min-height: 4rem;
+}

@@ -1,6 +1,8 @@
 /* mocked route for ai to prevent spending unnecessary tokens during development */
 import { NextRequest, NextResponse } from 'next/server';
 
+import { type ChatMessageParams } from '../../ai/chat/route';
+
 const MOCK_SCENARIOS = {
   success: 'success',
   successLongDelay: 'successLongDelay',
@@ -18,14 +20,18 @@ const scenario: MockScenario = 'success';
 // const scenario: MockScenario = 'aiCreationError';
 
 export async function POST(request: NextRequest) {
+  const { systemInstruction, previousInteractionId, input } =
+    (await request.json()) as ChatMessageParams;
+  const successResponseOutputText = `mock response.output_text (response to ${input})`;
+
   switch (scenario) {
     case MOCK_SCENARIOS.success:
       return respondAfterDelay({
-        data: { id: 'mock response.id', text: 'mock response.output_text' },
+        data: { id: 'mock response.id', text: successResponseOutputText },
       });
     case MOCK_SCENARIOS.successLongDelay:
       return respondAfterDelay({
-        data: { id: 'mock response.id', text: 'mock response.output_text' },
+        data: { id: 'mock response.id', text: successResponseOutputText },
         delayMs: 5000,
       });
     case MOCK_SCENARIOS.rateLimitError:

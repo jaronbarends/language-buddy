@@ -17,7 +17,7 @@ export type ChatAction =
   | { type: 'STOP_CHAT' }
   | { type: 'START_LISTENING' }
   | { type: 'LISTENING_TIMED_OUT' }
-  | { type: 'USER_REPLY_SENT' }
+  | { type: 'USER_MESSAGE_SENT' }
   | { type: 'ERROR'; payload: { message: string } };
 
 // initial state should be { status: 'idle' }
@@ -63,33 +63,32 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       }
     case 'readyForUserStart':
       switch (action.type) {
-        // TODO
+        case 'START_LISTENING':
+          return {
+            status: 'listening',
+          };
         default:
           return state;
       }
     case 'readyForUserReply':
       switch (action.type) {
-        // TODO
-        case 'USER_REPLY_SENT':
+        case 'START_LISTENING':
           return {
-            status: 'waitingForAI',
+            status: 'listening',
           };
         default:
           return state;
       }
     case 'listening':
       switch (action.type) {
-        // TODO
+        case 'USER_MESSAGE_SENT':
+          return {
+            status: 'waitingForAI',
+          };
         default:
           return state;
       }
     case 'listeningTimedOut':
-      switch (action.type) {
-        // TODO
-        default:
-          return state;
-      }
-    case 'sending':
       switch (action.type) {
         // TODO
         default:
@@ -120,10 +119,14 @@ export function canStartChat(state: ChatState): boolean {
   return state.status === 'idle';
 }
 
-export function canStartFirstTurn(state: ChatState): boolean {
+export function canStartWithUser(state: ChatState): boolean {
   return state.status === 'readyForUserStart';
 }
 
-export function canReply(state: ChatState): boolean {
+export function canStartReply(state: ChatState): boolean {
   return state.status === 'readyForUserReply';
+}
+
+export function canSendReply(state: ChatState): boolean {
+  return state.status === 'listening';
 }
