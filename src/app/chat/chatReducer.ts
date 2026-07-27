@@ -1,4 +1,14 @@
-export type ChatState =
+export type ThreadItem = {
+  message: string;
+  author: 'ai' | 'user';
+};
+
+export type ChatState = {
+  threadItems: ThreadItem[];
+  phase: ChatPhase;
+};
+
+export type ChatPhase =
   | { status: 'idle' }
   | { status: 'waitingForAI' }
   | { status: 'aiTurnSpeaking'; message: string }
@@ -17,21 +27,23 @@ export type ChatAction =
   | { type: 'STOP_CHAT' }
   | { type: 'START_LISTENING' }
   | { type: 'LISTENING_TIMED_OUT' }
-  | { type: 'USER_MESSAGE_SENT' }
+  | { type: 'USER_MESSAGE_SENT'; payload: { message: string } }
   | { type: 'ERROR'; payload: { message: string } };
 
 // initial state should be { status: 'idle' }
 export function chatReducer(state: ChatState, action: ChatAction): ChatState {
-  switch (state.status) {
+  switch (state.phase.status) {
     case 'idle':
       switch (action.type) {
         case 'AI_START_INPUT_SENT':
           return {
-            status: 'waitingForAI',
+            threadItems: state.threadItems,
+            phase: { status: 'waitingForAI' },
           };
         case 'START_CHAT_WITH_USER':
           return {
-            status: 'readyForUserStart',
+            threadItems: state.threadItems,
+            phase: { status: 'readyForUserStart' },
           };
         default:
           return state;
@@ -39,14 +51,18 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
     case 'waitingForAI': {
       switch (action.type) {
         case 'AI_RESPONSE_RECEIVED':
-          return {
-            status: 'aiTurnSpeaking',
+          const newItem: ThreadItem = {
             message: action.payload.message,
+            author: 'ai',
+          };
+          return {
+            threadItems: [...state.threadItems, newItem],
+            phase: { status: 'aiTurnSpeaking', message: action.payload.message },
           };
         case 'ERROR':
           return {
-            status: 'error',
-            message: action.payload.message,
+            threadItems: state.threadItems,
+            phase: { status: 'error', message: action.payload.message },
           };
         default:
           return state;
@@ -56,7 +72,8 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       switch (action.type) {
         case 'AI_FINISHED_SPEAKING':
           return {
-            status: 'readyForUserReply',
+            threadItems: state.threadItems,
+            phase: { status: 'readyForUserReply' },
           };
         default:
           return state;
@@ -65,7 +82,8 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       switch (action.type) {
         case 'START_LISTENING':
           return {
-            status: 'listening',
+            threadItems: state.threadItems,
+            phase: { status: 'listening' },
           };
         default:
           return state;
@@ -74,7 +92,8 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       switch (action.type) {
         case 'START_LISTENING':
           return {
-            status: 'listening',
+            threadItems: state.threadItems,
+            phase: { status: 'listening' },
           };
         default:
           return state;
@@ -82,8 +101,13 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
     case 'listening':
       switch (action.type) {
         case 'USER_MESSAGE_SENT':
+          const newItem: ThreadItem = {
+            message: action.payload.message,
+            author: 'user',
+          };
           return {
-            status: 'waitingForAI',
+            threadItems: [...state.threadItems, newItem],
+            phase: { status: 'waitingForAI' },
           };
         default:
           return state;
@@ -107,7 +131,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
           return state;
       }
     default: {
-      const exhaustiveCheck: never = state;
+      const exhaustiveCheck: never = state.phase;
       return exhaustiveCheck;
     }
   }
@@ -115,18 +139,18 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
 
 // derived state functions
 
-export function canStartChat(state: ChatState): boolean {
-  return state.status === 'idle';
+export function canStartChat(phase: ChatPhase): boolean {
+  return phase.status === 'idle';
 }
 
-export function canStartWithUser(state: ChatState): boolean {
-  return state.status === 'readyForUserStart';
+export function canStartWithUser(phase: ChatPhase): boolean {
+  return phase.status === 'readyForUserStart';
 }
 
-export function canStartReply(state: ChatState): boolean {
-  return state.status === 'readyForUserReply';
+export function canStartReply(phase: ChatPhase): boolean {
+  return phase.status === 'readyForUserReply';
 }
 
-export function canSendReply(state: ChatState): boolean {
-  return state.status === 'listening';
+export function canSendReply(phase: ChatPhase): boolean {
+  return phase.status === 'listening';
 }

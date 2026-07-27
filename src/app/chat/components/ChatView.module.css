@@ -1,2 +1,22 @@
 .component {
 }
+
+.threadItems {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-8);
+}
+
+.message {
+  padding: var(--size-8);
+}
+
+.messageFromAi {
+  margin-right: 20%;
+  background: #ffc;
+}
+
+.messageFromUser {
+  margin-left: 20%;
+  background: #eee;
+}

@@ -19,31 +19,31 @@ const aiHasFirstTurn = false;
 
 export default function ChatClient() {
   const [previousInteractionId, setPreviousInteractionId] = useState<string | undefined>();
-  const initalChatState: ChatState = { status: 'idle' };
+  const initalChatState: ChatState = { threadItems: [], phase: { status: 'idle' } };
   const [state, dispatch] = useReducer(chatReducer, initalChatState);
   const abortControllerRef = useRef<AbortController | undefined>(undefined);
 
   useEffect(() => {
-    if (state.status !== 'aiTurnSpeaking') {
+    if (state.phase.status !== 'aiTurnSpeaking') {
       return;
     }
-    speakAIResponse(state.message);
-  }, [state]);
+    speakAIResponse(state.phase.message);
+  }, [state.phase]);
 
   return (
     <>
       <div className={styles.component}>
-        <ChatView {...{ state }} />
-        <MockTTS />
+        <ChatView threadItems={state.threadItems} />
+        <MockTTS phase={state.phase} />
         <ControlsArea
           onStartChat={handleStartChat}
           onStopChat={handleStopChat}
           onStartListening={handleStartListening}
           onSendUserMessage={handleSendUserMessage}
-          {...{ state }}
+          phase={state.phase}
         />
       </div>
-      <div className={styles.status}>status: {state.status}</div>
+      <div className={styles.status}>status: {state.phase.status}</div>
     </>
   );
 
@@ -110,7 +110,7 @@ export default function ChatClient() {
       mockTTS.value = '';
     }
 
-    dispatch({ type: 'USER_MESSAGE_SENT' });
+    dispatch({ type: 'USER_MESSAGE_SENT', payload: { message: input } });
     const reply: AIChatResult = await sendChatMessage({
       input,
       previousInteractionId,

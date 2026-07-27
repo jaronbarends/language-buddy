@@ -3,14 +3,14 @@ import {
   canStartWithUser,
   canStartReply,
   canSendReply,
-  type ChatState,
+  type ChatPhase,
 } from '@/app/chat/chatReducer';
 import Button from '@/components/button/Button';
 
 import styles from './ControlsArea.module.css';
 
 type PropsType = {
-  state: ChatState;
+  phase: ChatPhase;
   onStartChat: () => void;
   onStopChat: () => void;
   onStartListening: () => void;
@@ -24,13 +24,13 @@ type PrimaryButtonProps = {
 };
 
 export default function ControlsArea({
-  state,
+  phase,
   onStartChat,
   onStopChat,
   onStartListening,
   onSendUserMessage,
 }: PropsType) {
-  const buttonProps = getPrimaryButtonProps(state);
+  const buttonProps = getPrimaryButtonProps(phase);
   const disabled = buttonProps.disabled || false;
   return (
     <div className={styles.component}>
@@ -43,26 +43,26 @@ export default function ControlsArea({
     </div>
   );
 
-  function getPrimaryButtonProps(state: ChatState): PrimaryButtonProps {
-    if (canStartChat(state)) {
+  function getPrimaryButtonProps(phase: ChatPhase): PrimaryButtonProps {
+    if (canStartChat(phase)) {
       return {
         label: 'Start conversation',
         onClick: onStartChat,
       };
     }
-    if (canStartWithUser(state)) {
+    if (canStartWithUser(phase)) {
       return {
         label: 'Start speaking',
         onClick: onStartListening,
       };
     }
-    if (canStartReply(state)) {
+    if (canStartReply(phase)) {
       return {
         label: 'Start reply',
         onClick: onStartListening,
       };
     }
-    if (canSendReply(state)) {
+    if (canSendReply(phase)) {
       return {
         label: 'Send reply',
         onClick: onSendUserMessage,
