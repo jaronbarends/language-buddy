@@ -4,6 +4,7 @@ import { useReducer, useState, useRef, useEffect } from 'react';
 
 import { chatReducer, type ChatState } from '@/app/chat/chatReducer';
 import { sendChatMessage, type AIChatResult } from '@/lib/aiService';
+import { type ChatConfig } from '@/lib/chatConfig';
 
 import ControlsArea from './ControlsArea';
 import ErrorArea from './ErrorArea';
@@ -12,14 +13,12 @@ import ThreadView from './ThreadView';
 
 import styles from './ChatClient.module.css';
 
-// systemInstruction should also include scenario
-const language = 'nb_NO';
-// const language = 'nl_NL';
-const systemInstruction = `You are a native speaker of ${language}. no matter the input language, always reply in ${language}. The reply should be plain text only.`;
+type ChatClientProps = {
+  chatConfig: ChatConfig;
+};
 
-const aiHasFirstTurn = true;
-
-export default function ChatClient() {
+export default function ChatClient({ chatConfig }: ChatClientProps) {
+  const { aiHasFirstTurn, systemInstruction, language } = chatConfig;
   const [previousInteractionId, setPreviousInteractionId] = useState<string | undefined>();
   const initalChatState: ChatState = { threadItems: [], phase: { status: 'readyForNewChat' } };
   const [state, dispatch] = useReducer(chatReducer, initalChatState);
