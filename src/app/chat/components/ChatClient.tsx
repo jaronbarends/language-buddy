@@ -5,10 +5,12 @@ import { useReducer, useState, useRef, useEffect } from 'react';
 import { chatReducer, type ChatState } from '@/app/chat/chatReducer';
 import { sendChatMessage, type AIChatResult } from '@/lib/aiService';
 import { type ChatConfig } from '@/lib/chatConfig';
+import { type SpeechTranscript } from '@/lib/speechTranscript';
 
 import ControlsArea from './ControlsArea';
 import ErrorArea from './ErrorArea';
 import MockTTS from './MockTTS';
+import SpeechToText from './SpeechToText';
 import ThreadView from './ThreadView';
 
 import styles from './ChatClient.module.css';
@@ -37,10 +39,17 @@ export default function ChatClient({ chatConfig }: ChatClientProps) {
         <ThreadView threadItems={state.threadItems} />
         <ErrorArea phase={state.phase} />
         <MockTTS phase={state.phase} />
+        <SpeechToText
+          phase={state.phase}
+          onTranscriptCreated={handleTranscriptCreated}
+          onError={handleError}
+          languageTag={language.languageTag}
+        />
         <ControlsArea
           onStartChat={handleStartChat}
           onStopChat={handleStopChat}
           onStartListening={handleStartListening}
+          onStopListening={handleStopListening}
           onSendUserMessage={handleSendUserMessage}
           onEndSession={handleEndSession}
           phase={state.phase}
@@ -67,8 +76,21 @@ export default function ChatClient({ chatConfig }: ChatClientProps) {
     startListening();
   }
 
+  function handleStopListening() {
+    dispatch({ type: 'STOP_LISTENING' });
+  }
+
   function handleEndSession() {
     dispatch({ type: 'END_SESSION' });
+  }
+
+  function handleTranscriptCreated(transcript: SpeechTranscript) {
+    dispatch({ type: 'TRANSCRIPT_CREATED', payload: { transcript } });
+    console.log('handle transcript created');
+  }
+
+  function handleError() {
+    // TODO decide how to handle non-api errors
   }
 
   async function startChatWithAI() {

@@ -2,6 +2,7 @@ import {
   canStartChat,
   canStartWithUser,
   canStartReply,
+  canStopListening,
   canSendReply,
   canStopChat,
   chatHasEnded,
@@ -19,6 +20,7 @@ type ControlsAreaProps = {
   onStartListening: () => void;
   onSendUserMessage: () => void;
   onEndSession: () => void;
+  onStopListening: () => void;
 };
 
 type PrimaryButtonProps = {
@@ -33,20 +35,23 @@ export default function ControlsArea({
   onStopChat,
   onStartListening,
   onSendUserMessage,
+  onStopListening,
   onEndSession,
 }: ControlsAreaProps) {
   const buttonProps = getPrimaryButtonProps(phase);
   const disabled = buttonProps.disabled || false;
   return (
-    <div className={styles.component}>
-      <Button variant="primary" onClick={buttonProps.onClick} disabled={disabled}>
-        {buttonProps.label}
-      </Button>
-      {shouldShowStopButton(phase) && (
-        <Button variant="ghost" onClick={onStopChat}>
-          End conversation
+    <div className={styles.controlsArea}>
+      <div className={styles.actions}>
+        <Button variant="primary" onClick={buttonProps.onClick} disabled={disabled}>
+          {buttonProps.label}
         </Button>
-      )}
+        {shouldShowStopButton(phase) && (
+          <Button variant="ghost" onClick={onStopChat}>
+            End conversation
+          </Button>
+        )}
+      </div>
     </div>
   );
 
@@ -72,6 +77,12 @@ export default function ControlsArea({
       return {
         label: 'Start reply',
         onClick: onStartListening,
+      };
+    }
+    if (canStopListening(phase)) {
+      return {
+        label: 'Stop listening',
+        onClick: onStopListening,
       };
     }
     if (canSendReply(phase)) {

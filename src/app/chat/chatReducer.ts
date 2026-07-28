@@ -1,4 +1,5 @@
 import { type AIChatError } from '@/lib/aiService';
+import { type SpeechTranscript } from '@/lib/speechTranscript';
 
 export type ThreadItem = {
   message: string;
@@ -17,6 +18,8 @@ export type ChatPhase =
   | { status: 'readyForUserStart' }
   | { status: 'readyForUserReply' }
   | { status: 'listening' }
+  | { status: 'listeningStopped' }
+  | { status: 'readyForSendingUserReply'; transcript: SpeechTranscript }
   | { status: 'listeningTimedOut' }
   | { status: 'ended' } // ended, need to get evaluation now. rename to waitingForEvaluation? Next step readyForNewChat?
   | { status: 'error'; error: AIChatError };
@@ -28,7 +31,9 @@ export type ChatAction =
   | { type: 'AI_FINISHED_SPEAKING' }
   | { type: 'STOP_CHAT' }
   | { type: 'START_LISTENING' }
+  | { type: 'STOP_LISTENING' }
   | { type: 'LISTENING_TIMED_OUT' }
+  | { type: 'TRANSCRIPT_CREATED'; payload: { transcript: SpeechTranscript } }
   | { type: 'USER_MESSAGE_SENT'; payload: { message: string } }
   | { type: 'END_SESSION' }
   | { type: 'ERROR'; payload: { error: AIChatError } };
@@ -128,6 +133,16 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         default:
           return state;
       }
+    case 'listeningStopped':
+      switch (action.type) {
+        case 'TRANSCRIPT_CREATED':
+          return {
+            threadItems: state.threadItems,
+            phase: { status: 'readyForSendingUserReply', transcript: action.payload.transcript },
+          };
+        default:
+          return state;
+      }
     case 'listeningTimedOut':
       switch (action.type) {
         // TODO
@@ -175,8 +190,12 @@ export function canStartReply(phase: ChatPhase): boolean {
   return phase.status === 'readyForUserReply';
 }
 
-export function canSendReply(phase: ChatPhase): boolean {
+export function canStopListening(phase: ChatPhase): boolean {
   return phase.status === 'listening';
+}
+
+export function canSendReply(phase: ChatPhase): boolean {
+  return phase.status === 'readyForSendingUserReply';
 }
 
 export function canStopChat(phase: ChatPhase): boolean {

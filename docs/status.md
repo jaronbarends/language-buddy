@@ -123,6 +123,12 @@ is implemented. Next up: listening timeout, then wiring in real STT/TTS and the 
   interaction design is still actively changing, so styling now risks rework; the core loop being
   functionally settled first gives a low-risk, demoable styling target. Only the _timing_ is
   decided — token values, layout, and accessibility approach are still open (see decisions.md)
+- **STT integration design decided (2026-07-28)** — `listeningStopped` and
+  `readyForSendingUserReply; transcript` phases, `STOP_LISTENING`/`TRANSCRIPT_CREATED` actions, and
+  a `SpeechToText` child component (props: `phase`, `onTranscriptCreated`, `onError`). Transcript
+  displayed read-only before send, not editable — scaffolding for the still-deferred
+  `listeningTimedOut` work, not a reversal of the no-review-step decision (see decisions.md).
+  Design only — not yet implemented.
 
 ## What's open
 
@@ -159,8 +165,10 @@ is implemented. Next up: listening timeout, then wiring in real STT/TTS and the 
 5. ~~Build real error handling: reducer `error` case behavior + Retry action~~ — done:
    end-session-only recovery, implemented as a dedicated `END_SESSION` action that resets
    to `readyForNewChat`; no Retry action for v0 (see decisions.md, 2026-07-27).
-6. Wire real STT input, replacing the `MockTTS` textarea, and implement `listeningTimedOut`
-   alongside it (bundled per the 2026-07-27 decision).
+6. Wire real STT input, replacing the `MockTTS` textarea, per the 2026-07-28 design
+   (`SpeechToText` component; `listeningStopped` → `readyForSendingUserReply` phases; transcript
+   displayed read-only before send). `listeningTimedOut` remains deferred (2026-07-27 decision) —
+   the stop/send split is built now specifically so timeout can reuse the same path later.
 7. Wire real TTS output, replacing the `speakAIResponse` console.log/setTimeout stub.
 8. Swap the mock AI implementation for the real `/api/ai/chat` route behind the same
    `sendChatMessage`/`AIChatResult` signature.

@@ -662,3 +662,46 @@ concept, it's a more primitive one both `chatConfig.ts` and `getBaseInstruction.
 **Status:** Done. `scenarios.ts` still holds placeholder content only — real scenario data/schema
 (situation + goal + constraints) remains undesigned, per the existing "core data structures
 deliberately deferred" decision (2026-07-22).
+
+### STT integration design: stop/transcript split, display-only transcript before send
+
+**Date:** 2026-07-28
+**Decision:** Real STT integration will use two new phases and two new actions, plus a dedicated
+`SpeechToText` component:
+
+- **New phases:**
+  - `listeningStopped` — transitional; entered when the user clicks "Stop listening". Signals
+    `SpeechToText`'s effect to call `recognition.stop()` and wait for `onresult`/`onend`.
+  - `readyForSendingUserReply; transcript` — entered once `SpeechToText` reports a transcript.
+    The transcript is carried on the phase object itself (not appended to `threadItems` yet).
+- **New actions:**
+  - `STOP_LISTENING` — dispatched by `ChatClient` when the user clicks "Stop listening";
+    `listening` → `listeningStopped`.
+  - `TRANSCRIPT_CREATED; payload: { transcript }` — dispatched via `SpeechToText`'s
+    `onTranscriptCreated` callback once recognition produces a result; `listeningStopped` →
+    `readyForSendingUserReply; transcript`.
+- **`SpeechToText` component:** child of `ChatClient`, props `phase`, `onTranscriptCreated`,
+  `onError`. Recognition lifecycle keyed off `phase` via `useEffect`: starts on `listening`,
+  calls `recognition.stop()` on `listeningStopped`.
+- **Existing `USER_MESSAGE_SENT` action is unchanged and reused.** `ChatClient` reads
+  `state.phase.transcript` when in `readyForSendingUserReply` and passes it as `message` in the
+  dispatch payload when "Send message" is clicked — same pattern as the current mock-textarea flow.
+  The transcript only lands in `threadItems` at that point, not when it's first created.
+
+**Addendum to "STT transcript review step: not needed for MVP" (2026-07-19):** the transcript is
+now displayed (read-only) between stop and send. This does **not** reverse the 2026-07-19
+decision — there is still no edit/correction capability, and STT output is still sent to the LLM
+unedited. Display is added as scaffolding for the deferred `listeningTimedOut` work (see backlog),
+where showing transcript-so-far becomes necessary anyway; building it now avoids guessing its
+shape later.
+
+**Rationale:** Splitting "stop" from "send" into two phases (rather than one direct
+`listening` → send transition) gives `listeningTimedOut` a natural landing spot later — timeout
+can transition into the same `listeningStopped`/`readyForSendingUserReply` path a manual stop
+already uses, rather than needing its own separate flow designed from scratch.
+
+**Scope note:** `listeningTimedOut` itself remains explicitly deferred, per the 2026-07-27
+decision — this entry only adds the stop/transcript-display mechanics, not the countdown/timeout
+logic.
+
+**Status:** Design decided, not yet implemented.
