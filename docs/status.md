@@ -51,6 +51,11 @@ is implemented. Next up: listening timeout, then wiring in real STT/TTS and the 
 - Spike code for STT/TTS exists on branch `spike-speech-to-text` (spike-only, not production code).
 - **No visual/UI design work done yet** — current components are functional/unstyled. Timing for
   the design pass is now decided (see below); the design content itself is not.
+- `ChatClient.tsx` (Client Component) now receives a `chatConfig` prop (`ChatConfig`, from
+  `src/lib/chatConfig.ts`) built in `page.tsx` via `getChatConfig(language, scenario)`, replacing
+  the previous hardcoded `systemInstruction`/`aiHasFirstTurn` consts. Scenario selection
+  (`scenarios[0]`) and language now live in `page.tsx`; still a single placeholder scenario, not
+  the scenario library (see decisions.md, 2026-07-28).
 
 ## What's decided
 

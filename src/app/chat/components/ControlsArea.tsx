@@ -12,7 +12,7 @@ import Button from '@/components/button/Button';
 
 import styles from './ControlsArea.module.css';
 
-type PropsType = {
+type ControlsAreaProps = {
   phase: ChatPhase;
   onStartChat: () => void;
   onStopChat: () => void;
@@ -34,7 +34,7 @@ export default function ControlsArea({
   onStartListening,
   onSendUserMessage,
   onEndSession,
-}: PropsType) {
+}: ControlsAreaProps) {
   const buttonProps = getPrimaryButtonProps(phase);
   const disabled = buttonProps.disabled || false;
   return (

@@ -80,11 +80,6 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
             threadItems: [...state.threadItems, newItem],
             phase: { status: 'aiTurnSpeaking', message: action.payload.message },
           };
-        // case 'ERROR':
-        //   return {
-        //     threadItems: state.threadItems,
-        //     phase: { status: 'error', error: action.payload.error },
-        //   };
         default:
           return state;
       }

@@ -633,3 +633,32 @@ end actions at once.
 **Status:** Done — implemented in `chatReducer.ts`, `ControlsArea.tsx`, `ChatClient.tsx`
 (`handleEndSession`), `ErrorArea.tsx`/`ErrorArea.module.css`. Retry and per-error-type
 differentiation remain deferred, unchanged from the decision above.
+
+### Scenario/chat config extracted into src/lib
+
+**Date:** 2026-07-28
+**Decision:** Pulled the hardcoded `systemInstruction`/`aiHasFirstTurn` consts out of
+`ChatClient.tsx` into four `src/lib` files:
+
+- `scenarios.ts` — `Scenario` type + a `scenarios` array (currently one placeholder entry)
+- `language.ts` — `Language` type (`{ name, locale }`), factored out on its own after starting
+  in `chatConfig.ts`, to avoid a circular import between `chatConfig.ts` and
+  `getBaseInstruction.ts`
+- `getBaseInstruction.ts` — `getBaseInstruction(language)`, the generic "always reply in X,
+  plain text only" instruction shared across all scenarios
+- `chatConfig.ts` — `ChatConfig` type + `getChatConfig(language, scenario)`, combining the base
+  instruction with a scenario's own instruction text
+
+`page.tsx` now selects a scenario (`scenarios[0]` for now) and language, builds `chatConfig` via
+`getChatConfig`, and passes it into `ChatClient` as a prop. `ChatClient` destructures
+`systemInstruction`/`aiHasFirstTurn` from that prop instead of defining them as local consts.
+
+**Rationale:** Anticipates the scenario library concept without building it yet — scenario
+selection now has a place to live (`page.tsx`, Server Component) separate from `ChatClient`'s
+conversation logic, and adding scenarios later means adding array entries, not touching
+`ChatClient`. Splitting `Language` into its own file rather than leaving it in `chatConfig.ts`
+follows the same reasoning as the mid-refactor circular-import fix: `Language` isn't a chat-config
+concept, it's a more primitive one both `chatConfig.ts` and `getBaseInstruction.ts` need.
+**Status:** Done. `scenarios.ts` still holds placeholder content only — real scenario data/schema
+(situation + goal + constraints) remains undesigned, per the existing "core data structures
+deliberately deferred" decision (2026-07-22).
