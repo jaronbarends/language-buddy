@@ -495,3 +495,141 @@ turn counter needs to exist in state, which it doesn't yet. Not designing that m
 backlog: separate closing-instruction for the AI's final turn, deferred).
 **Status:** Turn-counter mechanism and any "wrap up the conversation" instruction are open — tracked
 in backlog.md, not designed here.
+
+### No dedicated `sending` state
+
+**Date:** 2026-07-27
+**Decision:** Drop the `sending` state from the 2026-07-22 model. `listening` transitions
+directly to `waitingForAI` on `USER_MESSAGE_SENT` — there is no separate in-flight-transmission
+state.
+**Rationale:** The original list already covered "the user's just-sent message is in flight"
+under `waitingForAI`; `sending` never added distinct meaning beyond that. Deliberate
+simplification, not an oversight.
+
+### No `initializing` state
+
+**Date:** 2026-07-27
+**Decision:** Drop the `initializing` state from the 2026-07-22 model.
+**Rationale:** `initializing` was scoped around creating a persistent Gemini chat object
+(`chats.create`) and determining who opens before the first request. Since Spike 3 moved
+implementation to `interactions.create`, systemInstruction is resent on every turn regardless —
+there's no chat object to create up front. For v0's single hardcoded scenario, "who opens" is a
+static per-scenario value, not something needing an async determination step. Revisit once real
+scenario loading exists.
+
+### Turn counter / max-turns postponed
+
+**Date:** 2026-07-27
+**Decision:** Postpone the turn counter / max-turns limit. For now, "End conversation" (explicit
+user action) is the only way a session ends.
+**Rationale:** Avoids building termination logic that isn't blocking anything yet. When it is
+built, the 2026-07-26 rule stands: AI always speaks last.
+
+### `listeningTimedOut` deferred to STT work
+
+**Date:** 2026-07-27
+**Decision:** Implement `listeningTimedOut` alongside real STT integration, not before.
+**Rationale:** Timeout logic is meaningless against the current mock textarea — there's no real
+listening session to time out. Bundling avoids building against a guessed shape.
+
+### Visual/UI design phase sequenced after core loop, before evaluation
+
+**Date:** 2026-07-27
+**Decision:** Do the visual/UI design pass (tokens, layout, accessibility) after the core
+conversation loop is functionally complete (stop-from-any-state fix, error handling, real STT/TTS,
+real Gemini swap) and before evaluation is built.
+**Rationale:** Interaction design is still actively changing (two states dropped, stop/error scope
+still being defined) — styling components whose shape is still shifting risks rework, and CSS
+tokens are meant to be a closed scale, which shouldn't be locked in while the UI is still churning.
+Once the core loop is functionally done, `ThreadView`/`ControlsArea`/new error-and-STT UI will be
+structurally settled enough to style with low rework risk. Sequencing before evaluation (rather
+than after, or before the functional work) also produces one fully-styled, working, demoable
+conversation loop as an earlier case-study checkpoint, instead of leaving the whole app unstyled
+until everything — including evaluation — exists.
+**Status:** Open — full design.md decisions (token values, layout, accessibility approach) not yet
+made; only the _timing_ is decided here.
+
+### `idle` renamed to `readyForNewChat`
+
+**Date:** 2026-07-27
+**Decision:** Rename the `idle` phase to `readyForNewChat`.
+**Rationale:** `idle` didn't convey what the state actually means — that a new chat can be started
+from it. `readyForNewChat` states that explicitly, consistent with the existing `readyForUserStart`
+/ `readyForUserReply` naming.
+
+### `STOP_CHAT` handled from every reducer phase
+
+**Date:** 2026-07-27
+**Decision:** Check `STOP_CHAT` once at the top of `chatReducer`, before the phase-specific switch:
+if the action is `STOP_CHAT` and the current phase is neither `readyForNewChat` nor `ended`,
+transition straight to `ended` regardless of which phase the state machine is in.
+**Rationale:** The previous implementation only handled `STOP_CHAT` inside the `listening` case;
+every other phase fell through to `default: return state`, so ending the conversation mid-turn
+(e.g. during `waitingForAI` or `aiTurnSpeaking`) silently no-opped even though the "End
+conversation" button is always rendered and always dispatches `STOP_CHAT` (see `ControlsArea.tsx`
+in status.md). This was the exact failure mode the original useReducer decision entry flagged as a
+risk to guard against. A single top-level check (rather than repeating a `STOP_CHAT` case in every
+phase's inner switch) keeps the guard in one place instead of duplicated across every branch.
+
+### Error message extraction: `error.message` unreliable, parse `error.body` instead
+
+**Date:** 2026-07-27
+**Decision:** Route Handler error handling no longer reads `error.message` directly for the
+user-facing message. It parses `error.body` (the raw response body string) via a new
+`extractApiErrorMessage` helper, falling back to `error.message` only if that parsing fails.
+**Rationale:** Discovered while testing invalid-API-key and invalid-model-name failures live: the
+underlying Gemini API returns inconsistent error body shapes depending on error type — bad model
+name returns a bare `{"error": {...}}` object, but bad API key returns the same shape wrapped in an
+array (`[{"error": {...}}]`). The `@google/genai` SDK's error parser assumes the bare-object shape;
+against the array-wrapped case it fails to populate `.error.message`, so `BadRequestError` falls
+back to a generic `"API error occurred: " + JSON.stringify(httpMeta)` message, which is
+uninformative (`httpMeta` serializes to near-`{}` since `Response`/`Request` objects have no
+meaningful `toJSON()`). The real message is always present in `error.body` as a string, just not
+always reachable via `error.message`.
+**Consequence:** This does not affect Spike 4's `name`/`status`-based structural error
+discrimination, which remains reliable — only the human-readable message text was affected.
+`AIChatResult`'s error branch keeps using `name`/`status` to decide error type; only the message
+string extraction changed.
+**Status:** Done — implemented in `src/app/api/ai/chat/route.ts`.
+
+### Error recovery: end-session only, no retry, for v0
+
+**Date:** 2026-07-27
+**Decision:** No Retry action for v0. The only recovery path from the `error` phase is
+"End conversation" (already covered by the existing top-level `STOP_CHAT` handling).
+**Rationale:** A generic retry-the-failed-operation isn't judged useful — most failure
+causes (bad config, malformed request) will fail identically on retry. Per-error-type
+recovery logic is deferred rather than built against a guess of which errors are
+actually transient.
+**Status:** Superseded same-day — see "Error recovery implemented" below. The
+STOP_CHAT-already-covers-it assumption turned out not to match what was actually built.
+
+### Error recovery implemented: dedicated `END_SESSION` action, not `STOP_CHAT`
+
+**Date:** 2026-07-27
+**Decision:** Generic error-state recovery is built. In the `error` phase:
+
+- The ghost "End conversation" button (`STOP_CHAT`) is hidden — `ControlsArea`'s
+  `shouldShowStopButton` explicitly excludes `status === 'error'`.
+- The primary button instead reads "End this session" and dispatches a new `END_SESSION`
+  action.
+- The reducer's `error` case handles `END_SESSION` by resetting straight to
+  `{ threadItems: [], phase: { status: 'readyForNewChat' } }` — a full reset back to the
+  start, not a transition through `ended`.
+- `ErrorArea.tsx` renders the raw `phase.error.error` message in the chat area; unstyled,
+  no per-error-type differentiation (unchanged from the decision above).
+
+From the `error` phase, ending the session is the only available action — no Retry, and
+the normal "End conversation" path is not offered alongside it.
+
+**Rationale:** Corrects the same-day decision above, which assumed the existing top-level
+`STOP_CHAT` handling already covered end-from-error with no reducer changes needed. In
+practice a dedicated path was built instead: ending from an error should discard the
+broken session and return the user to a fresh start (`readyForNewChat`), not land in the
+terminal `ended` phase, which implies a normal, completed conversation now waiting on
+evaluation — a different meaning than "this session errored out." Hiding the generic
+ghost "End conversation" button while in `error` avoids offering two differently-behaving
+end actions at once.
+**Status:** Done — implemented in `chatReducer.ts`, `ControlsArea.tsx`, `ChatClient.tsx`
+(`handleEndSession`), `ErrorArea.tsx`/`ErrorArea.module.css`. Retry and per-error-type
+differentiation remain deferred, unchanged from the decision above.

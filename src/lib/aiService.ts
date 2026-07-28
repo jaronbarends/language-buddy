@@ -5,18 +5,20 @@ import { type ChatMessageParams } from '@/app/api/ai/chat/route';
 const CHAT_ENDPOINT =
   process.env.NEXT_PUBLIC_USE_MOCK_AI === 'true' ? '/api/aiMock/chat' : '/api/ai/chat';
 
+export type AIChatError = {
+  success: false;
+  error: string;
+  status: number;
+  name: string;
+};
+
 export type AIChatResult =
   | {
       success: true;
       interactionId: string;
       message: string;
     }
-  | {
-      success: false;
-      error: string;
-      status: number;
-      name: string;
-    };
+  | AIChatError;
 
 export async function sendChatMessage({
   systemInstruction,

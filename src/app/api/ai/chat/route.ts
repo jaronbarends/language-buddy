@@ -3,7 +3,8 @@ import 'dotenv/config';
 import { NextRequest, NextResponse } from 'next/server';
 
 // genai no longer uses a single ApiError, but generated hierarchy of specific error classes. Define what we need
-type GeminiApiError = Error & { status?: number; error?: { code?: string } };
+// genai no longer uses a single ApiError, but generated hierarchy of specific error classes. Define what we need
+type GeminiApiError = Error & { status?: number; error?: { code?: string }; body?: string };
 
 const MODEL = 'gemini-3.1-flash-lite';
 
@@ -54,10 +55,29 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
+    console.log('in de error', error);
     const name = error instanceof Error ? error.name : undefined;
     const status = error instanceof Error ? (error as GeminiApiError).status : 500;
-    const message = error instanceof Error ? error.message : 'Unknown error';
+    const rawBody = error instanceof Error ? (error as GeminiApiError).body : undefined;
+    const message =
+      extractApiErrorMessage(rawBody) ?? (error instanceof Error ? error.message : 'Unknown error');
+
+    console.log({ error: message, name }, { status: status ?? 500 });
     return NextResponse.json({ error: message, name }, { status: status ?? 500 });
+  }
+}
+
+function extractApiErrorMessage(rawBody: string | undefined): string | undefined {
+  if (!rawBody) {
+    return undefined;
+  }
+
+  try {
+    const parsed = JSON.parse(rawBody);
+    const errorObject = Array.isArray(parsed) ? parsed[0]?.error : parsed?.error;
+    return errorObject?.message;
+  } catch {
+    return undefined;
   }
 }
 

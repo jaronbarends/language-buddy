@@ -16,6 +16,7 @@
   font-weight: var(--font-weight);
   cursor: pointer;
   text-decoration: none;
+  transition: opacity 0.2s;
 
   &:hover:not(:disabled),
   &:focus:not(:disabled) {

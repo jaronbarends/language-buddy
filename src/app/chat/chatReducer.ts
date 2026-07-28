@@ -1,3 +1,5 @@
+import { type AIChatError } from '@/lib/aiService';
+
 export type ThreadItem = {
   message: string;
   author: 'ai' | 'user';
@@ -9,15 +11,15 @@ export type ChatState = {
 };
 
 export type ChatPhase =
-  | { status: 'idle' }
+  | { status: 'readyForNewChat' }
   | { status: 'waitingForAI' }
   | { status: 'aiTurnSpeaking'; message: string }
   | { status: 'readyForUserStart' }
   | { status: 'readyForUserReply' }
   | { status: 'listening' }
   | { status: 'listeningTimedOut' }
-  | { status: 'ended' }
-  | { status: 'error'; message: string };
+  | { status: 'ended' } // ended, need to get evaluation now. rename to waitingForEvaluation? Next step readyForNewChat?
+  | { status: 'error'; error: AIChatError };
 
 export type ChatAction =
   | { type: 'AI_START_INPUT_SENT' }
@@ -28,12 +30,31 @@ export type ChatAction =
   | { type: 'START_LISTENING' }
   | { type: 'LISTENING_TIMED_OUT' }
   | { type: 'USER_MESSAGE_SENT'; payload: { message: string } }
-  | { type: 'ERROR'; payload: { message: string } };
+  | { type: 'END_SESSION' }
+  | { type: 'ERROR'; payload: { error: AIChatError } };
 
-// initial state should be { status: 'idle' }
+// initial state should be { status: 'readyForNewChat' }
 export function chatReducer(state: ChatState, action: ChatAction): ChatState {
+  if (
+    action.type === 'STOP_CHAT' &&
+    state.phase.status !== 'readyForNewChat' &&
+    state.phase.status !== 'ended'
+  ) {
+    return {
+      threadItems: state.threadItems,
+      phase: { status: 'ended' },
+    };
+  }
+
+  if (action.type === 'ERROR') {
+    return {
+      threadItems: state.threadItems,
+      phase: { status: 'error', error: action.payload.error },
+    };
+  }
+
   switch (state.phase.status) {
-    case 'idle':
+    case 'readyForNewChat':
       switch (action.type) {
         case 'AI_START_INPUT_SENT':
           return {
@@ -59,11 +80,11 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
             threadItems: [...state.threadItems, newItem],
             phase: { status: 'aiTurnSpeaking', message: action.payload.message },
           };
-        case 'ERROR':
-          return {
-            threadItems: state.threadItems,
-            phase: { status: 'error', message: action.payload.message },
-          };
+        // case 'ERROR':
+        //   return {
+        //     threadItems: state.threadItems,
+        //     phase: { status: 'error', error: action.payload.error },
+        //   };
         default:
           return state;
       }
@@ -120,13 +141,21 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       }
     case 'ended':
       switch (action.type) {
-        // TODO
+        case 'END_SESSION':
+          return {
+            threadItems: [],
+            phase: { status: 'readyForNewChat' },
+          };
         default:
           return state;
       }
     case 'error':
       switch (action.type) {
-        // TODO
+        case 'END_SESSION':
+          return {
+            threadItems: [],
+            phase: { status: 'readyForNewChat' },
+          };
         default:
           return state;
       }
@@ -140,7 +169,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
 // derived state functions
 
 export function canStartChat(phase: ChatPhase): boolean {
-  return phase.status === 'idle';
+  return phase.status === 'readyForNewChat';
 }
 
 export function canStartWithUser(phase: ChatPhase): boolean {
@@ -153,4 +182,17 @@ export function canStartReply(phase: ChatPhase): boolean {
 
 export function canSendReply(phase: ChatPhase): boolean {
   return phase.status === 'listening';
+}
+
+export function canStopChat(phase: ChatPhase): boolean {
+  const status = phase.status;
+  return status !== 'readyForNewChat' && status !== 'ended';
+}
+
+export function chatHasEnded(phase: ChatPhase): boolean {
+  return phase.status === 'ended';
+}
+
+export function hasError(phase: ChatPhase): boolean {
+  return phase.status === 'error';
 }

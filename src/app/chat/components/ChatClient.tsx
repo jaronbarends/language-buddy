@@ -2,24 +2,26 @@
 
 import { useReducer, useState, useRef, useEffect } from 'react';
 
+import { chatReducer, type ChatState } from '@/app/chat/chatReducer';
 import { sendChatMessage, type AIChatResult } from '@/lib/aiService';
 
-import { chatReducer, type ChatState } from '../chatReducer';
-import ChatView from './ChatView';
 import ControlsArea from './ControlsArea';
+import ErrorArea from './ErrorArea';
 import MockTTS from './MockTTS';
+import ThreadView from './ThreadView';
 
 import styles from './ChatClient.module.css';
 
 // systemInstruction should also include scenario
-const systemInstruction =
-  'you are a norwegian speaker. no matter the input language, always reply in norwegian bokmal';
+const language = 'nb_NO';
+// const language = 'nl_NL';
+const systemInstruction = `You are a native speaker of ${language}. no matter the input language, always reply in ${language}. The reply should be plain text only.`;
 
-const aiHasFirstTurn = false;
+const aiHasFirstTurn = true;
 
 export default function ChatClient() {
   const [previousInteractionId, setPreviousInteractionId] = useState<string | undefined>();
-  const initalChatState: ChatState = { threadItems: [], phase: { status: 'idle' } };
+  const initalChatState: ChatState = { threadItems: [], phase: { status: 'readyForNewChat' } };
   const [state, dispatch] = useReducer(chatReducer, initalChatState);
   const abortControllerRef = useRef<AbortController | undefined>(undefined);
 
@@ -33,13 +35,15 @@ export default function ChatClient() {
   return (
     <>
       <div className={styles.component}>
-        <ChatView threadItems={state.threadItems} />
+        <ThreadView threadItems={state.threadItems} />
+        <ErrorArea phase={state.phase} />
         <MockTTS phase={state.phase} />
         <ControlsArea
           onStartChat={handleStartChat}
           onStopChat={handleStopChat}
           onStartListening={handleStartListening}
           onSendUserMessage={handleSendUserMessage}
+          onEndSession={handleEndSession}
           phase={state.phase}
         />
       </div>
@@ -57,12 +61,15 @@ export default function ChatClient() {
 
   function handleStopChat() {
     dispatch({ type: 'STOP_CHAT' });
-    console.log('stop');
     abortControllerRef.current?.abort();
   }
 
   function handleStartListening() {
     startListening();
+  }
+
+  function handleEndSession() {
+    dispatch({ type: 'END_SESSION' });
   }
 
   async function startChatWithAI() {
@@ -75,12 +82,10 @@ export default function ChatClient() {
       systemInstruction,
       abortSignal: abortControllerRef.current.signal,
     });
-    console.log('reply:', reply);
 
     if (!reply.success) {
-      // TODO
-      console.log('dispatch stop');
-      dispatch({ type: 'ERROR', payload: { message: 'oops' } });
+      // then reply must be error object
+      dispatch({ type: 'ERROR', payload: { error: reply } });
       return;
     }
 
@@ -95,7 +100,6 @@ export default function ChatClient() {
   }
 
   function startListening() {
-    console.log('start listening');
     dispatch({ type: 'START_LISTENING' });
     // create speech thing here
   }
@@ -111,16 +115,16 @@ export default function ChatClient() {
     }
 
     dispatch({ type: 'USER_MESSAGE_SENT', payload: { message: input } });
+    abortControllerRef.current = new AbortController();
     const reply: AIChatResult = await sendChatMessage({
       input,
       previousInteractionId,
       systemInstruction,
+      abortSignal: abortControllerRef.current.signal,
     });
-    console.log('reply:', reply);
     if (!reply.success) {
-      // TODO
-      console.log('dispatch stop');
-      dispatch({ type: 'ERROR', payload: { message: 'oops' } });
+      // then reply must be error object
+      dispatch({ type: 'ERROR', payload: { error: reply } });
       return;
     }
     const { interactionId, message } = reply;

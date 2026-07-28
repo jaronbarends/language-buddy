@@ -16,6 +16,25 @@ wired to the mock for all UI dev.
 
 ---
 
+## Postponed (decided, not built)
+
+### Turn counter / max-turns
+
+**Postponed:** 2026-07-27 — see decisions.md.
+Enforces the 2026-07-26 "AI always speaks last" rule once built. Until then, explicit user-triggered
+"End conversation" is the only way a v0 session ends. Related idea below (closing instruction for
+the AI's final turn) is part of the same mechanism, not a separate decision.
+
+### Per-error-type recovery (fatal vs retryable, Retry action)
+
+**Postponed:** 2026-07-27 — see decisions.md.
+v0 error recovery is end-session-only, implemented via a dedicated `END_SESSION` action (see
+decisions.md, "Error recovery implemented"). No Retry action, no fatal/retryable
+differentiation. Deferred rather than built against a guess of which errors are actually
+transient.
+
+---
+
 ## Ideas to be decided upon
 
 - countdown for time remaining to speak
