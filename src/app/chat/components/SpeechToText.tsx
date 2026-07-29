@@ -20,6 +20,9 @@ export default function SpeechToText({
 }: SpeechToTextProps) {
   const recognitionRef = useRef<SpeechRecognition>(null);
   const recognitionShouldBeActiveRef = useRef<boolean>(false);
+  // ref to ensure same object across recreated event handlers
+  // always update ref before setSpeechResults
+  const speechResultsRef = useRef<SpeechRecognitionAlternative[]>([]);
   const [speechResults, setSpeechResults] = useState<SpeechRecognitionAlternative[]>([]);
 
   useEffect(() => {
@@ -47,17 +50,6 @@ export default function SpeechToText({
     </div>
   );
 
-  function startListening() {
-    console.log('recognition.start()');
-    recognitionRef.current?.start();
-  }
-
-  function stopListening() {
-    console.log('recognition.stop()');
-    recognitionShouldBeActiveRef.current = false;
-    recognitionRef.current?.stop();
-  }
-
   function initSpeechRecognition(languageTag: string): SpeechRecognition {
     const CrossBrowserSpeechRecognition =
       window.SpeechRecognition ?? window.webkitSpeechRecognition;
@@ -66,7 +58,6 @@ export default function SpeechToText({
       throw new Error('Speech recognition is not supported in this browser');
     }
     const recognition = new CrossBrowserSpeechRecognition();
-    console.log('tag:', languageTag);
 
     recognition.continuous = true;
     recognition.lang = languageTag;
@@ -77,40 +68,76 @@ export default function SpeechToText({
     recognition.onend = handleEnd;
     // todo add additional listeners for feedback like soundStart
 
-    // handleResult may be called multiple times when user has pause
-    function handleResult(event: SpeechRecognitionEvent) {
-      // event.results is SpeechRecognitionResultList object representing all the speech recognition results for the current session.
-      // resultIndex is the lowest index that is actually changes.
-      // each SpeechRecognitionResult can contain multiple SpeechRecognitionAlternative objects (we have set that to 1 with recognition.maxAlternatives)
-      // SpeechRecognitionResult is no array, but can be queried with [index]
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const result = event.results[i];
-        if (!result.isFinal) continue; // not necessary when interimResults=false, but keep it in case we change that
-
-        addSpeechResult(result[0]);
-      }
-    }
-
-    function addSpeechResult(result: SpeechRecognitionAlternative) {
-      if (!result.transcript) {
-        // when you say only one short word, it gives empty transcript.
-        return;
-      }
-      setSpeechResults((prev) => [...prev, result]);
-    }
-
-    function handleEnd() {
-      // speechRecognition auto-ends after a short pause by user
-      // if that happens, start it again.
-      // recognition.continuous = true ensures we capture all the results
-      if (recognitionShouldBeActiveRef.current) {
-        console.log('prevent end');
-        recognition.start(); // end was triggered by silence timeout, not wanted
-      } else {
-        console.log('really end - recognition service has disconnected');
-      }
-    }
-
     return recognition;
+  }
+
+  function startListening() {
+    console.log('recognition.start()');
+    recognitionRef.current?.start();
+  }
+
+  function stopListening() {
+    console.log('recognition.stop()');
+    recognitionShouldBeActiveRef.current = false;
+    recognitionRef.current?.stop();
+    // we don't have the final result here yet. we have that when onend fires
+  }
+
+  // handleResult may be called multiple times when user has pause
+  function handleResult(event: SpeechRecognitionEvent) {
+    // event.results is SpeechRecognitionResultList object representing all the speech recognition results for the current session.
+    // resultIndex is the lowest index that is actually changes.
+    // each SpeechRecognitionResult can contain multiple SpeechRecognitionAlternative objects (we have set that to 1 with recognition.maxAlternatives)
+    // SpeechRecognitionResult is no array, but can be queried with [index]
+    console.log('handleResult');
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const result = event.results[i];
+      if (!result.isFinal) continue; // not necessary when interimResults=false, but keep it in case we change that
+
+      addSpeechResult(result[0]);
+    }
+  }
+
+  function handleEnd() {
+    // speechRecognition auto-ends after a short pause by user
+    // if that happens, start it again.
+    // recognition.continuous = true ensures we capture all the results
+    if (recognitionShouldBeActiveRef.current) {
+      console.log('prevent end');
+      recognitionRef.current?.start(); // end was triggered by silence timeout, not wanted
+    } else {
+      console.log('really end - recognition service has disconnected');
+      const fullTranscript = createFullTranscript();
+      onTranscriptCreated(fullTranscript);
+    }
+  }
+
+  function addSpeechResult(result: SpeechRecognitionAlternative) {
+    if (!result.transcript) {
+      // when you say only one short word, it gives empty transcript.
+      return;
+    }
+    setSpeechResultsByRef(result);
+  }
+
+  function createFullTranscript(): string {
+    const results = speechResultsRef.current;
+    if (results.length === 0) {
+      return '';
+    }
+    const transcripts: string[] = results.map((result) => result.transcript);
+    const fullTranscript = transcripts.join(' ');
+    return fullTranscript;
+  }
+
+  /*
+  recognition's event handlers are only assigned once.
+  If those functions refer to speechResult, that closes over the snapshot of speechResult at the time the function was created.
+  On subsequent renders, speechResult points to a different snapshot.
+  Using a ref avoids that problem: .current is always the live, current value, no matter which render's closure reads it. Unlike speechResults, which is frozen at whichever render created the closure.
+  */
+  function setSpeechResultsByRef(result: SpeechRecognitionAlternative) {
+    speechResultsRef.current = [...speechResultsRef.current, result];
+    setSpeechResults(speechResultsRef.current);
   }
 }

@@ -24,7 +24,6 @@ export default function ChatClient({ chatConfig }: ChatClientProps) {
   const [state, dispatch] = useReducer(chatReducer, initalChatState);
   const abortControllerRef = useRef<AbortController | undefined>(undefined);
 
-  console.log('language:', language);
   useEffect(() => {
     if (state.phase.status !== 'aiTurnSpeaking') {
       return;
@@ -85,6 +84,7 @@ export default function ChatClient({ chatConfig }: ChatClientProps) {
   }
 
   function handleTranscriptCreated(transcript: string) {
+    console.log('handleCreated transcript:', transcript);
     dispatch({ type: 'TRANSCRIPT_CREATED', payload: { transcript } });
     console.log('handle transcript created');
   }
@@ -116,24 +116,26 @@ export default function ChatClient({ chatConfig }: ChatClientProps) {
   }
 
   function startChatWithUser() {
-    console.log('start chat with user');
     dispatch({ type: 'START_CHAT_WITH_USER' });
   }
 
   function startListening() {
     dispatch({ type: 'START_LISTENING' });
-    // create speech thing here
   }
 
   async function handleSendUserMessage() {
     // stop listening; parse results
-    const defaultInput = 'tell me more about the city you just mentioned';
-    const mockTTS = document.getElementById('mockTTS');
-    const mockTTSValue = mockTTS?.value;
-    const input = mockTTSValue || defaultInput;
-    if (mockTTS) {
-      mockTTS.value = '';
+    // const defaultInput = 'tell me more about the city you just mentioned';
+    // const mockTTS = document.getElementById('mockTTS');
+    // const mockTTSValue = mockTTS?.value;
+    // const input = mockTTSValue || defaultInput;
+    // if (mockTTS) {
+    //   mockTTS.value = '';
+    // }
+    if (state.phase.status !== 'readyForSendingUserReply') {
+      return;
     }
+    const input = state.phase.transcript;
 
     dispatch({ type: 'USER_MESSAGE_SENT', payload: { message: input } });
     abortControllerRef.current = new AbortController();

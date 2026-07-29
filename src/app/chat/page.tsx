@@ -5,9 +5,13 @@ import { scenarios } from '@/lib/scenarios';
 import ChatClient from './components/ChatClient';
 
 export default function ChatPage() {
+  // const language: Language = {
+  //   name: 'Norwegian (Bokmål)',
+  //   languageTag: 'nb-NO',
+  // };
   const language: Language = {
-    name: 'Norwegian (Bokmål)',
-    languageTag: 'nb-NO',
+    name: 'Nederlands',
+    languageTag: 'nl-NL',
   };
   const scenario = scenarios[0];
   const chatConfig = getChatConfig(language, scenario);

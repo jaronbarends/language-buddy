@@ -131,6 +131,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
     case 'listeningStopped':
       switch (action.type) {
         case 'TRANSCRIPT_CREATED':
+          console.log('action.payload.transcript:', action.payload.transcript);
           return {
             threadItems: state.threadItems,
             phase: { status: 'readyForSendingUserReply', transcript: action.payload.transcript },
