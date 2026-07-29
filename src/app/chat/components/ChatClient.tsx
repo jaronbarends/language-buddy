@@ -5,7 +5,6 @@ import { useReducer, useState, useRef, useEffect } from 'react';
 import { chatReducer, type ChatState } from '@/app/chat/chatReducer';
 import ControlsArea from '@/app/chat/components/ControlsArea';
 import ErrorArea from '@/app/chat/components/ErrorArea';
-import MockTTS from '@/app/chat/components/MockTTS';
 import SpeechToText from '@/app/chat/components/SpeechToText';
 import ThreadView from '@/app/chat/components/ThreadView';
 import { sendChatMessage, type AIChatResult } from '@/lib/aiService';
@@ -36,7 +35,6 @@ export default function ChatClient({ chatConfig }: ChatClientProps) {
       <div className={styles.component}>
         <ThreadView threadItems={state.threadItems} />
         <ErrorArea phase={state.phase} />
-        <MockTTS phase={state.phase} />
         <SpeechToText
           phase={state.phase}
           onTranscriptCreated={handleTranscriptCreated}
@@ -84,9 +82,10 @@ export default function ChatClient({ chatConfig }: ChatClientProps) {
   }
 
   function handleTranscriptCreated(transcript: string) {
-    console.log('handleCreated transcript:', transcript);
+    if (transcript === '') {
+      dispatch({ type: 'TRANSCRIPT_EMPTY' });
+    }
     dispatch({ type: 'TRANSCRIPT_CREATED', payload: { transcript } });
-    console.log('handle transcript created');
   }
 
   function handleError() {
@@ -124,14 +123,6 @@ export default function ChatClient({ chatConfig }: ChatClientProps) {
   }
 
   async function handleSendUserMessage() {
-    // stop listening; parse results
-    // const defaultInput = 'tell me more about the city you just mentioned';
-    // const mockTTS = document.getElementById('mockTTS');
-    // const mockTTSValue = mockTTS?.value;
-    // const input = mockTTSValue || defaultInput;
-    // if (mockTTS) {
-    //   mockTTS.value = '';
-    // }
     if (state.phase.status !== 'readyForSendingUserReply') {
       return;
     }

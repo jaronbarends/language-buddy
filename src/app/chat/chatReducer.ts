@@ -33,6 +33,7 @@ export type ChatAction =
   | { type: 'STOP_LISTENING' }
   | { type: 'LISTENING_TIMED_OUT' }
   | { type: 'TRANSCRIPT_CREATED'; payload: { transcript: string } }
+  | { type: 'TRANSCRIPT_EMPTY' }
   | { type: 'USER_MESSAGE_SENT'; payload: { message: string } }
   | { type: 'END_SESSION' }
   | { type: 'ERROR'; payload: { error: AIChatError } };
@@ -135,6 +136,11 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
           return {
             threadItems: state.threadItems,
             phase: { status: 'readyForSendingUserReply', transcript: action.payload.transcript },
+          };
+        case 'TRANSCRIPT_EMPTY':
+          return {
+            threadItems: state.threadItems,
+            phase: { status: 'readyForUserReply' },
           };
         default:
           return state;

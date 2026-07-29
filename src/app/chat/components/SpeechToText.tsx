@@ -1,6 +1,8 @@
+import 'dotenv/config';
 import { useEffect, useRef, useState } from 'react';
 
 import { type ChatPhase } from '@/app/chat/chatReducer';
+import MockSTT, { type MockSTTHandle } from '@/app/chat/components/MockSTT';
 import SpeechResults from '@/app/chat/components/SpeechResults';
 
 import styles from './SpeechToText.module.css';
@@ -11,6 +13,8 @@ type SpeechToTextProps = {
   onError: () => void;
   languageTag: string;
 };
+
+const shouldShowMockSTT = process.env.NEXT_PUBLIC_USE_MOCK_STT === 'true';
 
 export default function SpeechToText({
   phase,
@@ -24,6 +28,7 @@ export default function SpeechToText({
   // always update ref before setSpeechResults
   const speechResultsRef = useRef<SpeechRecognitionAlternative[]>([]);
   const [speechResults, setSpeechResults] = useState<SpeechRecognitionAlternative[]>([]);
+  const mockRef = useRef<MockSTTHandle>(null);
 
   useEffect(() => {
     recognitionRef.current = initSpeechRecognition(languageTag);
@@ -43,10 +48,18 @@ export default function SpeechToText({
     stopListening();
   }, [phase]);
 
+  useEffect(() => {
+    if (phase.status !== 'waitingForAI') {
+      return;
+    }
+    clearSpeechResultsByRef();
+  }, [phase]);
+
   return (
     <div className={styles.speechToText}>
-      <SpeechResults speechResults={speechResults} />
+      <SpeechResults speechResults={speechResults} phase={phase} />
       {/* <div className={styles.feedback}>listening...</div> */}
+      {shouldShowMockSTT && <MockSTT ref={mockRef} phase={phase} />}
     </div>
   );
 
@@ -72,12 +85,12 @@ export default function SpeechToText({
   }
 
   function startListening() {
-    console.log('recognition.start()');
+    recognitionShouldBeActiveRef.current = true;
     recognitionRef.current?.start();
+    console.log('recognitionShouldBeActiveRef.current:', recognitionShouldBeActiveRef.current);
   }
 
   function stopListening() {
-    console.log('recognition.stop()');
     recognitionShouldBeActiveRef.current = false;
     recognitionRef.current?.stop();
     // we don't have the final result here yet. we have that when onend fires
@@ -89,7 +102,6 @@ export default function SpeechToText({
     // resultIndex is the lowest index that is actually changes.
     // each SpeechRecognitionResult can contain multiple SpeechRecognitionAlternative objects (we have set that to 1 with recognition.maxAlternatives)
     // SpeechRecognitionResult is no array, but can be queried with [index]
-    console.log('handleResult');
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const result = event.results[i];
       if (!result.isFinal) continue; // not necessary when interimResults=false, but keep it in case we change that
@@ -99,15 +111,16 @@ export default function SpeechToText({
   }
 
   function handleEnd() {
-    // speechRecognition auto-ends after a short pause by user
+    // speechRecognition auto-ends after a long pause by user
     // if that happens, start it again.
-    // recognition.continuous = true ensures we capture all the results
+    // recognition.continuous = true prevents onend to fire on short pauses, and that we capture all the results
     if (recognitionShouldBeActiveRef.current) {
-      console.log('prevent end');
       recognitionRef.current?.start(); // end was triggered by silence timeout, not wanted
     } else {
-      console.log('really end - recognition service has disconnected');
-      const fullTranscript = createFullTranscript();
+      let fullTranscript = createFullTranscript();
+      if (fullTranscript === '') {
+        fullTranscript = mockRef.current?.getMockValue() ?? '';
+      }
       onTranscriptCreated(fullTranscript);
     }
   }
@@ -138,6 +151,11 @@ export default function SpeechToText({
   */
   function setSpeechResultsByRef(result: SpeechRecognitionAlternative) {
     speechResultsRef.current = [...speechResultsRef.current, result];
+    setSpeechResults(speechResultsRef.current);
+  }
+
+  function clearSpeechResultsByRef() {
+    speechResultsRef.current = [];
     setSpeechResults(speechResultsRef.current);
   }
 }
