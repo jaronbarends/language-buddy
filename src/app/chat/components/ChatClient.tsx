@@ -73,7 +73,6 @@ export default function ChatClient({ chatConfig }: ChatClientProps) {
   }
 
   function handleStopListening() {
-    console.log('dispatch stop');
     dispatch({ type: 'STOP_LISTENING' });
   }
 

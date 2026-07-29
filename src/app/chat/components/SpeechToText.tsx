@@ -1,4 +1,4 @@
-import 'dotenv/config';
+// import 'dotenv/config';
 import { useEffect, useRef, useState } from 'react';
 
 import { type ChatPhase } from '@/app/chat/chatReducer';
@@ -25,9 +25,7 @@ export default function SpeechToText({
   const recognitionRef = useRef<SpeechRecognition>(null);
   const recognitionShouldBeActiveRef = useRef<boolean>(false);
   // ref to ensure same object across recreated event handlers
-  // always update ref before setSpeechResults
-  const speechResultsRef = useRef<SpeechRecognitionAlternative[]>([]);
-  const [speechResults, setSpeechResults] = useState<SpeechRecognitionAlternative[]>([]);
+  // always update ref before setting liveTranscript
   const liveTranscriptRef = useRef<string>('');
   const [liveTranscript, setLiveTranscript] = useState<string>('');
   const mockRef = useRef<MockSTTHandle>(null);
@@ -54,7 +52,6 @@ export default function SpeechToText({
     if (phase.status !== 'waitingForAI') {
       return;
     }
-    clearSpeechResultsByRef();
     setLiveTranscriptByRef('');
   }, [phase]);
 
@@ -100,30 +97,19 @@ export default function SpeechToText({
 
   // handleResult may be called multiple times when user has pause
   function handleResult(event: SpeechRecognitionEvent) {
-    console.log('handleResult');
     // event.results is SpeechRecognitionResultList object representing all the speech recognition results for the current session.
-    // resultIndex is the lowest index that is actually changes.
-    // each SpeechRecognitionResult can contain multiple SpeechRecognitionAlternative objects (we have set that to 1 with recognition.maxAlternatives)
+    // each SpeechRecognitionResult can contain multiple SpeechRecognitionAlternative objects, but we have set that to 1 with recognition.maxAlternatives
     // SpeechRecognitionResult is no array, but can be queried with [index]
-    for (let i = event.resultIndex; i < event.results.length; i++) {
-      const result = event.results[i];
-      // console.log(i, result);
-      if (!result.isFinal) continue; // not necessary when interimResults=false, but keep it in case we change that
-
-      addSpeechResult(result[0]);
-    }
-
-    const transcript = [...event.results]
-      .map((result: SpeechRecognitionResult) => {
+    const resultsArray = [...event.results];
+    const transcript = resultsArray
+      .map((result) => {
         return result[0].transcript;
       })
       .join('');
-    console.log(transcript);
     setLiveTranscriptByRef(transcript);
   }
 
   function handleEnd() {
-    console.log('handleEnd');
     // speechRecognition auto-ends after a long pause by user
     // if that happens, start it again.
     // recognition.continuous = true prevents onend to fire on short pauses, and that we capture all the results
@@ -138,40 +124,12 @@ export default function SpeechToText({
     }
   }
 
-  function addSpeechResult(result: SpeechRecognitionAlternative) {
-    if (!result.transcript) {
-      // when you say only one short word, it gives empty transcript.
-      return;
-    }
-    setSpeechResultsByRef(result);
-  }
-
-  function createFullTranscript(): string {
-    const results = speechResultsRef.current;
-    if (results.length === 0) {
-      return '';
-    }
-    const transcripts: string[] = results.map((result) => result.transcript);
-    const fullTranscript = transcripts.join(' ');
-    return fullTranscript;
-  }
-
   /*
   recognition's event handlers are only assigned once.
-  If those functions refer to speechResult, that closes over the snapshot of speechResult at the time the function was created.
-  On subsequent renders, speechResult points to a different snapshot.
-  Using a ref avoids that problem: .current is always the live, current value, no matter which render's closure reads it. Unlike speechResults, which is frozen at whichever render created the closure.
+  If those functions refer to liveTranscript, that closes over the snapshot of liveTranscript at the time the function was created.
+  On subsequent renders, liveTranscript points to a different snapshot.
+  Using a ref avoids that problem: .current is always the live, current value, no matter which render's closure reads it. Unlike liveTranscript, which is frozen at whichever render created the closure.
   */
-  function setSpeechResultsByRef(result: SpeechRecognitionAlternative) {
-    speechResultsRef.current = [...speechResultsRef.current, result];
-    setSpeechResults(speechResultsRef.current);
-  }
-
-  function clearSpeechResultsByRef() {
-    speechResultsRef.current = [];
-    setSpeechResults(speechResultsRef.current);
-  }
-
   function setLiveTranscriptByRef(transcript: string) {
     liveTranscriptRef.current = transcript;
     setLiveTranscript(liveTranscriptRef.current);
