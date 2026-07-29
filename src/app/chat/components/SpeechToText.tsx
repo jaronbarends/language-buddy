@@ -28,6 +28,8 @@ export default function SpeechToText({
   // always update ref before setSpeechResults
   const speechResultsRef = useRef<SpeechRecognitionAlternative[]>([]);
   const [speechResults, setSpeechResults] = useState<SpeechRecognitionAlternative[]>([]);
+  const liveTranscriptRef = useRef<string>('');
+  const [liveTranscript, setLiveTranscript] = useState<string>('');
   const mockRef = useRef<MockSTTHandle>(null);
 
   useEffect(() => {
@@ -53,11 +55,12 @@ export default function SpeechToText({
       return;
     }
     clearSpeechResultsByRef();
+    setLiveTranscriptByRef('');
   }, [phase]);
 
   return (
     <div className={styles.speechToText}>
-      <SpeechResults speechResults={speechResults} phase={phase} />
+      <SpeechResults liveTranscript={liveTranscript} phase={phase} />
       {/* <div className={styles.feedback}>listening...</div> */}
       {shouldShowMockSTT && <MockSTT ref={mockRef} phase={phase} />}
     </div>
@@ -74,7 +77,7 @@ export default function SpeechToText({
 
     recognition.continuous = true;
     recognition.lang = languageTag;
-    recognition.interimResults = false;
+    recognition.interimResults = true;
     recognition.maxAlternatives = 1;
 
     recognition.onresult = handleResult;
@@ -87,7 +90,6 @@ export default function SpeechToText({
   function startListening() {
     recognitionShouldBeActiveRef.current = true;
     recognitionRef.current?.start();
-    console.log('recognitionShouldBeActiveRef.current:', recognitionShouldBeActiveRef.current);
   }
 
   function stopListening() {
@@ -98,30 +100,41 @@ export default function SpeechToText({
 
   // handleResult may be called multiple times when user has pause
   function handleResult(event: SpeechRecognitionEvent) {
+    console.log('handleResult');
     // event.results is SpeechRecognitionResultList object representing all the speech recognition results for the current session.
     // resultIndex is the lowest index that is actually changes.
     // each SpeechRecognitionResult can contain multiple SpeechRecognitionAlternative objects (we have set that to 1 with recognition.maxAlternatives)
     // SpeechRecognitionResult is no array, but can be queried with [index]
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const result = event.results[i];
+      // console.log(i, result);
       if (!result.isFinal) continue; // not necessary when interimResults=false, but keep it in case we change that
 
       addSpeechResult(result[0]);
     }
+
+    const transcript = [...event.results]
+      .map((result: SpeechRecognitionResult) => {
+        return result[0].transcript;
+      })
+      .join('');
+    console.log(transcript);
+    setLiveTranscriptByRef(transcript);
   }
 
   function handleEnd() {
+    console.log('handleEnd');
     // speechRecognition auto-ends after a long pause by user
     // if that happens, start it again.
     // recognition.continuous = true prevents onend to fire on short pauses, and that we capture all the results
     if (recognitionShouldBeActiveRef.current) {
       recognitionRef.current?.start(); // end was triggered by silence timeout, not wanted
     } else {
-      let fullTranscript = createFullTranscript();
-      if (fullTranscript === '') {
-        fullTranscript = mockRef.current?.getMockValue() ?? '';
+      let transcript = liveTranscriptRef.current;
+      if (transcript === '') {
+        transcript = mockRef.current?.getMockValue() ?? '';
       }
-      onTranscriptCreated(fullTranscript);
+      onTranscriptCreated(transcript);
     }
   }
 
@@ -157,5 +170,10 @@ export default function SpeechToText({
   function clearSpeechResultsByRef() {
     speechResultsRef.current = [];
     setSpeechResults(speechResultsRef.current);
+  }
+
+  function setLiveTranscriptByRef(transcript: string) {
+    liveTranscriptRef.current = transcript;
+    setLiveTranscript(liveTranscriptRef.current);
   }
 }
