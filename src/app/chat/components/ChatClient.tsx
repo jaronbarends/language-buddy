@@ -3,15 +3,13 @@
 import { useReducer, useState, useRef, useEffect } from 'react';
 
 import { chatReducer, type ChatState } from '@/app/chat/chatReducer';
+import ControlsArea from '@/app/chat/components/ControlsArea';
+import ErrorArea from '@/app/chat/components/ErrorArea';
+import MockTTS from '@/app/chat/components/MockTTS';
+import SpeechToText from '@/app/chat/components/SpeechToText';
+import ThreadView from '@/app/chat/components/ThreadView';
 import { sendChatMessage, type AIChatResult } from '@/lib/aiService';
 import { type ChatConfig } from '@/lib/chatConfig';
-import { type SpeechTranscript } from '@/lib/speechTranscript';
-
-import ControlsArea from './ControlsArea';
-import ErrorArea from './ErrorArea';
-import MockTTS from './MockTTS';
-import SpeechToText from './SpeechToText';
-import ThreadView from './ThreadView';
 
 import styles from './ChatClient.module.css';
 
@@ -26,6 +24,7 @@ export default function ChatClient({ chatConfig }: ChatClientProps) {
   const [state, dispatch] = useReducer(chatReducer, initalChatState);
   const abortControllerRef = useRef<AbortController | undefined>(undefined);
 
+  console.log('language:', language);
   useEffect(() => {
     if (state.phase.status !== 'aiTurnSpeaking') {
       return;
@@ -77,6 +76,7 @@ export default function ChatClient({ chatConfig }: ChatClientProps) {
   }
 
   function handleStopListening() {
+    console.log('dispatch stop');
     dispatch({ type: 'STOP_LISTENING' });
   }
 
@@ -84,7 +84,7 @@ export default function ChatClient({ chatConfig }: ChatClientProps) {
     dispatch({ type: 'END_SESSION' });
   }
 
-  function handleTranscriptCreated(transcript: SpeechTranscript) {
+  function handleTranscriptCreated(transcript: string) {
     dispatch({ type: 'TRANSCRIPT_CREATED', payload: { transcript } });
     console.log('handle transcript created');
   }

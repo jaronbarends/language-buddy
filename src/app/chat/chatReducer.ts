@@ -1,5 +1,4 @@
 import { type AIChatError } from '@/lib/aiService';
-import { type SpeechTranscript } from '@/lib/speechTranscript';
 
 export type ThreadItem = {
   message: string;
@@ -19,7 +18,7 @@ export type ChatPhase =
   | { status: 'readyForUserReply' }
   | { status: 'listening' }
   | { status: 'listeningStopped' }
-  | { status: 'readyForSendingUserReply'; transcript: SpeechTranscript }
+  | { status: 'readyForSendingUserReply'; transcript: string }
   | { status: 'listeningTimedOut' }
   | { status: 'ended' } // ended, need to get evaluation now. rename to waitingForEvaluation? Next step readyForNewChat?
   | { status: 'error'; error: AIChatError };
@@ -33,7 +32,7 @@ export type ChatAction =
   | { type: 'START_LISTENING' }
   | { type: 'STOP_LISTENING' }
   | { type: 'LISTENING_TIMED_OUT' }
-  | { type: 'TRANSCRIPT_CREATED'; payload: { transcript: SpeechTranscript } }
+  | { type: 'TRANSCRIPT_CREATED'; payload: { transcript: string } }
   | { type: 'USER_MESSAGE_SENT'; payload: { message: string } }
   | { type: 'END_SESSION' }
   | { type: 'ERROR'; payload: { error: AIChatError } };
@@ -121,14 +120,10 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       }
     case 'listening':
       switch (action.type) {
-        case 'USER_MESSAGE_SENT':
-          const newItem: ThreadItem = {
-            message: action.payload.message,
-            author: 'user',
-          };
+        case 'STOP_LISTENING':
           return {
-            threadItems: [...state.threadItems, newItem],
-            phase: { status: 'waitingForAI' },
+            threadItems: state.threadItems,
+            phase: { status: 'listeningStopped' },
           };
         default:
           return state;
@@ -146,6 +141,20 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
     case 'listeningTimedOut':
       switch (action.type) {
         // TODO
+        default:
+          return state;
+      }
+    case 'readyForSendingUserReply':
+      switch (action.type) {
+        case 'USER_MESSAGE_SENT':
+          const newItem: ThreadItem = {
+            message: action.payload.message,
+            author: 'user',
+          };
+          return {
+            threadItems: [...state.threadItems, newItem],
+            phase: { status: 'waitingForAI' },
+          };
         default:
           return state;
       }

@@ -10,6 +10,7 @@ export type ChatConfig = {
 };
 
 export function getChatConfig(language: Language, scenario: Scenario): ChatConfig {
+  console.log('language in conf:', language);
   if (!isValidLanguageTag(language.languageTag)) {
     throw new Error(
       `Language tag ${language.languageTag} is not valid. Should look like 'en' or 'en-US'`
@@ -27,6 +28,10 @@ export function getChatConfig(language: Language, scenario: Scenario): ChatConfi
 
 function isValidLanguageTag(languageTag: string) {
   // regex simplified for my use case. 2 lowercase letters, optionally followed by dash + 2 uppercase letters. Mostly to catch use of underscore.
-  const regex = /[a-z]{2}(?:-[A-Z]{2})?/;
+  if (typeof languageTag !== 'string') {
+    // regex.test calls String() on its argument, possibly leading to unexpected results (e.g. when languageTag is undefined)
+    return false;
+  }
+  const regex = /^[a-z]{2}(?:-[A-Z]{2})?$/;
   return regex.test(languageTag);
 }

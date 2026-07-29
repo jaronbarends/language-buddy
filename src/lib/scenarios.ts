@@ -10,6 +10,6 @@ export const scenarios: Scenario[] = [
   {
     title: 'Placeholder scenario',
     instruction: '', // scenario content here
-    aiHasFirstTurn: true,
+    aiHasFirstTurn: false,
   },
 ];

@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { type ChatPhase } from '@/app/chat/chatReducer';
-import { SpeechTranscript } from '@/lib/speechTranscript';
+import SpeechResults from '@/app/chat/components/SpeechResults';
 
 import styles from './SpeechToText.module.css';
 
 type SpeechToTextProps = {
   phase: ChatPhase;
-  onTranscriptCreated: (transcript: SpeechTranscript) => void;
+  onTranscriptCreated: (transcript: string) => void;
   onError: () => void;
   languageTag: string;
 };
@@ -20,7 +20,7 @@ export default function SpeechToText({
 }: SpeechToTextProps) {
   const recognitionRef = useRef<SpeechRecognition>(null);
   const recognitionShouldBeActiveRef = useRef<boolean>(false);
-  const [transcripts, setTranscripts] = useState<SpeechTranscript[]>([]);
+  const [speechResults, setSpeechResults] = useState<SpeechRecognitionAlternative[]>([]);
 
   useEffect(() => {
     recognitionRef.current = initSpeechRecognition(languageTag);
@@ -42,17 +42,20 @@ export default function SpeechToText({
 
   return (
     <div className={styles.speechToText}>
-      <div className={styles.transcript}>transcript</div>
+      <SpeechResults speechResults={speechResults} />
       {/* <div className={styles.feedback}>listening...</div> */}
     </div>
   );
 
   function startListening() {
-    console.log('recognition init + start()');
+    console.log('recognition.start()');
+    recognitionRef.current?.start();
   }
 
   function stopListening() {
     console.log('recognition.stop()');
+    recognitionShouldBeActiveRef.current = false;
+    recognitionRef.current?.stop();
   }
 
   function initSpeechRecognition(languageTag: string): SpeechRecognition {
@@ -63,6 +66,7 @@ export default function SpeechToText({
       throw new Error('Speech recognition is not supported in this browser');
     }
     const recognition = new CrossBrowserSpeechRecognition();
+    console.log('tag:', languageTag);
 
     recognition.continuous = true;
     recognition.lang = languageTag;
@@ -75,13 +79,24 @@ export default function SpeechToText({
 
     // handleResult may be called multiple times when user has pause
     function handleResult(event: SpeechRecognitionEvent) {
+      // event.results is SpeechRecognitionResultList object representing all the speech recognition results for the current session.
+      // resultIndex is the lowest index that is actually changes.
+      // each SpeechRecognitionResult can contain multiple SpeechRecognitionAlternative objects (we have set that to 1 with recognition.maxAlternatives)
+      // SpeechRecognitionResult is no array, but can be queried with [index]
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
         if (!result.isFinal) continue; // not necessary when interimResults=false, but keep it in case we change that
 
-        // renderResult(result[0]);
-        // const transcript: SpeechTranscript =
+        addSpeechResult(result[0]);
       }
+    }
+
+    function addSpeechResult(result: SpeechRecognitionAlternative) {
+      if (!result.transcript) {
+        // when you say only one short word, it gives empty transcript.
+        return;
+      }
+      setSpeechResults((prev) => [...prev, result]);
     }
 
     function handleEnd() {
