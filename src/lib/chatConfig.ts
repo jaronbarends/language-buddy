@@ -10,7 +10,6 @@ export type ChatConfig = {
 };
 
 export function getChatConfig(language: Language, scenario: Scenario): ChatConfig {
-  console.log('language in conf:', language);
   if (!isValidLanguageTag(language.languageTag)) {
     throw new Error(
       `Language tag ${language.languageTag} is not valid. Should look like 'en' or 'en-US'`
