@@ -153,7 +153,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       }
     case 'readyForSendingUserReply':
       switch (action.type) {
-        case 'USER_MESSAGE_SENT':
+        case 'USER_MESSAGE_SENT': {
           const newItem: ThreadItem = {
             message: action.payload.message,
             author: 'user',
@@ -162,9 +162,11 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
             threadItems: [...state.threadItems, newItem],
             phase: { status: 'waitingForAI' },
           };
+        }
         default:
           return state;
       }
+
     case 'ended':
       switch (action.type) {
         case 'END_SESSION':

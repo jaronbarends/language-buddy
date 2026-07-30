@@ -766,7 +766,7 @@ transcript is still display-only and sent unedited; this only changes *when* tex
 
 **Date:** 2026-07-29
 **Decision:** `next.config.ts` sets `allowedDevOrigins: ['*.ngrok-free.app']`.
-**Rationale:** Next.js 15's dev server blocks cross-origin requests by default; this allowlists
+**Rationale:** Next.js's dev server blocks cross-origin requests by default; this allowlists
 requests tunneled through ngrok, needed to reach the local dev server from a device other than the
 machine running it (commit `f662a2f`, same day as the STT work this enables testing).
 **Status:** Done.

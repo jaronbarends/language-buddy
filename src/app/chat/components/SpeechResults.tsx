@@ -17,7 +17,7 @@ export default function SpeechResults({ liveTranscript, phase }: SpeechResultsPr
       <span>&hellip;</span>
     );
   return (
-    <div className={styles.results}>
+    <div className={styles.results} role="status" aria-live="polite" aria-atomic="true">
       {liveTranscript}
       {suffix}
     </div>

@@ -15,8 +15,6 @@
 
 #### v0 interaction/state model
 
-#### v0 interaction/state model
-
 - [ ] 9-state model implemented via useReducer + discriminated union (see decisions.md,
       2026-07-22 through 2026-07-27, for full state list and transitions — the original
       2026-07-22/07-23 model has since dropped `sending` and `initializing`). **Real STT wiring

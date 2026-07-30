@@ -1,2 +1,4 @@
 .speechToText {
+  border-top: 1px solid #ccc;
+  padding-top: var(--size-8);
 }
