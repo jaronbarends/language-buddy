@@ -20,7 +20,7 @@ export type ChatPhase =
   | { status: 'listeningStopped' }
   | { status: 'readyForSendingUserReply'; transcript: string }
   | { status: 'listeningTimedOut' }
-  | { status: 'ended' } // ended, need to get evaluation now.
+  | { status: 'chatEnded' } // ended, need to get evaluation now.
   | { status: 'error'; error: AIChatError };
 
 export type ChatAction =
@@ -42,11 +42,11 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
   if (
     action.type === 'STOP_CHAT' &&
     state.phase.status !== 'chatStartPending' &&
-    state.phase.status !== 'ended'
+    state.phase.status !== 'chatEnded'
   ) {
     return {
       threadItems: state.threadItems,
-      phase: { status: 'ended' },
+      phase: { status: 'chatEnded' },
     };
   }
 
@@ -165,7 +165,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         default:
           return state;
       }
-    case 'ended':
+    case 'chatEnded':
       switch (action.type) {
         default:
           return state;
@@ -202,11 +202,11 @@ export function canSendReply(phase: ChatPhase): boolean {
 
 export function canStopChat(phase: ChatPhase): boolean {
   const status = phase.status;
-  return status !== 'chatStartPending' && status !== 'ended';
+  return status !== 'chatStartPending' && status !== 'chatEnded';
 }
 
 export function chatHasEnded(phase: ChatPhase): boolean {
-  return phase.status === 'ended';
+  return phase.status === 'chatEnded';
 }
 
 export function hasError(phase: ChatPhase): boolean {

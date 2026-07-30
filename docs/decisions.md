@@ -866,6 +866,46 @@ once the Start action moves out of `ChatConversation` — flagged for removal, n
 **Rationale:** Reads more clearly now that "ending the session" (returning to `ChatSetup`) is no
 longer a reducer concern (see above) — `chatEnded` means only "this conversation is over," not "and
 now return to setup," which is a separate, component-level concern handled by `ChatContainer`.
+**Status:** Decided 2026-07-30 but not applied when the rest of the setup screen was implemented —
+`chatReducer.ts` still read `'ended'` throughout. Caught and applied while updating docs after the
+setup screen implementation landed (2026-07-30 session); confirmed via `tsc --noEmit` that no other
+file referenced the literal.
+
+---
+
+## Setup screen implemented (2026-07-30, same day as the design decisions above)
+
+**Decision:** The setup screen design decided earlier the same day (see all entries above under
+"Setup screen extraction & component restructuring") is now built, across three commits
+(`c1474b4` rename, `71c4a78` setup form + starter choice, `6a1be86` language picker):
+
+- `ChatContainer.tsx` — owns a `ContainerState` union (`{ status: 'setup' }` /
+  `{ status: 'conversation'; chatConfig }`) plus the currently-selected `Language`. Renders
+  `ChatSetup` or `ChatConversation` based on that union. `handleSessionEnd` (passed to
+  `ChatConversation` as the `onEndSession` prop — implemented under this name, not the
+  `onSessionEnd` name used while planning) resets state back to `{ status: 'setup' }`.
+- `ChatSetup.tsx` — form with a language fieldset (delegated to a new `LanguagePicker`
+  subcomponent, not called out in the original plan — extracted because the language radio group
+  has its own repeated markup-per-option, consistent with the project's "extract when JSX has its
+  own behavior" guideline) and an inline starter fieldset (`ai/user` radio pair, kept inline since
+  it's simple one-off JSX). Defaults: first entry of `supportedLanguages` and `starter: 'ai'`
+  pre-selected, per the 2026-07-30 "loads with pre-selected defaults" decision. On submit, resolves
+  the starter choice to `freeformChatWithAIStart`/`freeformChatWithUserStart`, builds `ChatConfig`
+  via `getChatConfig`, and calls `onStartSession(chatConfig)`.
+- `languages.ts` — `supportedLanguages: Language[]`, currently Dutch (`nl-NL`) and Norwegian Bokmål
+  (`nb-NO`), matching the planned list.
+- `chatReducer.ts` — `chatStartPending` and the `END_SESSION`-removal/`onSessionEnd`-prop-call
+  design are in place as planned. `canStartChat` (flagged as dead code to remove once Start moved
+  out of `ChatConversation`) is already gone. The `chatEnded` rename was the one planned item not
+  yet applied — see the entry directly above.
+
+**Note on `Language.locale` → `Language.languageTag`:** status.md previously described `Language` as
+`{ name, locale }`. The actual field has been `languageTag` (a BCP 47 tag, e.g. `nb-NO`) since commit
+`2738e0d`, predating this setup-screen work — a stale doc reference caught in passing while
+verifying the setup screen against the code, not a change made now.
+
+**Status:** Done. Setup screen is live: `chat/page.tsx` → `ChatContainer` → `ChatSetup` ⇄
+`ChatConversation`.
 
 ### Start-of-chat trigger moves to a mount effect; `readyForNewChat` renamed to `chatStartPending`
 
