@@ -12,6 +12,10 @@
 - [ ] Session ends via max-turn limit or explicit user action ("End conversation")
 - [ ] Async structured evaluation after session ends: grammar, vocabulary upgrades, semantic nuance
 - [ ] Session state is in-memory only for MVP — no persistence across refresh/tab close/return visits
+- [ ] Setup screen before the conversation loop: pick language (from a limited, config-driven list)
+      and who starts (user or AI); "Start conversation" lives here, not in the conversation
+      component. v0 scope is "open chat" only — two explicit `Scenario` objects (user-starts /
+      AI-starts), not a scenario-array selector (see decisions.md, 2026-07-30)
 
 #### v0 interaction/state model
 
@@ -19,7 +23,9 @@
       2026-07-22 through 2026-07-27, for full state list and transitions — the original
       2026-07-22/07-23 model has since dropped `sending` and `initializing`). **Real STT wiring
       (2026-07-28) adds two further phases, `listeningStopped` and `readyForSendingUserReply` —
-      see decisions.md.**
+      see decisions.md.** **2026-07-30: `readyForNewChat` → `chatStartPending` and `ended` →
+      `chatEnded`; the `END_SESSION` action is removed — ending a session is a direct component
+      call, not a reducer action (see decisions.md).**
 - [ ] Error/retry, end-conversation-from-anywhere, and listening-timeout behaviors implemented per
       decisions.md
 - [ ] Hidden AI-opening instruction excluded from transcript and from future evaluation input
@@ -30,6 +36,10 @@
       enough that this is not needed (see decisions.md). **Addendum 2026-07-28:** transcript will
       be displayed read-only before send as STT is wired in — still no edit/review capability;
       see decisions.md.
+- [ ] Predefined-scenario-picks-its-own-starter setup mode ("mode 2") — the setup screen (see Core
+      features above) builds only the open-chat case for v0; a scenario that dictates its own
+      starter, selected from the growing `scenarios` array, is deferred (see decisions.md,
+      2026-07-30, and backlog.md).
 
 ### Resolved
 
@@ -44,6 +54,9 @@
       eventual target, generalized after v0 (see decisions.md, 2026-07-22).
 - [x] Evaluation feasibility: no spike needed — judged well-established LLM capability, not a
       behavioral unknown like Spike 1/2 (see decisions.md, 2026-07-22).
+- [x] Setup screen shape: language + starter selection, open-chat-only for v0, modeled as two
+      explicit `Scenario` objects rather than a new parameter or a `scenarios`-array selector (see
+      decisions.md, 2026-07-30).
 
 ### Open — pending further scoping
 
@@ -58,6 +71,7 @@
 
 - Persistence (session/evaluation survive refresh or return visit)
 - Rich/specific AI personas (generic friendly acquaintance only)
+- Predefined-scenario-picks-its-own-starter setup mode (see "Explicitly deferred" above)
 
 ---
 

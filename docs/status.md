@@ -6,9 +6,13 @@ partner, Norwegian, multi-turn sessions + async structured evaluation). MVP scop
 Spikes 1–4 all complete. AI provider decided (Gemini). State machine now runs the full happy path
 end-to-end against real STT input and the mock AI API, `STOP_CHAT` now ends the session from
 any phase, generic error recovery (end-session-only, via a dedicated `END_SESSION` action) is
-implemented, and empty-transcript input silently retries rather than sending/erroring. Next up:
-listening timeout, then wiring in real TTS and the real Gemini call — with a visual/UI design pass
-sequenced after that, before evaluation.
+implemented, and empty-transcript input silently retries rather than sending/erroring. A setup
+screen (language + who-starts selection before entering the conversation loop) has been spec'd out
+and is next up for implementation — see "What's decided" below; this brings a component rename
+(`ChatClient` → `ChatConversation`) and a scope change to `chatReducer` (ending a session no longer
+goes through the reducer). Next up: build the setup screen extraction, then listening timeout, then
+real TTS and the real Gemini call — with a visual/UI design pass sequenced after that, before
+evaluation.
 
 ---
 
@@ -28,13 +32,16 @@ sequenced after that, before evaluation.
   the original 2026-07-22/07-23 model, and the 2026-07-27 rename of `idle` to `readyForNewChat`
   (see decisions.md). Reducer covers the full happy-flow transitions (`readyForNewChat` →
   `readyForUserStart`/`waitingForAI` → `aiTurnSpeaking` → `readyForUserReply` → `listening` →
-  `waitingForAI` → ... → `ended`).
+  `waitingForAI` → ... → `ended`). **Not yet updated** for the 2026-07-30 decisions
+  (`readyForNewChat` → `chatStartPending`, `ended` → `chatEnded`, `END_SESSION` removal) — those are
+  spec'd but not yet implemented; see "What's open" and "Next step" below.
 - `ChatClient.tsx` (Client Component) owns the `useReducer` and drives the loop end-to-end against
   a single hardcoded scenario: sends the transcript from real STT (`SpeechToText.tsx`, see below)
   to `sendChatMessage`, dispatches on success/failure, and fires a stubbed `speakAIResponse` in
   place of real TTS. `previousInteractionId` is tracked in component state and threaded through
   each call, per Spike 3's finding that context (but not `systemInstruction`) carries over via
-  `previous_interaction_id`.
+  `previous_interaction_id`. **Slated for rename to `ChatConversation`** (see "What's decided"
+  below) — not yet done.
 - `ControlsArea.tsx` — derives primary-button label/handler from phase via `canStartChat` /
   `canStartWithUser` / `canStartReply` / `canSendReply` helpers in `chatReducer.ts`; "End
   conversation" button always rendered (dispatches `STOP_CHAT`, now handled from every reducer
@@ -44,7 +51,9 @@ sequenced after that, before evaluation.
   wired up: from `error`, the only available action is "End this session" (a dedicated
   `END_SESSION` action, distinct from `STOP_CHAT`), which resets straight to
   `readyForNewChat` with an empty thread. The ghost "End conversation" button is hidden
-  while in `error` (see decisions.md, 2026-07-27).
+  while in `error` (see decisions.md, 2026-07-27). **This mechanism is slated to change** —
+  `END_SESSION` is being removed from the reducer in favor of a direct prop call to
+  `ChatContainer` (see decisions.md, 2026-07-30) — not yet implemented.
 - `ThreadView.tsx` — renders `threadItems` from state, styled by author (`ai`/`user`).
 - **Real STT wired up** (`SpeechToText.tsx`), per the 2026-07-28 design: starts/stops Web Speech
   API recognition keyed off `phase` (`listening` → start, `listeningStopped` → stop). With
@@ -75,7 +84,9 @@ sequenced after that, before evaluation.
   `src/lib/chatConfig.ts`) built in `page.tsx` via `getChatConfig(language, scenario)`, replacing
   the previous hardcoded `systemInstruction`/`aiHasFirstTurn` consts. Scenario selection
   (`scenarios[0]`) and language now live in `page.tsx`; still a single placeholder scenario, not
-  the scenario library (see decisions.md, 2026-07-28).
+  the scenario library (see decisions.md, 2026-07-28). **This selection responsibility is moving
+  to the new `ChatSetup` component** (see below) — `page.tsx` will go back to being a pure wrapper
+  once that's built.
 
 ## What's decided
 
@@ -127,18 +138,14 @@ sequenced after that, before evaluation.
 - `listeningTimedOut` deferred to real STT work (2026-07-27) — timeout logic is meaningless against
   the current mock textarea; will be built alongside real STT integration rather than against a
   guessed shape (see decisions.md)
-- `idle` renamed to `readyForNewChat` (2026-07-27) — `idle` didn't convey that a new chat can be
-  started from this state; name now matches the `readyForUser*` pattern (see decisions.md)
+- `idle` renamed to `readyForNewChat` (2026-07-27) — superseded 2026-07-30, renamed again to
+  `chatStartPending` (see below)
 - `STOP_CHAT` now handled from every reducer phase (2026-07-27) — checked once before the
   phase-specific switch, transitioning straight to `ended` from any phase except `readyForNewChat`
   and `ended` itself (see decisions.md)
-- Error recovery for v0: end-session only, no Retry action (2026-07-27) — implemented via
-  a dedicated `END_SESSION` action (not `STOP_CHAT`, contrary to the same-day plan that
-  assumed the existing top-level handling would cover it — see decisions.md). From
-  `error`, the only action offered is "End this session", which resets to
-  `readyForNewChat` with an empty thread; the generic "End conversation" button is hidden
-  in this phase. Per-error-type differentiation (fatal vs retryable) deferred, not built
-  against a guess of which errors are actually transient (see decisions.md).
+- Error recovery for v0: end-session only, no Retry action (2026-07-27) — the _policy_ (no Retry,
+  no per-error-type differentiation) still stands; the _mechanism_ (`END_SESSION` action) is
+  superseded 2026-07-30 (see below)
 - **Visual/UI design pass sequenced after the core loop, before evaluation (2026-07-27)** —
   interaction design is still actively changing, so styling now risks rework; the core loop being
   functionally settled first gives a low-risk, demoable styling target. Only the _timing_ is
@@ -153,6 +160,23 @@ sequenced after that, before evaluation.
   dev fallback) both produce no transcript, the user is dropped back to `readyForUserReply` with
   no message sent and no error shown, rather than surfacing an empty send or a failure state (see
   decisions.md).
+- **Setup screen: `ChatContainer`/`ChatSetup` components, `ChatClient` renamed to
+  `ChatConversation` (2026-07-30)** — a new client component `ChatContainer` (rendered by
+  `chat/page.tsx`) owns whether to render `ChatSetup` (language + scenario radios, pre-selected
+  defaults, "Start conversation" button) or `ChatConversation`. v0 builds only the "open chat" case
+  (see decisions.md).
+- **Open chat = two explicit `Scenario` objects, not in the `scenarios` array (2026-07-30)** —
+  user-starts/AI-starts variants, imported directly by `ChatSetup`, reusing the existing
+  `Scenario` type and instruction text unchanged (see decisions.md).
+- **New `languages.ts` config file, separate from `language.ts`'s `Language` type (2026-07-30)**
+  (see decisions.md).
+- **`chatReducer` scope narrowed to conversation-only states; `END_SESSION` removed (2026-07-30)**
+  — ending a session and returning to `ChatSetup` is now a direct `onSessionEnd` prop call from
+  `ChatConversation` to `ChatContainer`, not a dispatched action. `ended` renamed to `chatEnded`
+  (see decisions.md).
+- **Start-of-chat trigger moves to a mount `useEffect`; `readyForNewChat` renamed to
+  `chatStartPending` (2026-07-30)** — needs a ref guard against React 19 StrictMode's dev-mode
+  double-invoked effects (see decisions.md).
 
 ## What's open
 
@@ -176,6 +200,13 @@ sequenced after that, before evaluation.
 - **Visual/UI design content** — tokens, layout, component styling, accessibility approach. Timing
   is decided (after the core loop, before evaluation); the actual design.md content doesn't exist
   yet.
+- **Setup screen extraction is spec'd but not implemented** — `ChatContainer`, `ChatSetup`,
+  `languages.ts`, and the two open-chat `Scenario` objects don't exist as files yet; `ChatClient`
+  hasn't been renamed to `ChatConversation`; `chatReducer.ts` still has `readyForNewChat`/`ended`/
+  `END_SESSION` rather than `chatStartPending`/`chatEnded`/the direct-prop-call approach (see
+  decisions.md, 2026-07-30, for the full decided shape).
+- **Predefined-scenario-picks-its-own-starter (open-chat "mode 2")** remains out of scope —
+  deliberately deferred alongside the setup-screen decision, tracked in backlog.md.
 
 ## Next step
 
@@ -194,14 +225,21 @@ sequenced after that, before evaluation.
    send, plus empty-transcript handling (`TRANSCRIPT_EMPTY`) and `MockSTT` as a dev-only fallback
    (see decisions.md, 2026-07-29). `listeningTimedOut` remains deferred (2026-07-27 decision) — the
    stop/send split was built specifically so timeout can reuse the same path later.
-7. Wire real TTS output, replacing the `speakAIResponse` console.log/setTimeout stub.
-8. Swap the mock AI implementation for the real `/api/ai/chat` route behind the same
+7. **Build the setup screen extraction** (2026-07-30 decisions, not yet implemented):
+   `languages.ts`, the two open-chat `Scenario` objects, `ChatSetup`, `ChatContainer`; rename
+   `ChatClient` → `ChatConversation`; update `chatReducer.ts` (`readyForNewChat` →
+   `chatStartPending`, `ended` → `chatEnded`, remove `END_SESSION`, remove dead `canStartChat`);
+   move the chat-start trigger into a mount `useEffect` with a StrictMode ref guard; wire
+   `ChatConversation`'s end-session handler to call `onSessionEnd` directly instead of dispatching.
+8. Wire real TTS output, replacing the `speakAIResponse` console.log/setTimeout stub.
+9. Swap the mock AI implementation for the real `/api/ai/chat` route behind the same
    `sendChatMessage`/`AIChatResult` signature.
-9. **Visual/UI design pass** on the now-functionally-complete conversation loop: define tokens,
-   layout, and accessibility approach; restyle `ThreadView`/`ControlsArea`/STT-and-error UI against
-   it (see decisions.md, 2026-07-27).
-10. Define core data structures (session state shape, transcript shape) consistent with the state
+10. **Visual/UI design pass** on the now-functionally-complete conversation loop: define tokens,
+    layout, and accessibility approach; restyle `ThreadView`/`ControlsArea`/STT-and-error UI against
+    it (see decisions.md, 2026-07-27).
+11. Define core data structures (session state shape, transcript shape) consistent with the state
     model — transcript must exclude the hidden opening instruction.
-11. Add evaluation as a second slice once the full v0 conversation loop (steps 4–9) is solid and
+12. Add evaluation as a second slice once the full v0 conversation loop (steps 4–10) is solid and
     styled.
-12. Revisit scenario count for v1, and turn counter / max-turns, once v0 exists.
+13. Revisit scenario count for v1, predefined-scenario-starter mode, and turn counter / max-turns,
+    once v0 exists.

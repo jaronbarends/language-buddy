@@ -4,6 +4,7 @@ import { useReducer, useState, useRef, useEffect } from 'react';
 
 import { chatReducer, type ChatState } from '@/app/chat/chatReducer';
 import ControlsArea from '@/app/chat/components/ControlsArea';
+import DevHelper from '@/app/chat/components/DevHelper';
 import ErrorArea from '@/app/chat/components/ErrorArea';
 import SpeechToText from '@/app/chat/components/SpeechToText';
 import ThreadView from '@/app/chat/components/ThreadView';
@@ -51,7 +52,7 @@ export default function ChatClient({ chatConfig }: ChatClientProps) {
           phase={state.phase}
         />
       </div>
-      <div className={styles.status}>status: {state.phase.status}</div>
+      <DevHelper phase={state.phase} />
     </>
   );
 
