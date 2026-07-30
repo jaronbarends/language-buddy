@@ -150,7 +150,7 @@ export default function ChatConversation({ chatConfig, onEndSession }: ChatConve
     dispatch({ type: 'AI_RESPONSE_RECEIVED', payload: { message } });
   }
 
-  function speakAIResponse(message) {
+  function speakAIResponse(message: string) {
     // speak ai response
     // use TTS finish event
     //console.log(`[SpeechToText's last utterance's end event fires]`);
