@@ -556,6 +556,8 @@ made; only the _timing_ is decided here.
 **Rationale:** `idle` didn't convey what the state actually means — that a new chat can be started
 from it. `readyForNewChat` states that explicitly, consistent with the existing `readyForUserStart`
 / `readyForUserReply` naming.
+**Status:** Superseded 2026-07-30 — renamed again to `chatStartPending`, reflecting the mount-effect
+trigger change. See "Setup screen extraction & component restructuring" below.
 
 ### `STOP_CHAT` handled from every reducer phase
 
@@ -630,9 +632,13 @@ terminal `ended` phase, which implies a normal, completed conversation now waiti
 evaluation — a different meaning than "this session errored out." Hiding the generic
 ghost "End conversation" button while in `error` avoids offering two differently-behaving
 end actions at once.
-**Status:** Done — implemented in `chatReducer.ts`, `ControlsArea.tsx`, `ChatClient.tsx`
-(`handleEndSession`), `ErrorArea.tsx`/`ErrorArea.module.css`. Retry and per-error-type
-differentiation remain deferred, unchanged from the decision above.
+**Status:** Superseded 2026-07-30 — the `END_SESSION` action is removed from the reducer
+entirely once `ChatSetup`/`ChatContainer` exist. Ending a session (from both `error` and
+the renamed `chatEnded` phase) is now a direct call from `ChatConversation` to an
+`onSessionEnd` prop owned by `ChatContainer`, not a dispatched action. The underlying
+_policy_ this entry established — end-session-only recovery, no Retry, no per-error-type
+differentiation — is unchanged; only the mechanism changed. See "Setup screen extraction
+& component restructuring" below.
 
 ### Scenario/chat config extracted into src/lib
 
@@ -745,7 +751,7 @@ post an empty message.
 **Decision:** `SpeechToText.tsx` sets `recognition.interimResults = true` (previously `false`).
 `handleResult` no longer accumulates only `isFinal` results into a `speechResultsRef` array
 joined with spaces (`addSpeechResult`/`createFullTranscript`, now removed); instead, on every
-`onresult` event it joins *all* current results (interim + final) into one string and stores it
+`onresult` event it joins _all_ current results (interim + final) into one string and stores it
 in a `liveTranscriptRef`/`liveTranscript` state pair. `handleEnd` reads `liveTranscriptRef.current`
 directly (falling back to `MockSTT` when empty, unchanged from the 2026-07-29 STT-integration
 decision above). `SpeechResults.tsx` renders `liveTranscript` as it updates, with a "Listening…"
@@ -759,7 +765,7 @@ captured in state by the time `onend` fires, regardless of whether a final `onre
 arrives. Showing the transcript live as a side effect is a secondary benefit, not the driving
 reason (commits `ee35bfe`, `5471717`, same day as the initial STT integration).
 **Status:** Done. Does not reverse the 2026-07-19 "no transcript review/edit step" decision — the
-transcript is still display-only and sent unedited; this only changes *when* text appears
+transcript is still display-only and sent unedited; this only changes _when_ text appears
 (live vs. only after `onend`), not whether the user can edit it.
 
 ### Dev config: allow ngrok origin for the Next.js dev server
@@ -770,3 +776,151 @@ transcript is still display-only and sent unedited; this only changes *when* tex
 requests tunneled through ngrok, needed to reach the local dev server from a device other than the
 machine running it (commit `f662a2f`, same day as the STT work this enables testing).
 **Status:** Done.
+
+---
+
+## Setup screen extraction & component restructuring (2026-07-30)
+
+### New `ChatContainer`/`ChatSetup` components; `ChatClient` renamed to `ChatConversation`
+
+**Date:** 2026-07-30
+**Decision:** `chat/page.tsx` stays a thin Server Component, now rendering a new client component
+`ChatContainer`. `ChatContainer` owns state deciding whether to render `ChatSetup` (a new form:
+language radios + scenario radios + "Start conversation" button) or `ChatConversation` — the
+component previously named `ChatClient`.
+**Rationale:** Need a place to pick language and who starts before entering the conversation loop —
+partly a real product need (this will need to exist eventually regardless), partly immediate dev
+convenience (switching languages/starters frequently during testing). Scope for v0: only the
+"freeform chat" case (user picks language + who starts) is built now. A second case — a predefined scenario
+that dictates its own starter — is out of scope for now; this doesn't reverse the "scenario library
+from the start" concept decision, it sequences it the same way the single-hardcoded-scenario v0
+decision (2026-07-22) already does.
+
+### Component rename: `ChatClient` → `ChatConversation`
+
+**Date:** 2026-07-30
+**Decision:** Rename `ChatClient` to `ChatConversation`.
+**Rationale:** `ChatClient` was originally named for the `'use client'` directive. With
+`ChatContainer` now also a `'use client'` component, "client" in `ChatClient` would ambiguously read
+as either "client-side" (the original meaning) or "client role" (as opposed to setup) — the same
+kind of silent naming drift already avoided elsewhere in this project (e.g. `idle` →
+`readyForNewChat`). Renamed rather than reassigning the existing name to a new meaning.
+
+### Freeform chat modeled as two explicit `Scenario` objects, not entries in the `scenarios` array
+
+**Date:** 2026-07-30
+**Decision:** Two `Scenario`-typed objects are defined for the freeform-chat case — one with
+`aiHasFirstTurn: false` (user starts), one with `aiHasFirstTurn: true` (AI starts) — reusing the
+existing instruction text unchanged. These are defined separately, outside the `scenarios` array,
+and imported directly by `ChatSetup`.
+**Rationale:** The `scenarios` array is meant to grow into a real scenario library, which won't map
+well onto a small fixed radio-button UI. Keeping the freeform-chat pair separate avoids conflating
+"modes" with "scenarios" in the same array, and avoids any signature change to `getChatConfig` or to
+`aiHasFirstTurn`'s placement on `Scenario` — "who starts" is expressed by which scenario object the
+user picks, reusing existing types and logic as-is.
+**Known gap, not solved now:** once real scenarios exist, nothing distinguishes "this is a
+freeform-chat mode entry" from "this is a real scenario" at the type level — flagged as a probable
+future need (e.g. a `category` field), not designed against yet.
+
+### New `languages.ts` config file, separate from the `language.ts` type
+
+**Date:** 2026-07-30
+**Decision:** The list of supported languages (starting with `nl-NL` and `nb-NO`) lives in a new
+`languages.ts` file, separate from `language.ts` (which continues to define the `Language` type
+only).
+**Rationale:** The list is config-like data, not a type definition — same reasoning already applied
+when `Language` was split out of `chatConfig.ts` on its own (2026-07-28).
+
+### `ChatSetup` loads with pre-selected defaults
+
+**Date:** 2026-07-30
+**Decision:** The language and scenario radio groups on `ChatSetup` load with a default option
+already selected, rather than requiring an explicit pick before "Start conversation" is enabled.
+**Rationale:** Matches actual dev usage — languages/starters get switched frequently during
+development, so Start should always be immediately clickable.
+
+### `chatReducer` scope narrowed to conversation-only states; `END_SESSION` action removed
+
+**Date:** 2026-07-30
+**Decision:** Ending a session and returning to `ChatSetup` is no longer modeled as a reducer
+action or phase. The `END_SESSION` action (added 2026-07-27 — see that entry above, now marked
+superseded) is removed from `ChatAction` and from the reducer's `chatEnded`/`error` cases entirely.
+Instead, `ChatConversation` calls an `onSessionEnd` prop (passed down from `ChatContainer`) directly
+from its end-session handler — no dispatch, no phase transition involved.
+**Rationale:** `chatReducer` should only describe the state of an in-progress conversation;
+"return to setup" is a decision about which component is mounted, owned by `ChatContainer`, not a
+conversation state. A `sessionEnded` phase (modeling this as a phase + a `ChatConversation` effect
+watching for it) was considered and rejected — it would route a transition through the reducer
+whose resulting state is never actually read, since the component unmounts right after.
+**Consequence:** `chatEnded` (see rename below) remains a real terminal phase, reached via
+`STOP_CHAT` mid-conversation or, once built, a turn limit — only the _action taken from that phase_
+changed, not the phase's existence. The end-session-only recovery policy from the 2026-07-27
+decision (no Retry, no per-error-type differentiation) is unchanged; only the mechanism is.
+**Known dead code, not yet removed:** `canStartChat` (in `chatReducer.ts`) has no remaining caller
+once the Start action moves out of `ChatConversation` — flagged for removal, not yet done.
+
+### `ended` renamed to `chatEnded`; no `sessionEnded` phase added
+
+**Date:** 2026-07-30
+**Decision:** The `ended` phase is renamed to `chatEnded`.
+**Rationale:** Reads more clearly now that "ending the session" (returning to `ChatSetup`) is no
+longer a reducer concern (see above) — `chatEnded` means only "this conversation is over," not "and
+now return to setup," which is a separate, component-level concern handled by `ChatContainer`.
+**Status:** Decided 2026-07-30 but not applied when the rest of the setup screen was implemented —
+`chatReducer.ts` still read `'ended'` throughout. Caught and applied while updating docs after the
+setup screen implementation landed (2026-07-30 session); confirmed via `tsc --noEmit` that no other
+file referenced the literal.
+
+---
+
+## Setup screen implemented (2026-07-30, same day as the design decisions above)
+
+**Decision:** The setup screen design decided earlier the same day (see all entries above under
+"Setup screen extraction & component restructuring") is now built, across three commits
+(`c1474b4` rename, `71c4a78` setup form + starter choice, `6a1be86` language picker):
+
+- `ChatContainer.tsx` — owns a `ContainerState` union (`{ status: 'setup' }` /
+  `{ status: 'conversation'; chatConfig }`) plus the currently-selected `Language`. Renders
+  `ChatSetup` or `ChatConversation` based on that union. `handleSessionEnd` (passed to
+  `ChatConversation` as the `onEndSession` prop — implemented under this name, not the
+  `onSessionEnd` name used while planning) resets state back to `{ status: 'setup' }`.
+- `ChatSetup.tsx` — form with a language fieldset (delegated to a new `LanguagePicker`
+  subcomponent, not called out in the original plan — extracted because the language radio group
+  has its own repeated markup-per-option, consistent with the project's "extract when JSX has its
+  own behavior" guideline) and an inline starter fieldset (`ai/user` radio pair, kept inline since
+  it's simple one-off JSX). Defaults: first entry of `supportedLanguages` and `starter: 'ai'`
+  pre-selected, per the 2026-07-30 "loads with pre-selected defaults" decision. On submit, resolves
+  the starter choice to `freeformChatWithAIStart`/`freeformChatWithUserStart`, builds `ChatConfig`
+  via `getChatConfig`, and calls `onStartSession(chatConfig)`.
+- `languages.ts` — `supportedLanguages: Language[]`, currently Dutch (`nl-NL`) and Norwegian Bokmål
+  (`nb-NO`), matching the planned list.
+- `chatReducer.ts` — `chatStartPending` and the `END_SESSION`-removal/`onSessionEnd`-prop-call
+  design are in place as planned. `canStartChat` (flagged as dead code to remove once Start moved
+  out of `ChatConversation`) is already gone. The `chatEnded` rename was the one planned item not
+  yet applied — see the entry directly above.
+
+**Note on `Language.locale` → `Language.languageTag`:** status.md previously described `Language` as
+`{ name, locale }`. The actual field has been `languageTag` (a BCP 47 tag, e.g. `nb-NO`) since commit
+`2738e0d`, predating this setup-screen work — a stale doc reference caught in passing while
+verifying the setup screen against the code, not a change made now.
+
+**Status:** Done. Setup screen is live: `chat/page.tsx` → `ChatContainer` → `ChatSetup` ⇄
+`ChatConversation`.
+
+### Start-of-chat trigger moves to a mount effect; `readyForNewChat` renamed to `chatStartPending`
+
+**Date:** 2026-07-30
+**Decision:** Since "Start conversation" is now clicked in `ChatSetup`, before `ChatConversation`
+even mounts, the AI/user opening turn fires automatically via a `useEffect` on mount in
+`ChatConversation`, rather than waiting for a button click inside that component. The
+`readyForNewChat` phase (itself renamed from `idle` on 2026-07-27, now marked superseded) is
+renamed again to `chatStartPending`, and remains the reducer's initial phase.
+**Rationale:** `readyForNewChat`'s name assumed a user click was still pending inside this
+component; once that click already happened in `ChatSetup`, the phase is better described as a
+brief internal bootstrap step than a "waiting for the user" state. `chatStartPending` was chosen
+over an alternative considered, `waitingForChatKickoff`, because "waiting for X" already carries a
+specific meaning elsewhere in this reducer (`waitingForAI` = a request in flight) — reusing it here
+for "mount effect hasn't fired yet" would collide with that existing convention.
+**Consequence:** The mount effect needs a ref guard against React 19 StrictMode's dev-mode
+double-invocation of effects, to avoid firing the start logic — and, once off the mock API, a real
+duplicate request — twice.

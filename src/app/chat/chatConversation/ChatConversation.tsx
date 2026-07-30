@@ -2,26 +2,38 @@
 
 import { useReducer, useState, useRef, useEffect } from 'react';
 
-import { chatReducer, type ChatState } from '@/app/chat/chatReducer';
-import ControlsArea from '@/app/chat/components/ControlsArea';
-import ErrorArea from '@/app/chat/components/ErrorArea';
-import SpeechToText from '@/app/chat/components/SpeechToText';
-import ThreadView from '@/app/chat/components/ThreadView';
-import { sendChatMessage, type AIChatResult } from '@/lib/aiService';
+import { AIChatError, sendChatMessage, type AIChatResult } from '@/lib/aiService';
 import { type ChatConfig } from '@/lib/chatConfig';
 
-import styles from './ChatClient.module.css';
+import { chatReducer, type ChatState } from './chatReducer';
+import ControlsArea from './components/ControlsArea';
+import DevHelper from './components/DevHelper';
+import ErrorArea from './components/ErrorArea';
+import SpeechToText from './components/SpeechToText';
+import ThreadView from './components/ThreadView';
 
-type ChatClientProps = {
+import styles from './ChatConversation.module.css';
+
+type ChatConversationProps = {
   chatConfig: ChatConfig;
+  onEndSession: () => void;
 };
 
-export default function ChatClient({ chatConfig }: ChatClientProps) {
-  const { aiHasFirstTurn, systemInstruction, language } = chatConfig;
+export default function ChatConversation({ chatConfig, onEndSession }: ChatConversationProps) {
   const [previousInteractionId, setPreviousInteractionId] = useState<string | undefined>();
-  const initalChatState: ChatState = { threadItems: [], phase: { status: 'readyForNewChat' } };
+  const initalChatState: ChatState = { threadItems: [], phase: { status: 'chatStartPending' } };
   const [state, dispatch] = useReducer(chatReducer, initalChatState);
   const abortControllerRef = useRef<AbortController | undefined>(undefined);
+  const hasStartedRef = useRef<boolean>(false);
+  const requestIdRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (state.phase.status !== 'chatStartPending' || hasStartedRef.current) {
+      return;
+    }
+    hasStartedRef.current = true;
+    startChat();
+  }, [state.phase]);
 
   useEffect(() => {
     if (state.phase.status !== 'aiTurnSpeaking') {
@@ -39,24 +51,23 @@ export default function ChatClient({ chatConfig }: ChatClientProps) {
           phase={state.phase}
           onTranscriptCreated={handleTranscriptCreated}
           onError={handleError}
-          languageTag={language.languageTag}
+          languageTag={chatConfig.language.languageTag}
         />
         <ControlsArea
-          onStartChat={handleStartChat}
           onStopChat={handleStopChat}
           onStartListening={handleStartListening}
           onStopListening={handleStopListening}
           onSendUserMessage={handleSendUserMessage}
-          onEndSession={handleEndSession}
+          onEndSession={onEndSession}
           phase={state.phase}
         />
       </div>
-      <div className={styles.status}>status: {state.phase.status}</div>
+      <DevHelper phase={state.phase} language={chatConfig.language} />
     </>
   );
 
-  function handleStartChat() {
-    if (aiHasFirstTurn) {
+  function startChat() {
+    if (chatConfig.aiHasFirstTurn) {
       startChatWithAI();
     } else {
       startChatWithUser();
@@ -65,6 +76,7 @@ export default function ChatClient({ chatConfig }: ChatClientProps) {
 
   function handleStopChat() {
     dispatch({ type: 'STOP_CHAT' });
+    requestIdRef.current++; // ensure any pending requests are made stale
     abortControllerRef.current?.abort();
   }
 
@@ -74,10 +86,6 @@ export default function ChatClient({ chatConfig }: ChatClientProps) {
 
   function handleStopListening() {
     dispatch({ type: 'STOP_LISTENING' });
-  }
-
-  function handleEndSession() {
-    dispatch({ type: 'END_SESSION' });
   }
 
   function handleTranscriptCreated(transcript: string) {
@@ -92,15 +100,32 @@ export default function ChatClient({ chatConfig }: ChatClientProps) {
   }
 
   async function startChatWithAI() {
-    abortControllerRef.current = new AbortController();
     const input = 'start the conversation according to the system instructions';
+    let reply: AIChatResult;
+    abortControllerRef.current = new AbortController();
+    requestIdRef.current++;
+    const requestId = requestIdRef.current;
 
     dispatch({ type: 'AI_START_INPUT_SENT' });
-    const reply: AIChatResult = await sendChatMessage({
-      input,
-      systemInstruction,
-      abortSignal: abortControllerRef.current.signal,
-    });
+    try {
+      reply = await sendChatMessage({
+        input,
+        systemInstruction: chatConfig.systemInstruction,
+        abortSignal: abortControllerRef.current.signal,
+      });
+      if (requestIsStale(requestId)) {
+        return;
+      }
+    } catch (error) {
+      if (requestIsStale(requestId)) {
+        return;
+      }
+      if (error instanceof Error && error.name === 'AbortError') {
+        return; // user cancelled, not a real error, don't dispatch
+      }
+      dispatch({ type: 'ERROR', payload: { error: error as AIChatError } });
+      return;
+    }
 
     if (!reply.success) {
       // then reply must be error object
@@ -125,32 +150,56 @@ export default function ChatClient({ chatConfig }: ChatClientProps) {
     if (state.phase.status !== 'readyForSendingUserReply') {
       return;
     }
+
     const input = state.phase.transcript;
+    let reply: AIChatResult;
+    abortControllerRef.current = new AbortController();
+    requestIdRef.current++;
+    const requestId = requestIdRef.current;
 
     dispatch({ type: 'USER_MESSAGE_SENT', payload: { message: input } });
-    abortControllerRef.current = new AbortController();
-    const reply: AIChatResult = await sendChatMessage({
-      input,
-      previousInteractionId,
-      systemInstruction,
-      abortSignal: abortControllerRef.current.signal,
-    });
+    try {
+      reply = await sendChatMessage({
+        input,
+        previousInteractionId,
+        systemInstruction: chatConfig.systemInstruction,
+        abortSignal: abortControllerRef.current.signal,
+      });
+      if (requestIsStale(requestId)) {
+        return;
+      }
+    } catch (error) {
+      if (requestIsStale(requestId)) {
+        return;
+      }
+      if (error instanceof Error && error.name === 'AbortError') {
+        return; // user cancelled, not a real error, don't dispatch
+      }
+      dispatch({ type: 'ERROR', payload: { error: error as AIChatError } });
+      return;
+    }
+
     if (!reply.success) {
       // then reply must be error object
       dispatch({ type: 'ERROR', payload: { error: reply } });
       return;
     }
+
     const { interactionId, message } = reply;
     setPreviousInteractionId(interactionId);
     dispatch({ type: 'AI_RESPONSE_RECEIVED', payload: { message } });
   }
 
-  function speakAIResponse(message) {
-    console.log('speak ai response: ', message);
+  function speakAIResponse(message: string) {
+    // speak ai response
     // use TTS finish event
-    console.log(`[SpeechToText's last utterance's end event fires]`);
+    //console.log(`[SpeechToText's last utterance's end event fires]`);
     setTimeout(() => {
       dispatch({ type: 'AI_FINISHED_SPEAKING' });
     }, 500);
+  }
+
+  function requestIsStale(requestId: number): boolean {
+    return requestId !== requestIdRef.current;
   }
 }

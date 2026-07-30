@@ -32,7 +32,6 @@ export async function sendChatMessage({
     input,
   });
   const res: Response = await postChatMessage({ body, abortSignal });
-  console.log('response in service', res);
   return toAIChatResult(res);
 }
 
