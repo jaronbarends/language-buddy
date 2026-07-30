@@ -9,7 +9,8 @@ export type Scenario = {
 export const scenarios: Scenario[] = [
   {
     title: 'Placeholder scenario',
-    instruction: '', // scenario content here
+    instruction:
+      'You are having a friendly conversation with an acquaintance. If you are the one starting the conversation, pick a topic like discussing hobbies or where the user lives.', // scenario content here
     aiHasFirstTurn: false,
   },
 ];

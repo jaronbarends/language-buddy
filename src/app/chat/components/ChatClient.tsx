@@ -93,7 +93,7 @@ export default function ChatClient({ chatConfig }: ChatClientProps) {
 
   async function startChatWithAI() {
     abortControllerRef.current = new AbortController();
-    const input = 'what is the capital of the netherlands?';
+    const input = 'start the conversation according to the system instructions';
 
     dispatch({ type: 'AI_START_INPUT_SENT' });
     const reply: AIChatResult = await sendChatMessage({
