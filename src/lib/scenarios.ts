@@ -4,15 +4,15 @@ export type Scenario = {
   aiHasFirstTurn: boolean;
 };
 
-export const openChatWithAIStart: Scenario = {
-  title: 'Open chat; ai begins',
+export const freeformChatWithAIStart: Scenario = {
+  title: 'Freeform chat; ai begins',
   instruction:
     'You are having a friendly conversation with an acquaintance. If you are the one starting the conversation, pick a topic like discussing hobbies or where the user lives.', // scenario content here
   aiHasFirstTurn: true,
 };
 
-export const openChatWithUserStart: Scenario = {
-  title: 'Open chat; user begins',
+export const freeformChatWithUserStart: Scenario = {
+  title: 'Freeform chat; user begins',
   instruction:
     'You are having a friendly conversation with an acquaintance. If you are the one starting the conversation, pick a topic like discussing hobbies or where the user lives.', // scenario content here
   aiHasFirstTurn: false,

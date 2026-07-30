@@ -790,8 +790,8 @@ language radios + scenario radios + "Start conversation" button) or `ChatConvers
 component previously named `ChatClient`.
 **Rationale:** Need a place to pick language and who starts before entering the conversation loop —
 partly a real product need (this will need to exist eventually regardless), partly immediate dev
-convenience (switching languages/starters frequently during testing). Scope for v0: only the "open
-chat" case (user picks language + who starts) is built now. A second case — a predefined scenario
+convenience (switching languages/starters frequently during testing). Scope for v0: only the
+"freeform chat" case (user picks language + who starts) is built now. A second case — a predefined scenario
 that dictates its own starter — is out of scope for now; this doesn't reverse the "scenario library
 from the start" concept decision, it sequences it the same way the single-hardcoded-scenario v0
 decision (2026-07-22) already does.
@@ -806,20 +806,20 @@ as either "client-side" (the original meaning) or "client role" (as opposed to s
 kind of silent naming drift already avoided elsewhere in this project (e.g. `idle` →
 `readyForNewChat`). Renamed rather than reassigning the existing name to a new meaning.
 
-### Open chat modeled as two explicit `Scenario` objects, not entries in the `scenarios` array
+### Freeform chat modeled as two explicit `Scenario` objects, not entries in the `scenarios` array
 
 **Date:** 2026-07-30
-**Decision:** Two `Scenario`-typed objects are defined for the open-chat case — one with
+**Decision:** Two `Scenario`-typed objects are defined for the freeform-chat case — one with
 `aiHasFirstTurn: false` (user starts), one with `aiHasFirstTurn: true` (AI starts) — reusing the
 existing instruction text unchanged. These are defined separately, outside the `scenarios` array,
 and imported directly by `ChatSetup`.
 **Rationale:** The `scenarios` array is meant to grow into a real scenario library, which won't map
-well onto a small fixed radio-button UI. Keeping the open-chat pair separate avoids conflating
+well onto a small fixed radio-button UI. Keeping the freeform-chat pair separate avoids conflating
 "modes" with "scenarios" in the same array, and avoids any signature change to `getChatConfig` or to
 `aiHasFirstTurn`'s placement on `Scenario` — "who starts" is expressed by which scenario object the
 user picks, reusing existing types and logic as-is.
-**Known gap, not solved now:** once real scenarios exist, nothing distinguishes "this is an
-open-chat mode entry" from "this is a real scenario" at the type level — flagged as a probable
+**Known gap, not solved now:** once real scenarios exist, nothing distinguishes "this is a
+freeform-chat mode entry" from "this is a real scenario" at the type level — flagged as a probable
 future need (e.g. a `category` field), not designed against yet.
 
 ### New `languages.ts` config file, separate from the `language.ts` type

@@ -163,9 +163,9 @@ evaluation.
 - **Setup screen: `ChatContainer`/`ChatSetup` components, `ChatClient` renamed to
   `ChatConversation` (2026-07-30)** — a new client component `ChatContainer` (rendered by
   `chat/page.tsx`) owns whether to render `ChatSetup` (language + scenario radios, pre-selected
-  defaults, "Start conversation" button) or `ChatConversation`. v0 builds only the "open chat" case
+  defaults, "Start conversation" button) or `ChatConversation`. v0 builds only the "freeform chat" case
   (see decisions.md).
-- **Open chat = two explicit `Scenario` objects, not in the `scenarios` array (2026-07-30)** —
+- **Freeform chat = two explicit `Scenario` objects, not in the `scenarios` array (2026-07-30)** —
   user-starts/AI-starts variants, imported directly by `ChatSetup`, reusing the existing
   `Scenario` type and instruction text unchanged (see decisions.md).
 - **New `languages.ts` config file, separate from `language.ts`'s `Language` type (2026-07-30)**
@@ -201,11 +201,11 @@ evaluation.
   is decided (after the core loop, before evaluation); the actual design.md content doesn't exist
   yet.
 - **Setup screen extraction is spec'd but not implemented** — `ChatContainer`, `ChatSetup`,
-  `languages.ts`, and the two open-chat `Scenario` objects don't exist as files yet; `ChatClient`
+  `languages.ts`, and the two freeform-chat `Scenario` objects don't exist as files yet; `ChatClient`
   hasn't been renamed to `ChatConversation`; `chatReducer.ts` still has `readyForNewChat`/`ended`/
   `END_SESSION` rather than `chatStartPending`/`chatEnded`/the direct-prop-call approach (see
   decisions.md, 2026-07-30, for the full decided shape).
-- **Predefined-scenario-picks-its-own-starter (open-chat "mode 2")** remains out of scope —
+- **Predefined-scenario-picks-its-own-starter (freeform-chat "mode 2")** remains out of scope —
   deliberately deferred alongside the setup-screen decision, tracked in backlog.md.
 
 ## Next step
@@ -226,7 +226,7 @@ evaluation.
    (see decisions.md, 2026-07-29). `listeningTimedOut` remains deferred (2026-07-27 decision) — the
    stop/send split was built specifically so timeout can reuse the same path later.
 7. **Build the setup screen extraction** (2026-07-30 decisions, not yet implemented):
-   `languages.ts`, the two open-chat `Scenario` objects, `ChatSetup`, `ChatContainer`; rename
+   `languages.ts`, the two freeform-chat `Scenario` objects, `ChatSetup`, `ChatContainer`; rename
    `ChatClient` → `ChatConversation`; update `chatReducer.ts` (`readyForNewChat` →
    `chatStartPending`, `ended` → `chatEnded`, remove `END_SESSION`, remove dead `canStartChat`);
    move the chat-start trigger into a mount `useEffect` with a StrictMode ref guard; wire

@@ -1,5 +1,4 @@
 import {
-  canStartChat,
   canStartWithUser,
   canStartReply,
   canStopListening,
@@ -15,7 +14,6 @@ import styles from './ControlsArea.module.css';
 
 type ControlsAreaProps = {
   phase: ChatPhase;
-  onStartChat: () => void;
   onStopChat: () => void;
   onStartListening: () => void;
   onSendUserMessage: () => void;
@@ -31,7 +29,6 @@ type PrimaryButtonProps = {
 
 export default function ControlsArea({
   phase,
-  onStartChat,
   onStopChat,
   onStartListening,
   onSendUserMessage,
@@ -61,12 +58,6 @@ export default function ControlsArea({
   }
 
   function getPrimaryButtonProps(phase: ChatPhase): PrimaryButtonProps {
-    if (canStartChat(phase)) {
-      return {
-        label: 'Start conversation',
-        onClick: onStartChat,
-      };
-    }
     if (canStartWithUser(phase)) {
       return {
         label: 'Start speaking',

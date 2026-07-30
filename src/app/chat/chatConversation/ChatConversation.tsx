@@ -16,14 +16,22 @@ import styles from './ChatConversation.module.css';
 
 type ChatConversationProps = {
   chatConfig: ChatConfig;
+  onEndSession: () => void;
 };
 
-export default function ChatConversation({ chatConfig }: ChatConversationProps) {
-  const { aiHasFirstTurn, systemInstruction, language } = chatConfig;
+export default function ChatConversation({ chatConfig, onEndSession }: ChatConversationProps) {
   const [previousInteractionId, setPreviousInteractionId] = useState<string | undefined>();
-  const initalChatState: ChatState = { threadItems: [], phase: { status: 'readyForNewChat' } };
+  const initalChatState: ChatState = { threadItems: [], phase: { status: 'chatStartPending' } };
   const [state, dispatch] = useReducer(chatReducer, initalChatState);
   const abortControllerRef = useRef<AbortController | undefined>(undefined);
+  const hasStartedRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    if (state.phase.status !== 'chatStartPending' || hasStartedRef.current) {
+      return;
+    }
+    startChat();
+  }, [state.phase]);
 
   useEffect(() => {
     if (state.phase.status !== 'aiTurnSpeaking') {
@@ -41,24 +49,23 @@ export default function ChatConversation({ chatConfig }: ChatConversationProps) 
           phase={state.phase}
           onTranscriptCreated={handleTranscriptCreated}
           onError={handleError}
-          languageTag={language.languageTag}
+          languageTag={chatConfig.language.languageTag}
         />
         <ControlsArea
-          onStartChat={handleStartChat}
           onStopChat={handleStopChat}
           onStartListening={handleStartListening}
           onStopListening={handleStopListening}
           onSendUserMessage={handleSendUserMessage}
-          onEndSession={handleEndSession}
+          onEndSession={onEndSession}
           phase={state.phase}
         />
       </div>
-      <DevHelper phase={state.phase} />
+      <DevHelper phase={state.phase} language={chatConfig.language} />
     </>
   );
 
-  function handleStartChat() {
-    if (aiHasFirstTurn) {
+  function startChat() {
+    if (chatConfig.aiHasFirstTurn) {
       startChatWithAI();
     } else {
       startChatWithUser();
@@ -76,10 +83,6 @@ export default function ChatConversation({ chatConfig }: ChatConversationProps) 
 
   function handleStopListening() {
     dispatch({ type: 'STOP_LISTENING' });
-  }
-
-  function handleEndSession() {
-    dispatch({ type: 'END_SESSION' });
   }
 
   function handleTranscriptCreated(transcript: string) {
@@ -100,7 +103,7 @@ export default function ChatConversation({ chatConfig }: ChatConversationProps) 
     dispatch({ type: 'AI_START_INPUT_SENT' });
     const reply: AIChatResult = await sendChatMessage({
       input,
-      systemInstruction,
+      systemInstruction: chatConfig.systemInstruction,
       abortSignal: abortControllerRef.current.signal,
     });
 
@@ -134,7 +137,7 @@ export default function ChatConversation({ chatConfig }: ChatConversationProps) 
     const reply: AIChatResult = await sendChatMessage({
       input,
       previousInteractionId,
-      systemInstruction,
+      systemInstruction: chatConfig.systemInstruction,
       abortSignal: abortControllerRef.current.signal,
     });
     if (!reply.success) {
@@ -148,9 +151,9 @@ export default function ChatConversation({ chatConfig }: ChatConversationProps) 
   }
 
   function speakAIResponse(message) {
-    console.log('speak ai response: ', message);
+    // speak ai response
     // use TTS finish event
-    console.log(`[SpeechToText's last utterance's end event fires]`);
+    //console.log(`[SpeechToText's last utterance's end event fires]`);
     setTimeout(() => {
       dispatch({ type: 'AI_FINISHED_SPEAKING' });
     }, 500);

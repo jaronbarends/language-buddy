@@ -14,7 +14,7 @@
 - [ ] Session state is in-memory only for MVP — no persistence across refresh/tab close/return visits
 - [ ] Setup screen before the conversation loop: pick language (from a limited, config-driven list)
       and who starts (user or AI); "Start conversation" lives here, not in the conversation
-      component. v0 scope is "open chat" only — two explicit `Scenario` objects (user-starts /
+      component. v0 scope is "freeform chat" only — two explicit `Scenario` objects (user-starts /
       AI-starts), not a scenario-array selector (see decisions.md, 2026-07-30)
 
 #### v0 interaction/state model
@@ -37,7 +37,7 @@
       be displayed read-only before send as STT is wired in — still no edit/review capability;
       see decisions.md.
 - [ ] Predefined-scenario-picks-its-own-starter setup mode ("mode 2") — the setup screen (see Core
-      features above) builds only the open-chat case for v0; a scenario that dictates its own
+      features above) builds only the freeform-chat case for v0; a scenario that dictates its own
       starter, selected from the growing `scenarios` array, is deferred (see decisions.md,
       2026-07-30, and backlog.md).
 
@@ -54,7 +54,7 @@
       eventual target, generalized after v0 (see decisions.md, 2026-07-22).
 - [x] Evaluation feasibility: no spike needed — judged well-established LLM capability, not a
       behavioral unknown like Spike 1/2 (see decisions.md, 2026-07-22).
-- [x] Setup screen shape: language + starter selection, open-chat-only for v0, modeled as two
+- [x] Setup screen shape: language + starter selection, freeform-chat-only for v0, modeled as two
       explicit `Scenario` objects rather than a new parameter or a `scenarios`-array selector (see
       decisions.md, 2026-07-30).
 

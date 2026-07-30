@@ -10,7 +10,7 @@ export interface ButtonProps {
   onClick?: () => void;
   href?: string;
   children: ReactNode;
-  variant: ButtonVariant;
+  variant?: ButtonVariant;
   disabled?: boolean;
   ref?: RefObject<HTMLButtonElement | null>;
   type?: 'button' | 'submit' | 'reset';
@@ -20,7 +20,7 @@ export default function Button({
   onClick,
   href,
   children,
-  variant,
+  variant = 'primary',
   disabled,
   ref,
   type = 'button',

@@ -11,7 +11,7 @@ export type ChatState = {
 };
 
 export type ChatPhase =
-  | { status: 'readyForNewChat' }
+  | { status: 'chatStartPending' }
   | { status: 'waitingForAI' }
   | { status: 'aiTurnSpeaking'; message: string }
   | { status: 'readyForUserStart' }
@@ -20,7 +20,7 @@ export type ChatPhase =
   | { status: 'listeningStopped' }
   | { status: 'readyForSendingUserReply'; transcript: string }
   | { status: 'listeningTimedOut' }
-  | { status: 'ended' } // ended, need to get evaluation now. rename to waitingForEvaluation? Next step readyForNewChat?
+  | { status: 'ended' } // ended, need to get evaluation now.
   | { status: 'error'; error: AIChatError };
 
 export type ChatAction =
@@ -35,14 +35,13 @@ export type ChatAction =
   | { type: 'TRANSCRIPT_CREATED'; payload: { transcript: string } }
   | { type: 'TRANSCRIPT_EMPTY' }
   | { type: 'USER_MESSAGE_SENT'; payload: { message: string } }
-  | { type: 'END_SESSION' }
   | { type: 'ERROR'; payload: { error: AIChatError } };
 
-// initial state should be { status: 'readyForNewChat' }
+// initial state should be { status: 'chatStartPending' }
 export function chatReducer(state: ChatState, action: ChatAction): ChatState {
   if (
     action.type === 'STOP_CHAT' &&
-    state.phase.status !== 'readyForNewChat' &&
+    state.phase.status !== 'chatStartPending' &&
     state.phase.status !== 'ended'
   ) {
     return {
@@ -59,7 +58,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
   }
 
   switch (state.phase.status) {
-    case 'readyForNewChat':
+    case 'chatStartPending':
       switch (action.type) {
         case 'AI_START_INPUT_SENT':
           return {
@@ -166,24 +165,13 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         default:
           return state;
       }
-
     case 'ended':
       switch (action.type) {
-        case 'END_SESSION':
-          return {
-            threadItems: [],
-            phase: { status: 'readyForNewChat' },
-          };
         default:
           return state;
       }
     case 'error':
       switch (action.type) {
-        case 'END_SESSION':
-          return {
-            threadItems: [],
-            phase: { status: 'readyForNewChat' },
-          };
         default:
           return state;
       }
@@ -195,10 +183,6 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
 }
 
 // derived state functions
-
-export function canStartChat(phase: ChatPhase): boolean {
-  return phase.status === 'readyForNewChat';
-}
 
 export function canStartWithUser(phase: ChatPhase): boolean {
   return phase.status === 'readyForUserStart';
@@ -218,7 +202,7 @@ export function canSendReply(phase: ChatPhase): boolean {
 
 export function canStopChat(phase: ChatPhase): boolean {
   const status = phase.status;
-  return status !== 'readyForNewChat' && status !== 'ended';
+  return status !== 'chatStartPending' && status !== 'ended';
 }
 
 export function chatHasEnded(phase: ChatPhase): boolean {

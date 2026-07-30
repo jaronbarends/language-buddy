@@ -1,20 +1,33 @@
-import { getChatConfig } from '@/lib/chatConfig';
-import { Language } from '@/lib/language';
-import { scenarios } from '@/lib/scenarios';
+'use client';
+
+import { useState } from 'react';
+
+import { type ChatConfig } from '@/lib/chatConfig';
 
 import ChatConversation from './chatConversation/ChatConversation';
+import ChatSetup from './chatSetup/ChatSetup';
+
+type ContainerState = { status: 'setup' } | { status: 'conversation'; chatConfig: ChatConfig };
 
 export default function ChatContainer() {
-  // const language: Language = {
-  //   name: 'Norwegian (Bokmål)',
-  //   languageTag: 'nb-NO',
-  // };
-  const language: Language = {
-    name: 'Nederlands',
-    languageTag: 'nl-NL',
-  };
-  const scenario = scenarios[0];
-  const chatConfig = getChatConfig(language, scenario);
+  const [containerState, setContainerState] = useState<ContainerState>({ status: 'setup' });
 
-  return <ChatConversation chatConfig={chatConfig} />;
+  return (
+    <>
+      {containerState.status === 'setup' ? (
+        <ChatSetup onStartSession={handleSessionStart} />
+      ) : (
+        <ChatConversation chatConfig={containerState.chatConfig} onEndSession={handleSessionEnd} />
+      )}
+    </>
+  );
+
+  function handleSessionStart(chatConfig: ChatConfig) {
+    setContainerState({ status: 'conversation', chatConfig });
+  }
+
+  function handleSessionEnd() {
+    console.log('handle conv end');
+    setContainerState({ status: 'setup' });
+  }
 }
