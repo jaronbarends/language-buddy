@@ -738,3 +738,35 @@ back where they can click "Reply" and start listening again, as if nothing happe
 `readyForSendingUserReply` with an empty transcript would otherwise let the user hit "Send" and
 post an empty message.
 **Status:** Done — implemented in `chatReducer.ts`, `SpeechToText.tsx`, `ChatClient.tsx`.
+
+### STT display switched to live interim transcript
+
+**Date:** 2026-07-29
+**Decision:** `SpeechToText.tsx` sets `recognition.interimResults = true` (previously `false`).
+`handleResult` no longer accumulates only `isFinal` results into a `speechResultsRef` array
+joined with spaces (`addSpeechResult`/`createFullTranscript`, now removed); instead, on every
+`onresult` event it joins *all* current results (interim + final) into one string and stores it
+in a `liveTranscriptRef`/`liveTranscript` state pair. `handleEnd` reads `liveTranscriptRef.current`
+directly (falling back to `MockSTT` when empty, unchanged from the 2026-07-29 STT-integration
+decision above). `SpeechResults.tsx` renders `liveTranscript` as it updates, with a "Listening…"
+placeholder shown only while `phase.status === 'listening'` and the transcript is still empty, and
+a "…" typing indicator once text has appeared.
+**Rationale:** Works around a Safari-on-iOS bug found while dev-testing the STT flow: if `onresult`
+had already fired at least once, it would not fire again after `recognition.stop()` was called,
+silently dropping the last (final) result. Setting `interimResults = true` and continuously
+rebuilding `liveTranscript` from every `onresult` event means the last spoken segment is already
+captured in state by the time `onend` fires, regardless of whether a final `onresult` for it ever
+arrives. Showing the transcript live as a side effect is a secondary benefit, not the driving
+reason (commits `ee35bfe`, `5471717`, same day as the initial STT integration).
+**Status:** Done. Does not reverse the 2026-07-19 "no transcript review/edit step" decision — the
+transcript is still display-only and sent unedited; this only changes *when* text appears
+(live vs. only after `onend`), not whether the user can edit it.
+
+### Dev config: allow ngrok origin for the Next.js dev server
+
+**Date:** 2026-07-29
+**Decision:** `next.config.ts` sets `allowedDevOrigins: ['*.ngrok-free.app']`.
+**Rationale:** Next.js 15's dev server blocks cross-origin requests by default; this allowlists
+requests tunneled through ngrok, needed to reach the local dev server from a device other than the
+machine running it (commit `f662a2f`, same day as the STT work this enables testing).
+**Status:** Done.

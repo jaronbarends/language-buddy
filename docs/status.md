@@ -1,6 +1,6 @@
 # Project status
 
-**Last updated:** 2026-07-29
+**Last updated:** 2026-07-30
 **Current phase:** Early build. Concept locked (scenario-library based conversational sparring
 partner, Norwegian, multi-turn sessions + async structured evaluation). MVP scoping in progress;
 Spikes 1–4 all complete. AI provider decided (Gemini). State machine now runs the full happy path
@@ -46,14 +46,20 @@ sequenced after that, before evaluation.
   while in `error` (see decisions.md, 2026-07-27).
 - `ThreadView.tsx` — renders `threadItems` from state, styled by author (`ai`/`user`).
 - **Real STT wired up** (`SpeechToText.tsx`), per the 2026-07-28 design: starts/stops Web Speech
-  API recognition keyed off `phase` (`listening` → start, `listeningStopped` → stop), accumulates
-  `SpeechRecognitionAlternative` results, and builds the final transcript on `onend`.
-  `SpeechResults.tsx` renders the accumulated results plus a "…" indicator while `phase.status ===
-  'listening'`. `MockTTS.tsx` (the old typed-textarea stand-in for the *entire* input mechanism)
-  is deleted, replaced by `MockSTT.tsx` — a narrower dev/testing convenience, not a stand-in for
-  STT itself: its textarea is only read (via an imperative handle) as a fallback when the real
-  recognition transcript comes back empty, so development can continue by typing instead of
-  speaking without needing a working mic on every pass (see decisions.md, 2026-07-29).
+  API recognition keyed off `phase` (`listening` → start, `listeningStopped` → stop). With
+  `recognition.interimResults = true`, every `onresult` event joins *all* current results
+  (interim + final) into a single `liveTranscript` string (ref + state); `onend` reads
+  `liveTranscriptRef.current` directly rather than building a transcript from an accumulated array
+  of final-only results (see decisions.md, 2026-07-29, "live interim transcript"). `MockTTS.tsx`
+  (the old typed-textarea stand-in for the *entire* input mechanism) is deleted, replaced by
+  `MockSTT.tsx` — a narrower dev/testing convenience, not a stand-in for STT itself: its textarea
+  is only read (via an imperative handle) as a fallback when the real recognition transcript comes
+  back empty, so development can continue by typing instead of speaking without needing a working
+  mic on every pass (see decisions.md, 2026-07-29). `SpeechResults.tsx` renders `liveTranscript`
+  live as the user speaks, showing a "Listening…" placeholder while it's still empty and a "…"
+  typing indicator once text has appeared, both only while `phase.status === 'listening'`.
+- `next.config.ts` sets `allowedDevOrigins: ['*.ngrok-free.app']`, letting the Next.js 15 dev
+  server accept requests tunneled through ngrok (see decisions.md, 2026-07-29).
 - **Empty-transcript handling:** new `TRANSCRIPT_EMPTY` action. When neither real STT nor the
   `MockSTT` fallback produces a transcript, `ChatClient.tsx` dispatches `TRANSCRIPT_EMPTY` instead
   of (in addition to) `TRANSCRIPT_CREATED`; the reducer sends `listeningStopped` straight back to
