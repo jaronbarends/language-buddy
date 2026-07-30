@@ -2,22 +2,23 @@
 
 import { useReducer, useState, useRef, useEffect } from 'react';
 
-import { chatReducer, type ChatState } from '@/app/chat/chatReducer';
-import ControlsArea from '@/app/chat/components/ControlsArea';
-import DevHelper from '@/app/chat/components/DevHelper';
-import ErrorArea from '@/app/chat/components/ErrorArea';
-import SpeechToText from '@/app/chat/components/SpeechToText';
-import ThreadView from '@/app/chat/components/ThreadView';
 import { sendChatMessage, type AIChatResult } from '@/lib/aiService';
 import { type ChatConfig } from '@/lib/chatConfig';
 
-import styles from './ChatClient.module.css';
+import { chatReducer, type ChatState } from './chatReducer';
+import ControlsArea from './components/ControlsArea';
+import DevHelper from './components/DevHelper';
+import ErrorArea from './components/ErrorArea';
+import SpeechToText from './components/SpeechToText';
+import ThreadView from './components/ThreadView';
 
-type ChatClientProps = {
+import styles from './ChatConversation.module.css';
+
+type ChatConversationProps = {
   chatConfig: ChatConfig;
 };
 
-export default function ChatClient({ chatConfig }: ChatClientProps) {
+export default function ChatConversation({ chatConfig }: ChatConversationProps) {
   const { aiHasFirstTurn, systemInstruction, language } = chatConfig;
   const [previousInteractionId, setPreviousInteractionId] = useState<string | undefined>();
   const initalChatState: ChatState = { threadItems: [], phase: { status: 'readyForNewChat' } };

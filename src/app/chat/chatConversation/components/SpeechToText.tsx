@@ -1,9 +1,10 @@
 // import 'dotenv/config';
 import { useEffect, useRef, useState } from 'react';
 
-import { type ChatPhase } from '@/app/chat/chatReducer';
-import MockSTT, { type MockSTTHandle } from '@/app/chat/components/MockSTT';
-import SpeechResults from '@/app/chat/components/SpeechResults';
+import { type ChatPhase } from '@/app/chat/chatConversation/chatReducer';
+
+import MockSTT, { type MockSTTHandle } from './MockSTT';
+import SpeechResults from './SpeechResults';
 
 import styles from './SpeechToText.module.css';
 

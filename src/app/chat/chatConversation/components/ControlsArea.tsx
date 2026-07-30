@@ -8,7 +8,7 @@ import {
   chatHasEnded,
   hasError,
   type ChatPhase,
-} from '@/app/chat/chatReducer';
+} from '@/app/chat/chatConversation/chatReducer';
 import Button from '@/components/button/Button';
 
 import styles from './ControlsArea.module.css';

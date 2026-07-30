@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 
-import { type ThreadItem } from '@/app/chat/chatReducer';
+import { type ThreadItem } from '@/app/chat/chatConversation/chatReducer';
 
 import styles from './ThreadView.module.css';
 

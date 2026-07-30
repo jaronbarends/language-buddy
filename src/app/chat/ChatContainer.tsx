@@ -2,7 +2,7 @@ import { getChatConfig } from '@/lib/chatConfig';
 import { Language } from '@/lib/language';
 import { scenarios } from '@/lib/scenarios';
 
-import ChatClient from './components/ChatClient';
+import ChatConversation from './chatConversation/ChatConversation';
 
 export default function ChatContainer() {
   // const language: Language = {
@@ -16,5 +16,5 @@ export default function ChatContainer() {
   const scenario = scenarios[0];
   const chatConfig = getChatConfig(language, scenario);
 
-  return <ChatClient chatConfig={chatConfig} />;
+  return <ChatConversation chatConfig={chatConfig} />;
 }

@@ -1,4 +1,4 @@
-import { ChatPhase } from '@/app/chat/chatReducer';
+import { ChatPhase } from '@/app/chat/chatConversation/chatReducer';
 
 import styles from './ErrorArea.module.css';
 
