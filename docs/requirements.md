@@ -17,7 +17,9 @@
 
 - [ ] 9-state model implemented via useReducer + discriminated union (see decisions.md,
       2026-07-22 through 2026-07-27, for full state list and transitions — the original
-      2026-07-22/07-23 model has since dropped `sending` and `initializing`)
+      2026-07-22/07-23 model has since dropped `sending` and `initializing`). **Real STT wiring
+      (2026-07-28) adds two further phases, `listeningStopped` and `readyForSendingUserReply` —
+      see decisions.md.**
 - [ ] Error/retry, end-conversation-from-anywhere, and listening-timeout behaviors implemented per
       decisions.md
 - [ ] Hidden AI-opening instruction excluded from transcript and from future evaluation input
@@ -25,7 +27,9 @@
 ### Explicitly deferred (tracked, not MVP)
 
 - [ ] STT transcript review/edit step before sending to AI — spike 2 showed STT accuracy is good
-      enough that this is not needed (see decisions.md)
+      enough that this is not needed (see decisions.md). **Addendum 2026-07-28:** transcript will
+      be displayed read-only before send as STT is wired in — still no edit/review capability;
+      see decisions.md.
 
 ### Resolved
 

@@ -49,6 +49,9 @@ transient.
   - if no speech voice found, add instructions how to add it
 - add setting for speech rate
 - use generation_config.thinking_level: "low" for genAI (https://ai.google.dev/gemini-api/docs/text-generation) in regular chat; omit it in evaluation
+- add cancel option to listening phase; call recognition.abort()
+- add lang attribute to speech output elements
+- add aria-live to output elements
 
 ## Icebox
 

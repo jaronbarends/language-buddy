@@ -17,6 +17,8 @@ export type ChatPhase =
   | { status: 'readyForUserStart' }
   | { status: 'readyForUserReply' }
   | { status: 'listening' }
+  | { status: 'listeningStopped' }
+  | { status: 'readyForSendingUserReply'; transcript: string }
   | { status: 'listeningTimedOut' }
   | { status: 'ended' } // ended, need to get evaluation now. rename to waitingForEvaluation? Next step readyForNewChat?
   | { status: 'error'; error: AIChatError };
@@ -28,7 +30,10 @@ export type ChatAction =
   | { type: 'AI_FINISHED_SPEAKING' }
   | { type: 'STOP_CHAT' }
   | { type: 'START_LISTENING' }
+  | { type: 'STOP_LISTENING' }
   | { type: 'LISTENING_TIMED_OUT' }
+  | { type: 'TRANSCRIPT_CREATED'; payload: { transcript: string } }
+  | { type: 'TRANSCRIPT_EMPTY' }
   | { type: 'USER_MESSAGE_SENT'; payload: { message: string } }
   | { type: 'END_SESSION' }
   | { type: 'ERROR'; payload: { error: AIChatError } };
@@ -116,14 +121,26 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       }
     case 'listening':
       switch (action.type) {
-        case 'USER_MESSAGE_SENT':
-          const newItem: ThreadItem = {
-            message: action.payload.message,
-            author: 'user',
-          };
+        case 'STOP_LISTENING':
           return {
-            threadItems: [...state.threadItems, newItem],
-            phase: { status: 'waitingForAI' },
+            threadItems: state.threadItems,
+            phase: { status: 'listeningStopped' },
+          };
+        default:
+          return state;
+      }
+    case 'listeningStopped':
+      switch (action.type) {
+        case 'TRANSCRIPT_CREATED':
+          console.log('action.payload.transcript:', action.payload.transcript);
+          return {
+            threadItems: state.threadItems,
+            phase: { status: 'readyForSendingUserReply', transcript: action.payload.transcript },
+          };
+        case 'TRANSCRIPT_EMPTY':
+          return {
+            threadItems: state.threadItems,
+            phase: { status: 'readyForUserReply' },
           };
         default:
           return state;
@@ -134,6 +151,22 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         default:
           return state;
       }
+    case 'readyForSendingUserReply':
+      switch (action.type) {
+        case 'USER_MESSAGE_SENT': {
+          const newItem: ThreadItem = {
+            message: action.payload.message,
+            author: 'user',
+          };
+          return {
+            threadItems: [...state.threadItems, newItem],
+            phase: { status: 'waitingForAI' },
+          };
+        }
+        default:
+          return state;
+      }
+
     case 'ended':
       switch (action.type) {
         case 'END_SESSION':
@@ -175,8 +208,12 @@ export function canStartReply(phase: ChatPhase): boolean {
   return phase.status === 'readyForUserReply';
 }
 
-export function canSendReply(phase: ChatPhase): boolean {
+export function canStopListening(phase: ChatPhase): boolean {
   return phase.status === 'listening';
+}
+
+export function canSendReply(phase: ChatPhase): boolean {
+  return phase.status === 'readyForSendingUserReply';
 }
 
 export function canStopChat(phase: ChatPhase): boolean {

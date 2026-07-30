@@ -1,13 +1,14 @@
 # Project status
 
-**Last updated:** 2026-07-27
-**Current phase:** Early build. Concept locked (scenario-library based conversational sparring
+**Last updated:** 2026-07-30
+**Current phase:** Early build. Concept locked (scenario-library-based conversational sparring
 partner, Norwegian, multi-turn sessions + async structured evaluation). MVP scoping in progress;
 Spikes 1–4 all complete. AI provider decided (Gemini). State machine now runs the full happy path
-end-to-end against typed text input and the mock AI API, `STOP_CHAT` now ends the session from
-any phase, and generic error recovery (end-session-only, via a dedicated `END_SESSION` action)
-is implemented. Next up: listening timeout, then wiring in real STT/TTS and the real Gemini call
-— with a visual/UI design pass sequenced after that, before evaluation.
+end-to-end against real STT input and the mock AI API, `STOP_CHAT` now ends the session from
+any phase, generic error recovery (end-session-only, via a dedicated `END_SESSION` action) is
+implemented, and empty-transcript input silently retries rather than sending/erroring. Next up:
+listening timeout, then wiring in real TTS and the real Gemini call — with a visual/UI design pass
+sequenced after that, before evaluation.
 
 ---
 
@@ -20,15 +21,16 @@ is implemented. Next up: listening timeout, then wiring in real STT/TTS and the 
   error shape.
 - Mock chat API route (`src/app/api/aiMock/chat`), toggled via `NEXT_PUBLIC_USE_MOCK_AI`, built
   against the same `AIChatResult`/`sendChatMessage` signature as the real `/api/ai/chat` route.
-- `chatReducer.ts` — 9-state discriminated union (`readyForNewChat`, `waitingForAI`,
-  `aiTurnSpeaking`, `readyForUserStart`, `readyForUserReply`, `listening`, `listeningTimedOut`,
-  `ended`, `error`), reflecting the 2026-07-27 decisions to drop `sending` and `initializing` from
+- `chatReducer.ts` — 11-state discriminated union (`readyForNewChat`, `waitingForAI`,
+  `aiTurnSpeaking`, `readyForUserStart`, `readyForUserReply`, `listening`, `listeningStopped`,
+  `readyForSendingUserReply`, `listeningTimedOut`, `ended`, `error`), reflecting the 2026-07-27
+  decisions to drop `sending` and `initializing` from
   the original 2026-07-22/07-23 model, and the 2026-07-27 rename of `idle` to `readyForNewChat`
   (see decisions.md). Reducer covers the full happy-flow transitions (`readyForNewChat` →
   `readyForUserStart`/`waitingForAI` → `aiTurnSpeaking` → `readyForUserReply` → `listening` →
   `waitingForAI` → ... → `ended`).
 - `ChatClient.tsx` (Client Component) owns the `useReducer` and drives the loop end-to-end against
-  a single hardcoded scenario: sends typed input (via a `MockTTS` textarea stand-in, not real STT)
+  a single hardcoded scenario: sends the transcript from real STT (`SpeechToText.tsx`, see below)
   to `sendChatMessage`, dispatches on success/failure, and fires a stubbed `speakAIResponse` in
   place of real TTS. `previousInteractionId` is tracked in component state and threaded through
   each call, per Spike 3's finding that context (but not `systemInstruction`) carries over via
@@ -44,10 +46,28 @@ is implemented. Next up: listening timeout, then wiring in real STT/TTS and the 
   `readyForNewChat` with an empty thread. The ghost "End conversation" button is hidden
   while in `error` (see decisions.md, 2026-07-27).
 - `ThreadView.tsx` — renders `threadItems` from state, styled by author (`ai`/`user`).
-- `MockTTS.tsx` — textarea standing in for both STT input and a visual TTS placeholder; enabled
-  only in the `listening` phase.
+- **Real STT wired up** (`SpeechToText.tsx`), per the 2026-07-28 design: starts/stops Web Speech
+  API recognition keyed off `phase` (`listening` → start, `listeningStopped` → stop). With
+  `recognition.interimResults = true`, every `onresult` event joins _all_ current results
+  (interim + final) into a single `liveTranscript` string (ref + state); `onend` reads
+  `liveTranscriptRef.current` directly rather than building a transcript from an accumulated array
+  of final-only results (see decisions.md, 2026-07-29, "live interim transcript"). `MockTTS.tsx`
+  (the old typed-textarea stand-in for the _entire_ input mechanism) is deleted, replaced by
+  `MockSTT.tsx` — a narrower dev/testing convenience, not a stand-in for STT itself: its textarea
+  is only read (via an imperative handle) as a fallback when the real recognition transcript comes
+  back empty, so development can continue by typing instead of speaking without needing a working
+  mic on every pass (see decisions.md, 2026-07-29). `SpeechResults.tsx` renders `liveTranscript`
+  live as the user speaks, showing a "Listening…" placeholder while it's still empty and a "…"
+  typing indicator once text has appeared, both only while `phase.status === 'listening'`.
+- `next.config.ts` sets `allowedDevOrigins: ['*.ngrok-free.app']`, letting the Next.js dev
+  server accept requests tunneled through ngrok (see decisions.md, 2026-07-29).
+- **Empty-transcript handling:** new `TRANSCRIPT_EMPTY` action. When neither real STT nor the
+  `MockSTT` fallback produces a transcript, `ChatClient.tsx` dispatches `TRANSCRIPT_EMPTY` instead
+  of (in addition to) `TRANSCRIPT_CREATED`; the reducer sends `listeningStopped` straight back to
+  `readyForUserReply` (silent retry — no error, nothing sent) rather than into
+  `readyForSendingUserReply` with an empty string (see decisions.md, 2026-07-29).
 - **Working happy flow:** user-opens-first path (`aiHasFirstTurn = false`), full turn loop via
-  typed input and the mock AI API, confirmed running end-to-end.
+  real STT input and the mock AI API, confirmed running end-to-end.
 - Spike code for STT/TTS exists on branch `spike-speech-to-text` (spike-only, not production code).
 - **No visual/UI design work done yet** — current components are functional/unstyled. Timing for
   the design pass is now decided (see below); the design content itself is not.
@@ -123,6 +143,16 @@ is implemented. Next up: listening timeout, then wiring in real STT/TTS and the 
   interaction design is still actively changing, so styling now risks rework; the core loop being
   functionally settled first gives a low-risk, demoable styling target. Only the _timing_ is
   decided — token values, layout, and accessibility approach are still open (see decisions.md)
+- **STT integration design decided (2026-07-28)** — `listeningStopped` and
+  `readyForSendingUserReply; transcript` phases, `STOP_LISTENING`/`TRANSCRIPT_CREATED` actions, and
+  a `SpeechToText` child component (props: `phase`, `onTranscriptCreated`, `onError`). Transcript
+  displayed read-only before send, not editable — scaffolding for the still-deferred
+  `listeningTimedOut` work, not a reversal of the no-review-step decision (see decisions.md).
+  **Implemented (2026-07-29)** — see "What exists" above and decisions.md.
+- **Empty-transcript UX: silent retry, not an error (2026-07-29)** — if STT (and the `MockSTT`
+  dev fallback) both produce no transcript, the user is dropped back to `readyForUserReply` with
+  no message sent and no error shown, rather than surfacing an empty send or a failure state (see
+  decisions.md).
 
 ## What's open
 
@@ -159,8 +189,11 @@ is implemented. Next up: listening timeout, then wiring in real STT/TTS and the 
 5. ~~Build real error handling: reducer `error` case behavior + Retry action~~ — done:
    end-session-only recovery, implemented as a dedicated `END_SESSION` action that resets
    to `readyForNewChat`; no Retry action for v0 (see decisions.md, 2026-07-27).
-6. Wire real STT input, replacing the `MockTTS` textarea, and implement `listeningTimedOut`
-   alongside it (bundled per the 2026-07-27 decision).
+6. ~~Wire real STT input, replacing the `MockTTS` textarea~~ — done: `SpeechToText` component,
+   `listeningStopped` → `readyForSendingUserReply` phases, transcript displayed read-only before
+   send, plus empty-transcript handling (`TRANSCRIPT_EMPTY`) and `MockSTT` as a dev-only fallback
+   (see decisions.md, 2026-07-29). `listeningTimedOut` remains deferred (2026-07-27 decision) — the
+   stop/send split was built specifically so timeout can reuse the same path later.
 7. Wire real TTS output, replacing the `speakAIResponse` console.log/setTimeout stub.
 8. Swap the mock AI implementation for the real `/api/ai/chat` route behind the same
    `sendChatMessage`/`AIChatResult` signature.

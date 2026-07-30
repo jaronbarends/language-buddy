@@ -662,3 +662,111 @@ concept, it's a more primitive one both `chatConfig.ts` and `getBaseInstruction.
 **Status:** Done. `scenarios.ts` still holds placeholder content only — real scenario data/schema
 (situation + goal + constraints) remains undesigned, per the existing "core data structures
 deliberately deferred" decision (2026-07-22).
+
+### STT integration design: stop/transcript split, display-only transcript before send
+
+**Date:** 2026-07-28
+**Decision:** Real STT integration will use two new phases and two new actions, plus a dedicated
+`SpeechToText` component:
+
+- **New phases:**
+  - `listeningStopped` — transitional; entered when the user clicks "Stop listening". Signals
+    `SpeechToText`'s effect to call `recognition.stop()` and wait for `onresult`/`onend`.
+  - `readyForSendingUserReply; transcript` — entered once `SpeechToText` reports a transcript.
+    The transcript is carried on the phase object itself (not appended to `threadItems` yet).
+- **New actions:**
+  - `STOP_LISTENING` — dispatched by `ChatClient` when the user clicks "Stop listening";
+    `listening` → `listeningStopped`.
+  - `TRANSCRIPT_CREATED; payload: { transcript }` — dispatched via `SpeechToText`'s
+    `onTranscriptCreated` callback once recognition produces a result; `listeningStopped` →
+    `readyForSendingUserReply; transcript`.
+- **`SpeechToText` component:** child of `ChatClient`, props `phase`, `onTranscriptCreated`,
+  `onError`. Recognition lifecycle keyed off `phase` via `useEffect`: starts on `listening`,
+  calls `recognition.stop()` on `listeningStopped`.
+- **Existing `USER_MESSAGE_SENT` action is unchanged and reused.** `ChatClient` reads
+  `state.phase.transcript` when in `readyForSendingUserReply` and passes it as `message` in the
+  dispatch payload when "Send message" is clicked — same pattern as the current mock-textarea flow.
+  The transcript only lands in `threadItems` at that point, not when it's first created.
+
+**Addendum to "STT transcript review step: not needed for MVP" (2026-07-19):** the transcript is
+now displayed (read-only) between stop and send. This does **not** reverse the 2026-07-19
+decision — there is still no edit/correction capability, and STT output is still sent to the LLM
+unedited. Display is added as scaffolding for the deferred `listeningTimedOut` work (see backlog),
+where showing transcript-so-far becomes necessary anyway; building it now avoids guessing its
+shape later.
+
+**Rationale:** Splitting "stop" from "send" into two phases (rather than one direct
+`listening` → send transition) gives `listeningTimedOut` a natural landing spot later — timeout
+can transition into the same `listeningStopped`/`readyForSendingUserReply` path a manual stop
+already uses, rather than needing its own separate flow designed from scratch.
+
+**Scope note:** `listeningTimedOut` itself remains explicitly deferred, per the 2026-07-27
+decision — this entry only adds the stop/transcript-display mechanics, not the countdown/timeout
+logic.
+
+**Status:** Design decided. Implemented in the commits below — see "STT integration implemented"
+and "Empty-transcript handling" further down.
+
+### STT integration implemented; `MockTTS` replaced by `MockSTT` dev/testing fallback
+
+**Date:** 2026-07-29
+**Decision:** Real Web Speech API recognition is wired into `SpeechToText.tsx` per the 2026-07-28
+design (`listeningStopped`/`readyForSendingUserReply; transcript` phases, `STOP_LISTENING`/
+`TRANSCRIPT_CREATED` actions). `MockTTS.tsx`/`MockTTS.module.css` (the old typed-textarea
+stand-in for STT input) are deleted and replaced by `MockSTT.tsx`/`MockSTT.module.css`. Unlike
+`MockTTS`, which was the entire input mechanism, `MockSTT` is a fallback only: `SpeechToText`'s
+`handleEnd` first builds the transcript from real recognition results
+(`createFullTranscript()`), and only reads `MockSTT`'s textarea value (via an imperative handle,
+`MockSTTHandle.getMockValue()`) when that real transcript is empty.
+**Rationale:** Meant for dev/testing convenience — lets development continue by typing input
+instead of speaking every time the loop is tested, without needing a working mic/speech input on
+every pass. Not a defensive fallback for a known Web Speech API reliability problem.
+**Status:** Done.
+
+### Empty-transcript handling: new `TRANSCRIPT_EMPTY` action, silent retry back to `readyForUserReply`
+
+**Date:** 2026-07-29
+**Decision:** New `ChatAction`: `TRANSCRIPT_EMPTY` (no payload). In `SpeechToText.tsx`,
+`handleEnd` calls `onTranscriptCreated` with an empty string when both the real recognition
+transcript and the `MockSTT` fallback are empty. `ChatClient.tsx`'s `handleTranscriptCreated`
+checks for an empty string and dispatches `TRANSCRIPT_EMPTY` (in addition to the existing
+`TRANSCRIPT_CREATED` dispatch). In the reducer, `listeningStopped` handles `TRANSCRIPT_EMPTY` by
+transitioning straight back to `readyForUserReply` — not into
+`readyForSendingUserReply; transcript: ''`.
+**Rationale:** Intended UX is a silent retry: no error shown, nothing sent, the user just lands
+back where they can click "Reply" and start listening again, as if nothing happened. Landing in
+`readyForSendingUserReply` with an empty transcript would otherwise let the user hit "Send" and
+post an empty message.
+**Status:** Done — implemented in `chatReducer.ts`, `SpeechToText.tsx`, `ChatClient.tsx`.
+
+### STT display switched to live interim transcript
+
+**Date:** 2026-07-29
+**Decision:** `SpeechToText.tsx` sets `recognition.interimResults = true` (previously `false`).
+`handleResult` no longer accumulates only `isFinal` results into a `speechResultsRef` array
+joined with spaces (`addSpeechResult`/`createFullTranscript`, now removed); instead, on every
+`onresult` event it joins *all* current results (interim + final) into one string and stores it
+in a `liveTranscriptRef`/`liveTranscript` state pair. `handleEnd` reads `liveTranscriptRef.current`
+directly (falling back to `MockSTT` when empty, unchanged from the 2026-07-29 STT-integration
+decision above). `SpeechResults.tsx` renders `liveTranscript` as it updates, with a "Listening…"
+placeholder shown only while `phase.status === 'listening'` and the transcript is still empty, and
+a "…" typing indicator once text has appeared.
+**Rationale:** Works around a Safari-on-iOS bug found while dev-testing the STT flow: if `onresult`
+had already fired at least once, it would not fire again after `recognition.stop()` was called,
+silently dropping the last (final) result. Setting `interimResults = true` and continuously
+rebuilding `liveTranscript` from every `onresult` event means the last spoken segment is already
+captured in state by the time `onend` fires, regardless of whether a final `onresult` for it ever
+arrives. Showing the transcript live as a side effect is a secondary benefit, not the driving
+reason (commits `ee35bfe`, `5471717`, same day as the initial STT integration).
+**Status:** Done. Does not reverse the 2026-07-19 "no transcript review/edit step" decision — the
+transcript is still display-only and sent unedited; this only changes *when* text appears
+(live vs. only after `onend`), not whether the user can edit it.
+
+### Dev config: allow ngrok origin for the Next.js dev server
+
+**Date:** 2026-07-29
+**Decision:** `next.config.ts` sets `allowedDevOrigins: ['*.ngrok-free.app']`.
+**Rationale:** Next.js's dev server blocks cross-origin requests by default; this allowlists
+requests tunneled through ngrok, needed to reach the local dev server from a device other than the
+machine running it (commit `f662a2f`, same day as the STT work this enables testing).
+**Status:** Done.

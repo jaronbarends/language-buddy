@@ -1,6 +1,6 @@
 .component {
   display: grid;
-  grid-template-rows: 1fr auto auto auto;
+  grid-template-rows: 1fr repeat(4, auto);
   height: calc(100dvh - var(--header-height));
 }
 

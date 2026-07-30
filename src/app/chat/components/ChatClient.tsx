@@ -3,13 +3,12 @@
 import { useReducer, useState, useRef, useEffect } from 'react';
 
 import { chatReducer, type ChatState } from '@/app/chat/chatReducer';
+import ControlsArea from '@/app/chat/components/ControlsArea';
+import ErrorArea from '@/app/chat/components/ErrorArea';
+import SpeechToText from '@/app/chat/components/SpeechToText';
+import ThreadView from '@/app/chat/components/ThreadView';
 import { sendChatMessage, type AIChatResult } from '@/lib/aiService';
 import { type ChatConfig } from '@/lib/chatConfig';
-
-import ControlsArea from './ControlsArea';
-import ErrorArea from './ErrorArea';
-import MockTTS from './MockTTS';
-import ThreadView from './ThreadView';
 
 import styles from './ChatClient.module.css';
 
@@ -36,11 +35,17 @@ export default function ChatClient({ chatConfig }: ChatClientProps) {
       <div className={styles.component}>
         <ThreadView threadItems={state.threadItems} />
         <ErrorArea phase={state.phase} />
-        <MockTTS phase={state.phase} />
+        <SpeechToText
+          phase={state.phase}
+          onTranscriptCreated={handleTranscriptCreated}
+          onError={handleError}
+          languageTag={language.languageTag}
+        />
         <ControlsArea
           onStartChat={handleStartChat}
           onStopChat={handleStopChat}
           onStartListening={handleStartListening}
+          onStopListening={handleStopListening}
           onSendUserMessage={handleSendUserMessage}
           onEndSession={handleEndSession}
           phase={state.phase}
@@ -67,8 +72,23 @@ export default function ChatClient({ chatConfig }: ChatClientProps) {
     startListening();
   }
 
+  function handleStopListening() {
+    dispatch({ type: 'STOP_LISTENING' });
+  }
+
   function handleEndSession() {
     dispatch({ type: 'END_SESSION' });
+  }
+
+  function handleTranscriptCreated(transcript: string) {
+    if (transcript === '') {
+      dispatch({ type: 'TRANSCRIPT_EMPTY' });
+    }
+    dispatch({ type: 'TRANSCRIPT_CREATED', payload: { transcript } });
+  }
+
+  function handleError() {
+    // TODO decide how to handle non-api errors
   }
 
   async function startChatWithAI() {
@@ -94,24 +114,18 @@ export default function ChatClient({ chatConfig }: ChatClientProps) {
   }
 
   function startChatWithUser() {
-    console.log('start chat with user');
     dispatch({ type: 'START_CHAT_WITH_USER' });
   }
 
   function startListening() {
     dispatch({ type: 'START_LISTENING' });
-    // create speech thing here
   }
 
   async function handleSendUserMessage() {
-    // stop listening; parse results
-    const defaultInput = 'tell me more about the city you just mentioned';
-    const mockTTS = document.getElementById('mockTTS');
-    const mockTTSValue = mockTTS?.value;
-    const input = mockTTSValue || defaultInput;
-    if (mockTTS) {
-      mockTTS.value = '';
+    if (state.phase.status !== 'readyForSendingUserReply') {
+      return;
     }
+    const input = state.phase.transcript;
 
     dispatch({ type: 'USER_MESSAGE_SENT', payload: { message: input } });
     abortControllerRef.current = new AbortController();
