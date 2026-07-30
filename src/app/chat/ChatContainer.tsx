@@ -36,7 +36,6 @@ export default function ChatContainer() {
   }
 
   function handleSessionEnd() {
-    console.log('handle conv end');
     setContainerState({ status: 'setup' });
   }
 }

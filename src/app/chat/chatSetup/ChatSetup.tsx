@@ -1,10 +1,9 @@
 import { useState } from 'react';
 
 import Button from '@/components/button/Button';
-import { getChatConfig } from '@/lib/chatConfig';
-import { ChatConfig } from '@/lib/chatConfig';
+import { type ChatConfig, getChatConfig } from '@/lib/chatConfig';
 import { type Language } from '@/lib/language';
-import { freeformChatWithAIStart, freeformChatWithUserStart, scenarios } from '@/lib/scenarios';
+import { freeformChatWithAIStart, freeformChatWithUserStart } from '@/lib/scenarios';
 
 import LanguagePicker from './components/LanguagePicker';
 

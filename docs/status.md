@@ -230,12 +230,12 @@ design pass sequenced after that, before evaluation.
 2. ~~Build the mock implementation against that same type/signature~~ — done
    (`/api/aiMock/chat`, toggled via `NEXT_PUBLIC_USE_MOCK_AI`).
 3. ~~Wire the v0 state machine to the mock, drive the full happy-path loop~~ — done: typed input,
-   mock AI, full turn loop from `readyForNewChat` through `ended` all working.
+   mock AI, full turn loop from `chatStartPending` through `chatEnded` all working.
 4. ~~Fix `STOP_CHAT` to be handled from every reducer phase, not just `listening`~~ — done: checked
    once before the phase-specific switch (see decisions.md).
 5. ~~Build real error handling: reducer `error` case behavior + Retry action~~ — done:
-   end-session-only recovery, implemented as a dedicated `END_SESSION` action that resets
-   to `readyForNewChat`; no Retry action for v0 (see decisions.md, 2026-07-27).
+   end-session-only recovery, an "End this session" control calls `onEndSession` directly
+   (no dedicated end-session reducer action); no Retry action for v0 (see decisions.md, 2026-07-27).
 6. ~~Wire real STT input, replacing the `MockTTS` textarea~~ — done: `SpeechToText` component,
    `listeningStopped` → `readyForSendingUserReply` phases, transcript displayed read-only before
    send, plus empty-transcript handling (`TRANSCRIPT_EMPTY`) and `MockSTT` as a dev-only fallback

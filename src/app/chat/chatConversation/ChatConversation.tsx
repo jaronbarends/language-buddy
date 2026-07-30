@@ -2,7 +2,7 @@
 
 import { useReducer, useState, useRef, useEffect } from 'react';
 
-import { sendChatMessage, type AIChatResult } from '@/lib/aiService';
+import { AIChatError, sendChatMessage, type AIChatResult } from '@/lib/aiService';
 import { type ChatConfig } from '@/lib/chatConfig';
 
 import { chatReducer, type ChatState } from './chatReducer';
@@ -25,11 +25,13 @@ export default function ChatConversation({ chatConfig, onEndSession }: ChatConve
   const [state, dispatch] = useReducer(chatReducer, initalChatState);
   const abortControllerRef = useRef<AbortController | undefined>(undefined);
   const hasStartedRef = useRef<boolean>(false);
+  const requestIdRef = useRef<number>(0);
 
   useEffect(() => {
     if (state.phase.status !== 'chatStartPending' || hasStartedRef.current) {
       return;
     }
+    hasStartedRef.current = true;
     startChat();
   }, [state.phase]);
 
@@ -74,6 +76,7 @@ export default function ChatConversation({ chatConfig, onEndSession }: ChatConve
 
   function handleStopChat() {
     dispatch({ type: 'STOP_CHAT' });
+    requestIdRef.current++; // ensure any pending requests are made stale
     abortControllerRef.current?.abort();
   }
 
@@ -97,15 +100,32 @@ export default function ChatConversation({ chatConfig, onEndSession }: ChatConve
   }
 
   async function startChatWithAI() {
-    abortControllerRef.current = new AbortController();
     const input = 'start the conversation according to the system instructions';
+    let reply: AIChatResult;
+    abortControllerRef.current = new AbortController();
+    requestIdRef.current++;
+    const requestId = requestIdRef.current;
 
     dispatch({ type: 'AI_START_INPUT_SENT' });
-    const reply: AIChatResult = await sendChatMessage({
-      input,
-      systemInstruction: chatConfig.systemInstruction,
-      abortSignal: abortControllerRef.current.signal,
-    });
+    try {
+      reply = await sendChatMessage({
+        input,
+        systemInstruction: chatConfig.systemInstruction,
+        abortSignal: abortControllerRef.current.signal,
+      });
+      if (requestIsStale(requestId)) {
+        return;
+      }
+    } catch (error) {
+      if (requestIsStale(requestId)) {
+        return;
+      }
+      if (error instanceof Error && error.name === 'AbortError') {
+        return; // user cancelled, not a real error, don't dispatch
+      }
+      dispatch({ type: 'ERROR', payload: { error: error as AIChatError } });
+      return;
+    }
 
     if (!reply.success) {
       // then reply must be error object
@@ -130,21 +150,41 @@ export default function ChatConversation({ chatConfig, onEndSession }: ChatConve
     if (state.phase.status !== 'readyForSendingUserReply') {
       return;
     }
+
     const input = state.phase.transcript;
+    let reply: AIChatResult;
+    abortControllerRef.current = new AbortController();
+    requestIdRef.current++;
+    const requestId = requestIdRef.current;
 
     dispatch({ type: 'USER_MESSAGE_SENT', payload: { message: input } });
-    abortControllerRef.current = new AbortController();
-    const reply: AIChatResult = await sendChatMessage({
-      input,
-      previousInteractionId,
-      systemInstruction: chatConfig.systemInstruction,
-      abortSignal: abortControllerRef.current.signal,
-    });
+    try {
+      reply = await sendChatMessage({
+        input,
+        previousInteractionId,
+        systemInstruction: chatConfig.systemInstruction,
+        abortSignal: abortControllerRef.current.signal,
+      });
+      if (requestIsStale(requestId)) {
+        return;
+      }
+    } catch (error) {
+      if (requestIsStale(requestId)) {
+        return;
+      }
+      if (error instanceof Error && error.name === 'AbortError') {
+        return; // user cancelled, not a real error, don't dispatch
+      }
+      dispatch({ type: 'ERROR', payload: { error: error as AIChatError } });
+      return;
+    }
+
     if (!reply.success) {
       // then reply must be error object
       dispatch({ type: 'ERROR', payload: { error: reply } });
       return;
     }
+
     const { interactionId, message } = reply;
     setPreviousInteractionId(interactionId);
     dispatch({ type: 'AI_RESPONSE_RECEIVED', payload: { message } });
@@ -157,5 +197,9 @@ export default function ChatConversation({ chatConfig, onEndSession }: ChatConve
     setTimeout(() => {
       dispatch({ type: 'AI_FINISHED_SPEAKING' });
     }, 500);
+  }
+
+  function requestIsStale(requestId: number): boolean {
+    return requestId !== requestIdRef.current;
   }
 }
