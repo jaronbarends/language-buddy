@@ -22,7 +22,8 @@ const scenario: MockScenario = 'success';
 export async function POST(request: NextRequest) {
   const { systemInstruction, previousInteractionId, input } =
     (await request.json()) as ChatMessageParams;
-  const successResponseOutputText = `mock response.output_text (response to ${input})`;
+  // const successResponseOutputText = `mock response.output_text (response to ${input})`;
+  const successResponseOutputText = `Hei! Det er så fint vær ute i dag, så jeg har tilbrakt mye tid i hagen. Har du noen spennende hobbyer du pleier å holde på med i helgene? Hei! Det er så fint vær ute i dag, så jeg har tilbrakt mye tid i hagen. Har du noen spennende hobbyer du pleier å holde på med i helgene?`;
 
   switch (scenario) {
     case MOCK_SCENARIOS.success:

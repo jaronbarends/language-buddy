@@ -72,12 +72,6 @@ export async function toAIChatResult(res: Response): Promise<AIChatResult> {
   return {
     success: true,
     interactionId: id,
-    message: sanitizeMessage(text),
+    message: text,
   };
-}
-
-function sanitizeMessage(rawMessage: string) {
-  const sanitizedMessage = rawMessage.replace(/\s+/g, ' ').trim();
-  // we instruct AI to only return plain text, but let's not rely on that. Any white space (\n, tabs) that would servive will be interpreted by voice on Chrome as cues for a pause. Remove them.
-  return sanitizedMessage;
 }
