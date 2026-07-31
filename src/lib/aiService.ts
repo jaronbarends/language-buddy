@@ -5,7 +5,7 @@ import { type ChatMessageParams } from '@/app/api/ai/chat/route';
 const CHAT_ENDPOINT =
   process.env.NEXT_PUBLIC_USE_MOCK_AI === 'true' ? '/api/aiMock/chat' : '/api/ai/chat';
 
-export type AIChatError = {
+export type AIError = {
   success: false;
   error: string;
   status: number;
@@ -18,7 +18,7 @@ export type AIChatResult =
       interactionId: string;
       message: string;
     }
-  | AIChatError;
+  | AIError;
 
 export async function sendChatMessage({
   systemInstruction,
@@ -31,18 +31,21 @@ export async function sendChatMessage({
     previousInteractionId,
     input,
   });
-  const res: Response = await postChatMessage({ body, abortSignal });
+  const endpoint = CHAT_ENDPOINT;
+  const res: Response = await sendMessage({ body, abortSignal, endpoint });
   return toAIChatResult(res);
 }
 
-async function postChatMessage({
+async function sendMessage({
   body,
   abortSignal,
+  endpoint,
 }: {
   body: BodyInit;
   abortSignal: AbortSignal | undefined;
+  endpoint: string;
 }) {
-  const res = await fetch(CHAT_ENDPOINT, {
+  const res = await fetch(endpoint, {
     method: 'POST',
     body,
     headers: {

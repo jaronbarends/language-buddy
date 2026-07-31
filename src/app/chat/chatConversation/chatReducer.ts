@@ -1,4 +1,4 @@
-import { type AIChatError } from '@/lib/aiService';
+import { type AIError } from '@/lib/aiService';
 
 export type ThreadItem = {
   message: string;
@@ -21,7 +21,7 @@ export type ChatPhase =
   | { status: 'readyForSendingUserReply'; transcript: string }
   | { status: 'listeningTimedOut' }
   | { status: 'chatEnded' } // ended, need to get evaluation now.
-  | { status: 'error'; error: AIChatError };
+  | { status: 'error'; error: AIError };
 
 export type ChatAction =
   | { type: 'AI_START_INPUT_SENT' }
@@ -35,7 +35,7 @@ export type ChatAction =
   | { type: 'TRANSCRIPT_CREATED'; payload: { transcript: string } }
   | { type: 'TRANSCRIPT_EMPTY' }
   | { type: 'USER_MESSAGE_SENT'; payload: { message: string } }
-  | { type: 'ERROR'; payload: { error: AIChatError } };
+  | { type: 'ERROR'; payload: { error: AIError } };
 
 // initial state should be { status: 'chatStartPending' }
 export function chatReducer(state: ChatState, action: ChatAction): ChatState {
