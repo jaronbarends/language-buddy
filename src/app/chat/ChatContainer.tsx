@@ -52,6 +52,9 @@ export default function ChatContainer() {
   );
 
   function handleSessionStart(chatConfig: ChatConfig) {
+    if (languageVoice) {
+      unlockSpeechSynthesis();
+    }
     setContainerState({ status: 'conversation', chatConfig });
   }
 
@@ -76,4 +79,12 @@ export default function ChatContainer() {
   function handleSpeechInitFail() {
     setSpeechIsSupported(false);
   }
+}
+
+/*
+WebKit only allows speechSynthesis.speak() to actually produce audio when it's called synchronously inside a user-gesture handler. Such permission needs to be granted on echey page load.
+*/
+function unlockSpeechSynthesis() {
+  const unlockUtterance = new SpeechSynthesisUtterance('');
+  window.speechSynthesis.speak(unlockUtterance);
 }

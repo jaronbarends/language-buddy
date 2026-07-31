@@ -41,17 +41,22 @@ export default function ChatConversation({
     startChat();
   }, [state.phase]);
 
-  useEffect(() => {
-    if (state.phase.status !== 'aiTurnSpeaking') {
-      return;
-    }
-    speakAIResponse(state.phase.message);
-  }, [state.phase]);
+  // useEffect(() => {
+  //   if (state.phase.status !== 'aiTurnSpeaking') {
+  //     return;
+  //   }
+  //   startAISpeech(state.phase.message);
+  // }, [state.phase]);
 
   return (
     <>
       <div className={styles.component}>
-        <ThreadView threadItems={state.threadItems} languageVoice={languageVoice} />
+        <ThreadView
+          phase={state.phase}
+          threadItems={state.threadItems}
+          languageVoice={languageVoice}
+          onAISpeechEnd={handleAISpeechEnd}
+        />
         <ErrorArea phase={state.phase} />
         <SpeechToText
           phase={state.phase}
@@ -132,13 +137,17 @@ export default function ChatConversation({
     await sendMessageToAI(input);
   }
 
-  function speakAIResponse(message: string) {
-    // speak ai response
-    // use TTS finish event
-    //console.log(`[SpeechToText's last utterance's end event fires]`);
-    setTimeout(() => {
-      dispatch({ type: 'AI_FINISHED_SPEAKING' });
-    }, 500);
+  // function startAISpeech(message: string) {
+  //   // speak ai response
+  //   // use TTS finish event
+  //   //console.log(`[SpeechToText's last utterance's end event fires]`);
+  //   setTimeout(() => {
+  //     dispatch({ type: 'AI_FINISHED_SPEAKING' });
+  //   }, 500);
+  // }
+
+  function handleAISpeechEnd() {
+    dispatch({ type: 'AI_FINISHED_SPEAKING' });
   }
 
   async function sendMessageToAI(input: string): Promise<void> {

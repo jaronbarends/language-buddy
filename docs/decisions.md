@@ -924,3 +924,20 @@ for "mount effect hasn't fired yet" would collide with that existing convention.
 **Consequence:** The mount effect needs a ref guard against React 19 StrictMode's dev-mode
 double-invocation of effects, to avoid firing the start logic — and, once off the mock API, a real
 duplicate request — twice.
+
+### iOS Safari TTS silent failure: speechSynthesis requires a user-gesture unlock
+
+**Date:** 2026-07-31
+**Decision:** `unlockSpeechSynthesis()` — speaking a single empty `SpeechSynthesisUtterance` — is
+called in `ChatContainer`, synchronously inside a real tap handler (e.g. "Start conversation").
+**Rationale:** iOS Safari only allows `speechSynthesis.speak()` to actually produce audio when
+called synchronously inside a user-gesture handler. `ThreadView`'s TTS call fires from a
+`useEffect` reacting to `phase === 'aiTurnSpeaking'`, which is triggered by an async Gemini
+response — not a user gesture. On iOS Safari this fails silently: `speak()` runs, `onresult`-style
+logs fire, `synth.speaking` even reports `true`, but no audio plays. Chrome doesn't enforce this,
+which is why the bug wasn't caught until iPad/ngrok testing. Calling `speak('')` once, synchronously
+inside a genuine tap, "unlocks" the audio session for the rest of the page's lifetime — subsequent
+`speak()` calls from async contexts then work normally.
+**Known limitation:** the unlock doesn't persist across reloads/new tabs — must fire again on every
+fresh page load.
+**Status:** Done.

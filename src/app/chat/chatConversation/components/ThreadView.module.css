@@ -13,6 +13,7 @@
 }
 
 .messageFromAi {
+  display: flex;
   margin-right: 20%;
   border-top-left-radius: 0;
   background: rgba(from var(--color-primary) r g b / 0.1);
@@ -23,4 +24,9 @@
   border-top-right-radius: 0;
   background: var(--color-primary);
   color: var(--color-white);
+}
+
+.buttonWrapper {
+  flex: 0 0 auto;
+  margin-left: auto;
 }
