@@ -2,7 +2,7 @@
 
 import { useReducer, useState, useRef, useEffect } from 'react';
 
-import { AIChatError, sendChatMessage, type AIChatResult } from '@/lib/aiService';
+import { AIError, sendChatMessage, type AIChatResult } from '@/lib/aiService';
 import { type ChatConfig } from '@/lib/chatConfig';
 
 import { chatReducer, type ChatState } from './chatReducer';
@@ -91,6 +91,7 @@ export default function ChatConversation({ chatConfig, onEndSession }: ChatConve
   function handleTranscriptCreated(transcript: string) {
     if (transcript === '') {
       dispatch({ type: 'TRANSCRIPT_EMPTY' });
+      return;
     }
     dispatch({ type: 'TRANSCRIPT_CREATED', payload: { transcript } });
   }
@@ -101,41 +102,9 @@ export default function ChatConversation({ chatConfig, onEndSession }: ChatConve
 
   async function startChatWithAI() {
     const input = 'start the conversation according to the system instructions';
-    let reply: AIChatResult;
-    abortControllerRef.current = new AbortController();
-    requestIdRef.current++;
-    const requestId = requestIdRef.current;
-
     dispatch({ type: 'AI_START_INPUT_SENT' });
-    try {
-      reply = await sendChatMessage({
-        input,
-        systemInstruction: chatConfig.systemInstruction,
-        abortSignal: abortControllerRef.current.signal,
-      });
-      if (requestIsStale(requestId)) {
-        return;
-      }
-    } catch (error) {
-      if (requestIsStale(requestId)) {
-        return;
-      }
-      if (error instanceof Error && error.name === 'AbortError') {
-        return; // user cancelled, not a real error, don't dispatch
-      }
-      dispatch({ type: 'ERROR', payload: { error: error as AIChatError } });
-      return;
-    }
 
-    if (!reply.success) {
-      // then reply must be error object
-      dispatch({ type: 'ERROR', payload: { error: reply } });
-      return;
-    }
-
-    const { interactionId, message } = reply;
-    setPreviousInteractionId(interactionId);
-    dispatch({ type: 'AI_RESPONSE_RECEIVED', payload: { message } });
+    await sendMessageToAI(input);
   }
 
   function startChatWithUser() {
@@ -152,12 +121,26 @@ export default function ChatConversation({ chatConfig, onEndSession }: ChatConve
     }
 
     const input = state.phase.transcript;
+    dispatch({ type: 'USER_MESSAGE_SENT', payload: { message: input } });
+
+    await sendMessageToAI(input);
+  }
+
+  function speakAIResponse(message: string) {
+    // speak ai response
+    // use TTS finish event
+    //console.log(`[SpeechToText's last utterance's end event fires]`);
+    setTimeout(() => {
+      dispatch({ type: 'AI_FINISHED_SPEAKING' });
+    }, 500);
+  }
+
+  async function sendMessageToAI(input: string): Promise<void> {
     let reply: AIChatResult;
     abortControllerRef.current = new AbortController();
     requestIdRef.current++;
     const requestId = requestIdRef.current;
 
-    dispatch({ type: 'USER_MESSAGE_SENT', payload: { message: input } });
     try {
       reply = await sendChatMessage({
         input,
@@ -175,7 +158,7 @@ export default function ChatConversation({ chatConfig, onEndSession }: ChatConve
       if (error instanceof Error && error.name === 'AbortError') {
         return; // user cancelled, not a real error, don't dispatch
       }
-      dispatch({ type: 'ERROR', payload: { error: error as AIChatError } });
+      dispatch({ type: 'ERROR', payload: { error: error as AIError } });
       return;
     }
 
@@ -185,18 +168,8 @@ export default function ChatConversation({ chatConfig, onEndSession }: ChatConve
       return;
     }
 
-    const { interactionId, message } = reply;
-    setPreviousInteractionId(interactionId);
-    dispatch({ type: 'AI_RESPONSE_RECEIVED', payload: { message } });
-  }
-
-  function speakAIResponse(message: string) {
-    // speak ai response
-    // use TTS finish event
-    //console.log(`[SpeechToText's last utterance's end event fires]`);
-    setTimeout(() => {
-      dispatch({ type: 'AI_FINISHED_SPEAKING' });
-    }, 500);
+    setPreviousInteractionId(reply.interactionId);
+    dispatch({ type: 'AI_RESPONSE_RECEIVED', payload: { message: reply.message } });
   }
 
   function requestIsStale(requestId: number): boolean {
