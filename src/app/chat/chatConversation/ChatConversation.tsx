@@ -4,6 +4,7 @@ import { useReducer, useState, useRef, useEffect } from 'react';
 
 import { AIError, sendChatMessage, type AIChatResult } from '@/lib/aiService';
 import { type ChatConfig } from '@/lib/chatConfig';
+import { type LanguageVoice } from '@/lib/language';
 
 import { chatReducer, type ChatState } from './chatReducer';
 import ControlsArea from './components/ControlsArea';
@@ -16,10 +17,15 @@ import styles from './ChatConversation.module.css';
 
 type ChatConversationProps = {
   chatConfig: ChatConfig;
+  languageVoice: LanguageVoice;
   onEndSession: () => void;
 };
 
-export default function ChatConversation({ chatConfig, onEndSession }: ChatConversationProps) {
+export default function ChatConversation({
+  chatConfig,
+  languageVoice,
+  onEndSession,
+}: ChatConversationProps) {
   const [previousInteractionId, setPreviousInteractionId] = useState<string | undefined>();
   const initalChatState: ChatState = { threadItems: [], phase: { status: 'chatStartPending' } };
   const [state, dispatch] = useReducer(chatReducer, initalChatState);
@@ -45,7 +51,7 @@ export default function ChatConversation({ chatConfig, onEndSession }: ChatConve
   return (
     <>
       <div className={styles.component}>
-        <ThreadView threadItems={state.threadItems} />
+        <ThreadView threadItems={state.threadItems} languageVoice={languageVoice} />
         <ErrorArea phase={state.phase} />
         <SpeechToText
           phase={state.phase}

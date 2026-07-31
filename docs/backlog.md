@@ -64,6 +64,7 @@ rather than dropping it.
 - once real scenarios exist in the `scenarios` array alongside the two freeform-chat `Scenario`
   objects, nothing distinguishes "this is a freeform-chat mode" from "this is a real scenario" at the
   type level — a `category`-type field may be needed (see decisions.md, 2026-07-30)
+- check for available voices for supported languages; if no voice is found, only use written text and show icon on language selection
 
 ## Icebox
 
