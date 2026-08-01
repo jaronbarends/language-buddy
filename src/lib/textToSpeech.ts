@@ -4,9 +4,7 @@ export function initSpeech(
   onSuccess: (supportedLanguageVoices: SpeechSynthesisVoice[]) => void,
   onFail: () => void
 ) {
-  console.log('initSpeech');
   if (!('speechSynthesis' in window)) {
-    console.log('initSpeech - call onFail');
     onFail();
     return;
   }
@@ -21,7 +19,6 @@ export function initSpeech(
 
   function voiceschangedHandler() {
     const voices = synth.getVoices();
-    console.log('voices:', voices);
     onSuccess(voices);
   }
 }
@@ -29,7 +26,6 @@ export function initSpeech(
 const GOOGLE_SPEECH_RATE = 1;
 
 export function speakMessage(message: string, voice: LanguageVoice, onSpeechEnd: () => void) {
-  console.log('speakMessage');
   if (!voice || !('speechSynthesis' in window)) {
     return;
   }
@@ -38,8 +34,6 @@ export function speakMessage(message: string, voice: LanguageVoice, onSpeechEnd:
   const rate = googleRateToEngineRate(GOOGLE_SPEECH_RATE, voice);
   const sanitizedMessage = sanitizeMessage(message);
   const sentences = divideIntoSentences(sanitizedMessage);
-
-  console.log('sentences:', sentences);
 
   if (sentences.length === 0) {
     // nothing to speak (e.g. empty message) - signal completion immediately
