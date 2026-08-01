@@ -1,6 +1,6 @@
 # Project status
 
-**Last updated:** 2026-07-30
+**Last updated:** 2026-08-01
 **Current phase:** Early build. Concept locked (scenario-library-based conversational sparring
 partner, Norwegian, multi-turn sessions + async structured evaluation). MVP scoping in progress;
 Spikes 1–4 all complete. AI provider decided (Gemini). State machine now runs the full happy path
@@ -12,8 +12,10 @@ built**: `ChatContainer` renders `ChatSetup` (language + who-starts, pre-selecte
 call from `ChatConversation` to `ChatContainer`, no longer a reducer action. `chatReducer`'s
 `chatStartPending`/`chatEnded` renames and the `END_SESSION` removal are all in place (see
 decisions.md, 2026-07-30, for the one gap — `chatEnded` — caught and fixed while writing this
-update). Next up: listening timeout, then real TTS and the real Gemini call — with a visual/UI
-design pass sequenced after that, before evaluation.
+update). **Real TTS output is now wired up and working end-to-end** (2026-07-31–2026-08-01, see
+"What exists" and decisions.md): actual build order departed from the plan below —
+`listeningTimedOut` is still unwired; TTS was picked up first instead. Next up: swap the mock AI
+for the real Gemini route, then the visual/UI design pass, before evaluation.
 
 ---
 
@@ -64,10 +66,11 @@ design pass sequenced after that, before evaluation.
   → `readyForUserReply` → `listening` → `waitingForAI` → ... → `chatEnded`).
 - `ChatConversation.tsx` (Client Component, see "Setup screen" bullet above) owns the `useReducer`
   and drives the loop end-to-end: sends the transcript from real STT (`SpeechToText.tsx`, see
-  below) to `sendChatMessage`, dispatches on success/failure, and fires a stubbed
-  `speakAIResponse` in place of real TTS. `previousInteractionId` is tracked in component state and
-  threaded through each call, per Spike 3's finding that context (but not `systemInstruction`)
-  carries over via `previous_interaction_id`.
+  below) to `sendChatMessage`, dispatches on success/failure, and passes `languageVoice` plus an
+  `onAISpeechEnd` handler down to `ThreadView`, which now fires real TTS (see "Real TTS wired up"
+  below) instead of the old stubbed `speakAIResponse`/`setTimeout`. `previousInteractionId` is
+  tracked in component state and threaded through each call, per Spike 3's finding that context
+  (but not `systemInstruction`) carries over via `previous_interaction_id`.
 - `ControlsArea.tsx` — derives primary-button label/handler from phase via `canStartWithUser` /
   `canStartReply` / `canSendReply` / `chatHasEnded` / `hasError` helpers in `chatReducer.ts`; "End
   conversation" button always rendered except in `error` (dispatches `STOP_CHAT`, handled from
@@ -76,7 +79,9 @@ design pass sequenced after that, before evaluation.
 - `ErrorArea.tsx` — renders the raw error message from the `error` phase; unstyled, no
   per-error-type differentiation. Generic error recovery (end-session-only, no Retry) is wired up
   via the `onEndSession` prop call described above, not a reducer action.
-- `ThreadView.tsx` — renders `threadItems` from state, styled by author (`ai`/`user`).
+- `ThreadView.tsx` — renders `threadItems` from state, styled by author (`ai`/`user`); also owns
+  the TTS playback trigger (see "Real TTS wired up" below) via a `useEffect` keyed on
+  `phase.status === 'aiTurnSpeaking'`.
 - **Real STT wired up** (`SpeechToText.tsx`), per the 2026-07-28 design: starts/stops Web Speech
   API recognition keyed off `phase` (`listening` → start, `listeningStopped` → stop). With
   `recognition.interimResults = true`, every `onresult` event joins _all_ current results
@@ -90,6 +95,28 @@ design pass sequenced after that, before evaluation.
   mic on every pass (see decisions.md, 2026-07-29). `SpeechResults.tsx` renders `liveTranscript`
   live as the user speaks, showing a "Listening…" placeholder while it's still empty and a "…"
   typing indicator once text has appeared, both only while `phase.status === 'listening'`.
+- **Real TTS wired up** (2026-07-31–2026-08-01, see decisions.md): `src/lib/textToSpeech.ts`
+  exports `initSpeech(onSuccess, onFail)` (wraps `speechSynthesis.getVoices()`/the
+  `voiceschanged` event — Chrome vs. Firefox differ on whether voices are available
+  synchronously) and `speakMessage(message, voice, onSpeechEnd)`, which sanitizes whitespace,
+  splits the message into sentences (Chrome caps utterance length), queues one
+  `SpeechSynthesisUtterance` per sentence, and fires `onSpeechEnd` only on the last one's `end`
+  event. `ChatContainer.tsx` calls `initSpeech` on mount, builds a `supportedLanguageVoices` map
+  (one voice per supported `languageTag`), derives `languageVoice` for the currently-selected
+  `Language`, and calls `unlockSpeechSynthesis()` (speaking an empty utterance synchronously
+  inside the "Start conversation" tap handler) — required for iOS Safari to allow audio at all,
+  see decisions.md. `ThreadView.tsx`'s `aiTurnSpeaking` effect calls `speakMessage` with the
+  voice and dispatches `AI_FINISHED_SPEAKING` (the reducer phase this satisfies already existed
+  as a stub — no reducer changes needed). Speech rate is corrected per detected voice engine
+  (`google`/`apple`/`microsoft`, sniffed from `voice.voiceURI`) via a hardcoded, empirically
+  calibrated `speechRatePairings` lookup table — replacing an earlier, less accurate
+  `isIOS()`-based flat multiplier (`src/lib/platform.ts`, now deleted). `speechIsSupported` is
+  tracked in `ChatContainer` state but not yet consumed by any component — no UI fallback exists
+  yet for "this language has no installed voice" (tracked in backlog.md). Two dev-only files,
+  `textToSpeechTest.ts` and `speechRateAnalysis.ts`, hold the calibration tooling/raw timing data
+  behind the rate table; neither is imported by any production path (see decisions.md,
+  "known dead code" note, and backlog.md for a cleanup item covering these plus the now-orphaned
+  `AIThreadItemContent.tsx`).
 - `next.config.ts` sets `allowedDevOrigins: ['*.ngrok-free.app']`, letting the Next.js dev
   server accept requests tunneled through ngrok (see decisions.md, 2026-07-29).
 - **Empty-transcript handling:** new `TRANSCRIPT_EMPTY` action. When neither real STT nor the
@@ -198,6 +225,14 @@ design pass sequenced after that, before evaluation.
 - **Start-of-chat trigger moves to a mount `useEffect`; `readyForNewChat` renamed to
   `chatStartPending` (2026-07-30, implemented)** — `hasStartedRef` guards against React 19
   StrictMode's dev-mode double-invoked effects (see decisions.md).
+- **Real TTS output implemented (2026-07-31–2026-08-01)** — replaces the stubbed
+  `setTimeout`/console.log placeholder; wired via `ThreadView`'s `aiTurnSpeaking` effect calling
+  `speakMessage` (see "What exists" above and decisions.md). Speech rate is corrected per
+  detected voice engine (Google/Apple/Microsoft) using an empirically calibrated lookup table,
+  not a per-platform heuristic — the initial `isIOS()`-based flat multiplier was superseded the
+  same week once it proved too imprecise. Voice-availability detection per supported language
+  exists; the UI fallback for "no voice installed" and a user-facing speech-rate control remain
+  open (see below and backlog.md).
 
 ## What's open
 
@@ -223,6 +258,16 @@ design pass sequenced after that, before evaluation.
   yet.
 - **Predefined-scenario-picks-its-own-starter (freeform-chat "mode 2")** remains out of scope —
   deliberately deferred alongside the setup-screen decision, tracked in backlog.md.
+- **TTS UI fallback for unsupported languages** — `speechIsSupported`/per-language voice
+  detection exists in `ChatContainer`, but nothing in the UI reacts to it yet (no icon/text-only
+  fallback on the language picker, per the relevant backlog item).
+- **User-facing speech-rate control** — rate correction so far only normalizes *across voice
+  engines* to a consistent baseline speed; there's no slower/faster control exposed to the user
+  (separate backlog item).
+- **Dead code from the TTS build** — `AIThreadItemContent.tsx` (orphaned once the speak trigger
+  moved to `ThreadView`'s phase-driven effect) and `textToSpeechTest.ts`/`speechRateAnalysis.ts`
+  (dev-only calibration tooling, not imported by production code) are still in the tree; a
+  cleanup decision (delete vs. keep as documented calibration method) is tracked in backlog.md.
 
 ## Next step
 
@@ -247,7 +292,11 @@ design pass sequenced after that, before evaluation.
    removed, dead `canStartChat` already gone); chat-start trigger moved into a mount `useEffect`
    with a StrictMode ref guard; `ChatConversation`'s end-session handler calls `onEndSession`
    directly (see decisions.md, 2026-07-30, and "Setup screen" bullet above).
-8. Wire real TTS output, replacing the `speakAIResponse` console.log/setTimeout stub.
+8. ~~Wire real TTS output, replacing the `speakAIResponse` console.log/setTimeout stub~~ — done:
+   `textToSpeech.ts` (`initSpeech`/`speakMessage`), triggered from `ThreadView`'s `aiTurnSpeaking`
+   effect, voice detection/selection in `ChatContainer`, per-voice-engine speech-rate correction,
+   and the iOS Safari user-gesture unlock (see decisions.md). UI fallback for unsupported
+   languages and a user-facing rate control remain open (see "What's open").
 9. Swap the mock AI implementation for the real `/api/ai/chat` route behind the same
    `sendChatMessage`/`AIChatResult` signature.
 10. **Visual/UI design pass** on the now-functionally-complete conversation loop: define tokens,

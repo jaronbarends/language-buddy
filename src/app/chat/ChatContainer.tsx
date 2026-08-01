@@ -23,7 +23,6 @@ export default function ChatContainer() {
   );
   const [languageVoice, setLanguageVoice] = useState<LanguageVoice>();
 
-  // TODO: check which languages are supported by speechSynthesis
   useEffect(() => {
     initSpeech(handleSpeechInitSuccess, handleSpeechInitFail);
   }, []);
@@ -64,6 +63,7 @@ export default function ChatContainer() {
 
   function handleSpeechInitSuccess(voices: SpeechSynthesisVoice[]) {
     setSpeechIsSupported(true);
+    console.log('all voices:', voices);
     const supportedLanguageTags = supportedLanguages.map((l) => l.languageTag);
     const supportedVoices: SupportedLanguageVoices = {};
     voices.forEach((voice) => {
@@ -72,7 +72,7 @@ export default function ChatContainer() {
         supportedVoices[lang] = voice;
       }
     });
-
+    console.log(supportedVoices);
     setSupportedLanguageVoices(supportedVoices);
   }
 
