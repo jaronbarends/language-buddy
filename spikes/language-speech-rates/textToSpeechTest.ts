@@ -20,8 +20,8 @@ export function testSpeechRates(voice: LanguageVoice) {
   next();
 
   function next() {
-    console.log(voice.lang);
-    const message: string = testMessages[voice.lang];
+    console.log(voice!.lang);
+    const message: string = testMessages[voice!.lang];
     if (idx < rates.length) {
       const startMs = new Date().getTime();
       const rate = rates[idx];

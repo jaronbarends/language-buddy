@@ -63,7 +63,6 @@ export default function ChatContainer() {
 
   function handleSpeechInitSuccess(voices: SpeechSynthesisVoice[]) {
     setSpeechIsSupported(true);
-    console.log('all voices:', voices);
     const supportedLanguageTags = supportedLanguages.map((l) => l.languageTag);
     const supportedVoices: SupportedLanguageVoices = {};
     voices.forEach((voice) => {
@@ -72,7 +71,6 @@ export default function ChatContainer() {
         supportedVoices[lang] = voice;
       }
     });
-    console.log(supportedVoices);
     setSupportedLanguageVoices(supportedVoices);
   }
 
