@@ -57,7 +57,7 @@ rather than dropping it.
   - error "Speech recognition service permission check has failed" op iOs: Settings → Privacy & Security → Speech Recognition — is Safari toggled on there?
   - if no speech voice found, add instructions how to add it
 - add a user-facing setting for speech rate (current rate correction, 2026-08-01, only normalizes
-  speed *across voice engines* to a consistent baseline — it isn't a slower/faster control, see
+  speed _across voice engines_ to a consistent baseline — it isn't a slower/faster control, see
   decisions.md)
 - use generation_config.thinking_level: "low" for genAI (https://ai.google.dev/gemini-api/docs/text-generation) in regular chat; omit it in evaluation
 - add cancel option to listening phase; call recognition.abort()
@@ -74,6 +74,7 @@ rather than dropping it.
   `textToSpeechTest.ts`/`speechRateAnalysis.ts` are dev-only rate-calibration scratch code, not
   imported by any production path — decide whether to delete, or keep/relocate as documentation of
   how `speechRatePairings` was derived
+- reveal ai text while being spoken. we can only approximate this. Divide text into words, then based on speech rate estimate total speaking time, use interval for showing words. create extra ChatAction ABORT_SPEECH and status abortingSpeech. that should reveal all text and dispatch AI_FINISHED_SPEAKING. ABORT_SPEECH can also be used in cleanup of useEffect that starts speech, and when we have no languageVoice. Maybe we need to add next chatAction to ABORT_SPEECH's payload to determine if it should go to user's turn, or end conversation.
 
 ## Icebox
 

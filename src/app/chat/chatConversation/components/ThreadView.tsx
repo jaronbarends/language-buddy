@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { type ThreadItem } from '@/app/chat/chatConversation/chatReducer';
 import { type ChatPhase } from '@/app/chat/chatConversation/chatReducer';
 import { type LanguageVoice } from '@/lib/language';
-import { speakMessage } from '@/lib/textToSpeech';
+import { cancelSpeech, speakMessage } from '@/lib/textToSpeech';
 
 import styles from './ThreadView.module.css';
 
@@ -25,7 +25,14 @@ export default function ThreadView({
     if (phase.status !== 'aiTurnSpeaking') {
       return;
     }
+    if (!languageVoice) {
+      onAISpeechEnd();
+      return;
+    }
     startAISpeechWithLastMessage();
+    return () => {
+      cancelSpeech();
+    };
   }, [phase]);
 
   return (

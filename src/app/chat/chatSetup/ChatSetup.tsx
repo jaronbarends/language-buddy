@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Button from '@/components/button/Button';
 import { type ChatConfig, getChatConfig } from '@/lib/chatConfig';
 import { type Language } from '@/lib/language';
+import { type SupportedLanguageVoices } from '@/lib/language';
 import { freeformChatWithAIStart, freeformChatWithUserStart } from '@/lib/scenarios';
 
 import LanguagePicker from './components/LanguagePicker';
@@ -14,6 +15,8 @@ type ChatSetupProps = {
   selectedLanguage: Language;
   onChangeLanguage: (language: Language) => void;
   onStartSession: (chatConfig: ChatConfig) => void;
+  speechSupportIsChecked: boolean;
+  supportedLanguageVoices: SupportedLanguageVoices;
 };
 
 type Starter = 'ai' | 'user';
@@ -23,6 +26,8 @@ export default function ChatSetup({
   selectedLanguage,
   onStartSession,
   onChangeLanguage,
+  speechSupportIsChecked,
+  supportedLanguageVoices,
 }: ChatSetupProps) {
   const [starter, setStarter] = useState<Starter>('ai');
   return (
@@ -34,6 +39,7 @@ export default function ChatSetup({
             languages={languages}
             selectedLanguage={selectedLanguage}
             onChangeLanguage={onChangeLanguage}
+            supportedLanguageVoices={supportedLanguageVoices}
           />
         </fieldset>
         <fieldset>
@@ -63,7 +69,9 @@ export default function ChatSetup({
           <label htmlFor="chat-user-starts">I will start</label>
         </fieldset>
         <div>
-          <Button type="submit">Start conversation</Button>
+          <Button type="submit" disabled={!speechSupportIsChecked}>
+            Start conversation
+          </Button>
         </div>
       </form>
     </div>

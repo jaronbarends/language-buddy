@@ -56,6 +56,13 @@ export function speakMessage(message: string, voice: LanguageVoice, onSpeechEnd:
   });
 }
 
+export function cancelSpeech() {
+  if (!('speechSynthesis' in window)) {
+    return;
+  }
+  window.speechSynthesis.cancel();
+}
+
 function sanitizeMessage(rawMessage: string) {
   const sanitizedMessage = rawMessage.replace(/\s+/g, ' ').trim();
   // If message contains white space (\n, tabs), that will be interpreted by voice on Chrome as cues for a pause. Remove them.

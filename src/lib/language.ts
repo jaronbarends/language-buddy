@@ -4,3 +4,4 @@ export type Language = {
 };
 
 export type LanguageVoice = SpeechSynthesisVoice | undefined;
+export type SupportedLanguageVoices = Record<string, SpeechSynthesisVoice>;

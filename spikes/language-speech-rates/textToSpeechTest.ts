@@ -85,5 +85,6 @@ function divideIntoSentences(message: string): string[] {
   // Chrome will only play short utterances (max 200-300 words). Divide long text into sentences,
   // so text remains short. SpeechSynthesis leaves a small pause between utterances, so sentences
   // is a good way to split up text
-  return message.split('.');
+  const sentences = message.split('.');
+  return sentences.map((s) => s.trim()).filter((s) => s !== '');
 }

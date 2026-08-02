@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 
 import { type ChatConfig } from '@/lib/chatConfig';
 import { type Language, type LanguageVoice } from '@/lib/language';
+import { type SupportedLanguageVoices } from '@/lib/language';
 import { supportedLanguages } from '@/lib/languages';
 import { initSpeech } from '@/lib/textToSpeech';
 
@@ -11,12 +12,11 @@ import ChatSetup from './chatSetup/ChatSetup';
 
 type ContainerState = { status: 'setup' } | { status: 'conversation'; chatConfig: ChatConfig };
 
-type SupportedLanguageVoices = Record<string, SpeechSynthesisVoice>;
-
 export default function ChatContainer() {
   const initialLanguage = supportedLanguages[0];
   const [containerState, setContainerState] = useState<ContainerState>({ status: 'setup' });
   const [language, setLanguage] = useState<Language>(initialLanguage);
+  const [speechSupportIsChecked, setSpeechSupportIsChecked] = useState<boolean>(false);
   const [speechIsSupported, setSpeechIsSupported] = useState<boolean>(false);
   const [supportedLanguageVoices, setSupportedLanguageVoices] = useState<SupportedLanguageVoices>(
     {}
@@ -39,6 +39,8 @@ export default function ChatContainer() {
           onChangeLanguage={setLanguage}
           languages={supportedLanguages}
           selectedLanguage={language}
+          speechSupportIsChecked={speechSupportIsChecked}
+          supportedLanguageVoices={supportedLanguageVoices}
         />
       ) : (
         <ChatConversation
@@ -51,7 +53,7 @@ export default function ChatContainer() {
   );
 
   function handleSessionStart(chatConfig: ChatConfig) {
-    if (languageVoice) {
+    if (speechIsSupported) {
       unlockSpeechSynthesis();
     }
     setContainerState({ status: 'conversation', chatConfig });
@@ -62,6 +64,7 @@ export default function ChatContainer() {
   }
 
   function handleSpeechInitSuccess(voices: SpeechSynthesisVoice[]) {
+    setSpeechSupportIsChecked(true);
     setSpeechIsSupported(true);
     const supportedLanguageTags = supportedLanguages.map((l) => l.languageTag);
     const supportedVoices: SupportedLanguageVoices = {};
@@ -75,6 +78,7 @@ export default function ChatContainer() {
   }
 
   function handleSpeechInitFail() {
+    setSpeechSupportIsChecked(true);
     setSpeechIsSupported(false);
   }
 }

@@ -1,10 +1,10 @@
 'use client';
-
 import { useReducer, useState, useRef, useEffect } from 'react';
 
 import { AIError, sendChatMessage, type AIChatResult } from '@/lib/aiService';
 import { type ChatConfig } from '@/lib/chatConfig';
 import { type LanguageVoice } from '@/lib/language';
+import { cancelSpeech } from '@/lib/textToSpeech';
 
 import { chatReducer, type ChatState } from './chatReducer';
 import ControlsArea from './components/ControlsArea';
@@ -40,13 +40,6 @@ export default function ChatConversation({
     hasStartedRef.current = true;
     startChat();
   }, [state.phase]);
-
-  // useEffect(() => {
-  //   if (state.phase.status !== 'aiTurnSpeaking') {
-  //     return;
-  //   }
-  //   startAISpeech(state.phase.message);
-  // }, [state.phase]);
 
   return (
     <>
@@ -89,6 +82,7 @@ export default function ChatConversation({
     dispatch({ type: 'STOP_CHAT' });
     requestIdRef.current++; // ensure any pending requests are made stale
     abortControllerRef.current?.abort();
+    cancelSpeech();
   }
 
   function handleStartListening() {
