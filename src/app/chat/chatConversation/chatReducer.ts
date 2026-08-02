@@ -211,3 +211,13 @@ export function chatHasEnded(phase: ChatPhase): boolean {
 export function hasError(phase: ChatPhase): boolean {
   return phase.status === 'error';
 }
+
+export function shouldShowRecognitionPreview(phase: ChatPhase): boolean {
+  const allowedStatuses = [
+    'listening',
+    'listeningStopped',
+    'listeningTimedOut',
+    'readyForSendingUserReply',
+  ];
+  return allowedStatuses.includes(phase.status);
+}

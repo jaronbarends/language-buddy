@@ -1057,3 +1057,33 @@ it reflects a real discontinuity in how the MS engine's `rate` parameter behaves
   empty message would leave the caller waiting on a callback that never fires.
 
 **Status:** Done.
+
+---
+
+## Recognition preview shown as a speech balloon (2026-08-02)
+
+### Shared `SpeechBalloon` component; preview visible beyond `listening`
+
+**Date:** 2026-08-02
+**Decision:** The in-progress STT transcript preview (`SpeechResults.tsx`) is now visually a chat
+bubble, not a plain status `div`. The message-bubble styling previously inline in
+`ThreadView.tsx`/`ThreadView.module.css` (`.message`/`.messageFromAi`/`.messageFromUser`) is
+extracted into a new shared component, `SpeechBalloon.tsx` (+ `SpeechBalloon.module.css`), taking
+`author`/`tag` props. Both `ThreadView` (real transcript items) and `SpeechResults` (the live,
+not-yet-sent preview) render through it, with `SpeechResults` always passing `author="user"`.
+Visibility is widened at the same time: a new `shouldShowRecognitionPreview(phase)` helper in
+`chatReducer.ts` gates rendering on `listening`, `listeningStopped`, `listeningTimedOut`, and
+`readyForSendingUserReply` — not just `listening` as before.
+**Rationale:** Styling the live preview like a real message bubble makes it read as "this is what
+you're about to send," consistent with how sent messages already look in `ThreadView`, rather than
+a disconnected status line. Widening visibility beyond `listening` keeps that preview bubble on
+screen through the stop/transcript-review window (`listeningStopped` →
+`readyForSendingUserReply`) instead of it disappearing the moment listening stops, which would
+otherwise leave the transcript-before-send step (see the 2026-07-28 STT integration decision)
+with no visible content between "stop" and "send." Including `listeningTimedOut` in the gate is
+scaffolding consistent with that state's existing deferred status (see 2026-07-27) — no timeout
+dispatch site exists yet, but the preview will already be visible once one does.
+**Not a reversal:** the transcript is still display-only, sent unedited — this only changes when
+and how the in-progress preview is shown, not the no-review-step policy (2026-07-19) or the
+live-interim-transcript mechanism (2026-07-29).
+**Status:** Done.
