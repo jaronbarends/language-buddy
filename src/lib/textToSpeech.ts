@@ -23,7 +23,7 @@ export function initSpeech(
   }
 }
 
-const GOOGLE_SPEECH_RATE = 1.3;
+const GOOGLE_SPEECH_RATE = 1;
 
 export function speakMessage(message: string, voice: LanguageVoice, onSpeechEnd: () => void) {
   if (!voice || !('speechSynthesis' in window)) {
