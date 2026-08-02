@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { type ThreadItem } from '@/app/chat/chatConversation/chatReducer';
 import { type ChatPhase } from '@/app/chat/chatConversation/chatReducer';
@@ -24,6 +24,7 @@ export default function ThreadView({
   onAISpeechEnd,
 }: threadItemsProps) {
   const threadViewRef = useRef<HTMLDivElement>(null);
+  const [showAIPendingBalloon, setShowAIPendingBalloon] = useState<boolean>(false);
 
   useEffect(() => {
     if (phase.status !== 'aiTurnSpeaking') {
@@ -61,12 +62,25 @@ export default function ThreadView({
     }
   }, [threadItems]);
 
+  useEffect(() => {
+    if (phase.status !== 'waitingForAI') {
+      return;
+    }
+
+    const timer: ReturnType<typeof setTimeout> = setTimeout(() => {
+      setShowAIPendingBalloon(true);
+    }, 500);
+
+    return () => {
+      clearTimeout(timer);
+      setShowAIPendingBalloon(false);
+    };
+  }, [phase]);
+
   return (
     <div className={styles.threadView} ref={threadViewRef}>
       <ol className={styles.threadItems}>
         {threadItems.map((item, idx) => {
-          const authorClassName =
-            item.author === 'ai' ? styles.messageFromAi : styles.messageFromUser;
           return (
             <SpeechBalloon key={idx} author={item.author} tag="li">
               <div className={styles.itemContent}>{item.message}</div>
@@ -76,6 +90,11 @@ export default function ThreadView({
             </SpeechBalloon>
           );
         })}
+        {showAIPendingBalloon && (
+          <SpeechBalloon author="ai" tag="li">
+            &hellip;
+          </SpeechBalloon>
+        )}
       </ol>
     </div>
   );

@@ -1087,3 +1087,36 @@ dispatch site exists yet, but the preview will already be visible once one does.
 and how the in-progress preview is shown, not the no-review-step policy (2026-07-19) or the
 live-interim-transcript mechanism (2026-07-29).
 **Status:** Done.
+
+---
+
+## AI-pending speech balloon (2026-08-02)
+
+### `waitingForAI` renders a pending balloon in `ThreadView`, delayed by 500ms
+
+**Date:** 2026-08-02
+**Decision:** `ThreadView.tsx` now shows an ellipsis (`…`) inside an `author="ai"` `SpeechBalloon`
+while `phase.status === 'waitingForAI'`. A `useEffect` keyed on `phase` starts a 500ms `setTimeout`
+before flipping `showAIPendingBalloon` to `true`; the effect's cleanup clears the timer and resets
+the flag to `false` on any phase change (including leaving `waitingForAI` early).
+**Rationale:** Indicates the loading state while waiting for the AI response, reusing the same
+`SpeechBalloon` component (see the 2026-08-02 recognition-preview entry above) so the pending
+indicator reads as a chat bubble consistent with real messages rather than a separate UI element.
+The 500ms delay avoids a flash of the balloon on fast responses.
+**Status:** Done.
+
+### Persona wording: "stranger"/topic guidance broadened, superseding the 2026-07-17 decision
+
+**Date:** 2026-08-02 (supersedes "Persona: generic friendly acquaintance, not a specific character",
+2026-07-17)
+**Decision:** `freeformChatWithAIStart`'s instruction changes from "an acquaintance" /
+"discussing hobbies or where the user lives" to "a stranger" / "a topic suitable for a conversation
+that goes further than smalltalk." `freeformChatWithUserStart`'s instruction is shortened to "an
+acquaintance or a stranger," dropping the topic-picking guidance (moot for this scenario, since the
+user opens). The `scenarios` array's placeholder entry is untouched, still using the original
+acquaintance/hobbies wording.
+**Rationale:** The acquaintance-only framing kept the AI defaulting to shallow smalltalk topics,
+which is weak practice material for a language-sparring app. Broadening to include strangers and
+explicitly steering past smalltalk should produce more varied, useful conversation topics.
+**Status:** Done. The "generic friendly acquaintance" framing itself (not a named/specific
+character) still stands — only the topic-shallowness aspect of that decision is superseded.

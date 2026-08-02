@@ -66,7 +66,9 @@ export default function ChatConversation({
           phase={state.phase}
         />
       </div>
-      <DevHelper phase={state.phase} language={chatConfig.language} />
+      {process.env.NEXT_PUBLIC_SHOW_DEV_HELPER && (
+        <DevHelper phase={state.phase} language={chatConfig.language} />
+      )}
     </>
   );
 
