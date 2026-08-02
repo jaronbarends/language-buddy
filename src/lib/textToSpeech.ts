@@ -4,7 +4,7 @@ export function initSpeech(
   onSuccess: (supportedLanguageVoices: SpeechSynthesisVoice[]) => void,
   onFail: () => void
 ) {
-  if (!('speechSynthesis' in window)) {
+  if (!('speechSynthesis' in window) || process.env.NEXT_PUBLIC_DISABLE_TTS_DURING_DEV === 'true') {
     onFail();
     return;
   }

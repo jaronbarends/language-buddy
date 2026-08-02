@@ -1,4 +1,6 @@
-.component {
+.threadView {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
 }
 
 .threadItems {
@@ -10,13 +12,13 @@
 .message {
   padding: var(--size-8) var(--size-16);
   border-radius: var(--radius-8);
+  background: rgba(from var(--color-primary) r g b / 0.1);
 }
 
 .messageFromAi {
   display: flex;
   margin-right: 20%;
   border-top-left-radius: 0;
-  background: rgba(from var(--color-primary) r g b / 0.1);
 }
 
 .messageFromUser {

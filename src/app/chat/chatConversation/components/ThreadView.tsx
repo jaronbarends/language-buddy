@@ -49,7 +49,7 @@ export default function ThreadView({
   }, [phase]);
 
   return (
-    <div className={styles.component}>
+    <div className={styles.threadView}>
       <ol className={styles.threadItems}>
         {threadItems.map((item, idx) => {
           const authorClassName =
@@ -63,6 +63,31 @@ export default function ThreadView({
             </li>
           );
         })}
+        <li className={styles.message}>
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos. Lorem ipsum dolor
+          sit amet consectetur adipisicing elit. Quisquam, quos. Lorem ipsum dolor sit amet
+          consectetur adipisicing elit. Quisquam, quos.
+        </li>
+        <li className={styles.message}>
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos. Lorem ipsum dolor
+          sit amet consectetur adipisicing elit. Quisquam, quos. Lorem ipsum dolor sit amet
+          consectetur adipisicing elit. Quisquam, quos.
+        </li>
+        <li className={styles.message}>
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos. Lorem ipsum dolor
+          sit amet consectetur adipisicing elit. Quisquam, quos. Lorem ipsum dolor sit amet
+          consectetur adipisicing elit. Quisquam, quos.
+        </li>
+        <li className={styles.message}>
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos. Lorem ipsum dolor
+          sit amet consectetur adipisicing elit. Quisquam, quos. Lorem ipsum dolor sit amet
+          consectetur adipisicing elit. Quisquam, quos.
+        </li>
+        <li className={styles.message}>
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos. Lorem ipsum dolor
+          sit amet consectetur adipisicing elit. Quisquam, quos. Lorem ipsum dolor sit amet
+          consectetur adipisicing elit. Quisquam, quos.
+        </li>
       </ol>
     </div>
   );
