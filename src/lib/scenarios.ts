@@ -7,7 +7,7 @@ export type Scenario = {
 export const freeformChatWithAIStart: Scenario = {
   title: 'Freeform chat; ai begins',
   instruction:
-    'You are having a friendly conversation with a stranger. If you are the one starting the conversation, pick a topic suitable for an conversation that goes further than smalltalk.', // scenario content here
+    'You are having a friendly conversation with a stranger. If you are the one starting the conversation, pick a topic suitable for a conversation that goes further than small talk.', // scenario content here
   aiHasFirstTurn: true,
 };
 

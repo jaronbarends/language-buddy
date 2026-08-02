@@ -60,7 +60,7 @@ export default function ThreadView({
         behavior: 'smooth',
       });
     }
-  }, [threadItems]);
+  }, [threadItems, showAIPendingBalloon]);
 
   useEffect(() => {
     if (phase.status !== 'waitingForAI') {

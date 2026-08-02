@@ -1118,5 +1118,5 @@ acquaintance/hobbies wording.
 **Rationale:** The acquaintance-only framing kept the AI defaulting to shallow smalltalk topics,
 which is weak practice material for a language-sparring app. Broadening to include strangers and
 explicitly steering past smalltalk should produce more varied, useful conversation topics.
-**Status:** Done. The "generic friendly acquaintance" framing itself (not a named/specific
-character) still stands — only the topic-shallowness aspect of that decision is superseded.
+**Status:** Done. The generic, friendly, non-specific persona framing still stands; the
+acquaintance-only framing and shallow-topic guidance are superseded.
