@@ -14,8 +14,9 @@ call from `ChatConversation` to `ChatContainer`, no longer a reducer action. `ch
 decisions.md, 2026-07-30, for the one gap — `chatEnded` — caught and fixed while writing this
 update). **Real TTS output is now wired up and working end-to-end** (2026-07-31–2026-08-01, see
 "What exists" and decisions.md): actual build order departed from the plan below —
-`listeningTimedOut` is still unwired; TTS was picked up first instead. Next up: swap the mock AI
-for the real Gemini route, then the visual/UI design pass, before evaluation.
+`listeningTimedOut` is still unwired; TTS was picked up first instead. Next up: reply-phase UX redesign (flagged 2026-08-02 — too many clicks, listening-timeout value
+questioned, cancel/edit options under consideration), then swap the mock AI for the real Gemini
+route, then the visual/UI design pass, before evaluation.
 
 ---
 
@@ -279,8 +280,8 @@ for the real Gemini route, then the visual/UI design pass, before evaluation.
 - **TTS UI fallback for unsupported languages** — `speechIsSupported`/per-language voice
   detection exists in `ChatContainer`, but nothing in the UI reacts to it yet (no icon/text-only
   fallback on the language picker, per the relevant backlog item).
-- **User-facing speech-rate control** — rate correction so far only normalizes *across voice
-  engines* to a consistent baseline speed; there's no slower/faster control exposed to the user
+- **User-facing speech-rate control** — rate correction so far only normalizes _across voice
+  engines_ to a consistent baseline speed; there's no slower/faster control exposed to the user
   (separate backlog item).
 - **Dead code from the TTS build** — `AIThreadItemContent.tsx` (orphaned once the speak trigger
   moved to `ThreadView`'s phase-driven effect) and `textToSpeechTest.ts`/`speechRateAnalysis.ts`
@@ -310,7 +311,7 @@ for the real Gemini route, then the visual/UI design pass, before evaluation.
    removed, dead `canStartChat` already gone); chat-start trigger moved into a mount `useEffect`
    with a StrictMode ref guard; `ChatConversation`'s end-session handler calls `onEndSession`
    directly (see decisions.md, 2026-07-30, and "Setup screen" bullet above).
-7a. ~~Show the recognition preview as a speech balloon, visible beyond just `listening`~~ — done:
+   7a. ~~Show the recognition preview as a speech balloon, visible beyond just `listening`~~ — done:
    `SpeechBalloon.tsx` shared component, `shouldShowRecognitionPreview` helper (see decisions.md,
    2026-08-02).
 8. ~~Wire real TTS output, replacing the `speakAIResponse` console.log/setTimeout stub~~ — done:
@@ -318,14 +319,17 @@ for the real Gemini route, then the visual/UI design pass, before evaluation.
    effect, voice detection/selection in `ChatContainer`, per-voice-engine speech-rate correction,
    and the iOS Safari user-gesture unlock (see decisions.md). UI fallback for unsupported
    languages and a user-facing rate control remain open (see "What's open").
-9. Swap the mock AI implementation for the real `/api/ai/chat` route behind the same
-   `sendChatMessage`/`AIChatResult` signature.
-10. **Visual/UI design pass** on the now-functionally-complete conversation loop: define tokens,
+9. - **Reply-phase UX redesign** — current flow requires too many clicks; open questions on
+     auto-listen after AI turn, dropping `listeningTimedOut`, and adding Send/Cancel/Edit actions
+     during listening. Not scoped yet (see decisions.md, 2026-08-02).
+10. Swap the mock AI implementation for the real `/api/ai/chat` route behind the same
+    `sendChatMessage`/`AIChatResult` signature.
+11. **Visual/UI design pass** on the now-functionally-complete conversation loop: define tokens,
     layout, and accessibility approach; restyle `ThreadView`/`ControlsArea`/STT-and-error UI against
     it (see decisions.md, 2026-07-27).
-11. Define core data structures (session state shape, transcript shape) consistent with the state
+12. Define core data structures (session state shape, transcript shape) consistent with the state
     model — transcript must exclude the hidden opening instruction.
-12. Add evaluation as a second slice once the full v0 conversation loop (steps 4–10) is solid and
+13. Add evaluation as a second slice once the full v0 conversation loop (steps 4–10) is solid and
     styled.
-13. Revisit scenario count for v1, predefined-scenario-starter mode, and turn counter / max-turns,
+14. Revisit scenario count for v1, predefined-scenario-starter mode, and turn counter / max-turns,
     once v0 exists.

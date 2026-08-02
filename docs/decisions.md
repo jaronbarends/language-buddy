@@ -1120,3 +1120,28 @@ which is weak practice material for a language-sparring app. Broadening to inclu
 explicitly steering past smalltalk should produce more varied, useful conversation topics.
 **Status:** Done. The generic, friendly, non-specific persona framing still stands; the
 acquaintance-only framing and shallow-topic guidance are superseded.
+
+## Reply-phase UX flagged for redesign before visual design pass
+
+**Date:** 2026-08-02
+**Decision:** Before the visual/UI design pass (see 2026-07-27 sequencing decision), the
+reply-phase interaction flow — what happens after the AI's turn, and what controls are available
+during listening — will be redesigned. This becomes the next work item, ahead of visual design.
+**Rationale:** Current flow needs too many clicks during the reply phase. This is core
+conversational-loop functionality, not styling, so it should be settled first — consistent with
+the existing decision to only style once interaction design has stopped churning.
+**Open questions raised (not yet resolved — needs a scoping session before implementation):**
+
+- Auto-start listening immediately after the AI's turn ends, instead of waiting for a "Reply"
+  button click
+- Value of `listeningTimedOut`: raised for reconsideration — no clear added value identified so
+  far, but not decided. Supersedes nothing yet; the existing 2026-07-27 "deferred to STT work"
+  decision stands until this is resolved one way or the other.
+- Additional in-listening actions under consideration:
+  - **Send** — send immediately
+  - **Cancel** — clear the in-progress transcript, return to a "start reply" state (implies a
+    reply-start button/trigger is still needed for this path)
+  - **Edit** — stop listening, let the user manually edit the transcript, then send
+    **Status:** Open. Not scoped or designed — this entry only records that a redesign is queued and
+    lists the discussion points to resolve, per "define done" — no implementation starts until
+    explicit done criteria exist for whatever gets decided.

@@ -48,6 +48,8 @@ rather than dropping it.
 
 - countdown for time remaining to speak
 - upon user-turn timeout: give user chance to discard text and restart reply
+- **listening-timeout value under reconsideration (2026-08-02)** — see decisions.md, "Reply-phase
+  UX flagged for redesign." May be dropped entirely rather than built.
 - open app with vocab suggestion of the day
 - be able to choose language level
 - let app assert language level
