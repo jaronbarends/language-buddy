@@ -1,9 +1,10 @@
 'use client';
-
 import { useReducer, useState, useRef, useEffect } from 'react';
 
 import { AIError, sendChatMessage, type AIChatResult } from '@/lib/aiService';
 import { type ChatConfig } from '@/lib/chatConfig';
+import { type LanguageVoice } from '@/lib/language';
+import { cancelSpeech } from '@/lib/textToSpeech';
 
 import { chatReducer, type ChatState } from './chatReducer';
 import ControlsArea from './components/ControlsArea';
@@ -16,10 +17,15 @@ import styles from './ChatConversation.module.css';
 
 type ChatConversationProps = {
   chatConfig: ChatConfig;
+  languageVoice: LanguageVoice;
   onEndSession: () => void;
 };
 
-export default function ChatConversation({ chatConfig, onEndSession }: ChatConversationProps) {
+export default function ChatConversation({
+  chatConfig,
+  languageVoice,
+  onEndSession,
+}: ChatConversationProps) {
   const [previousInteractionId, setPreviousInteractionId] = useState<string | undefined>();
   const initalChatState: ChatState = { threadItems: [], phase: { status: 'chatStartPending' } };
   const [state, dispatch] = useReducer(chatReducer, initalChatState);
@@ -35,17 +41,15 @@ export default function ChatConversation({ chatConfig, onEndSession }: ChatConve
     startChat();
   }, [state.phase]);
 
-  useEffect(() => {
-    if (state.phase.status !== 'aiTurnSpeaking') {
-      return;
-    }
-    speakAIResponse(state.phase.message);
-  }, [state.phase]);
-
   return (
     <>
       <div className={styles.component}>
-        <ThreadView threadItems={state.threadItems} />
+        <ThreadView
+          phase={state.phase}
+          threadItems={state.threadItems}
+          languageVoice={languageVoice}
+          onAISpeechEnd={handleAISpeechEnd}
+        />
         <ErrorArea phase={state.phase} />
         <SpeechToText
           phase={state.phase}
@@ -126,13 +130,17 @@ export default function ChatConversation({ chatConfig, onEndSession }: ChatConve
     await sendMessageToAI(input);
   }
 
-  function speakAIResponse(message: string) {
-    // speak ai response
-    // use TTS finish event
-    //console.log(`[SpeechToText's last utterance's end event fires]`);
-    setTimeout(() => {
-      dispatch({ type: 'AI_FINISHED_SPEAKING' });
-    }, 500);
+  // function startAISpeech(message: string) {
+  //   // speak ai response
+  //   // use TTS finish event
+  //   //console.log(`[SpeechToText's last utterance's end event fires]`);
+  //   setTimeout(() => {
+  //     dispatch({ type: 'AI_FINISHED_SPEAKING' });
+  //   }, 500);
+  // }
+
+  function handleAISpeechEnd() {
+    dispatch({ type: 'AI_FINISHED_SPEAKING' });
   }
 
   async function sendMessageToAI(input: string): Promise<void> {

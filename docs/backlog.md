@@ -56,7 +56,9 @@ rather than dropping it.
 - troubleshooting
   - error "Speech recognition service permission check has failed" op iOs: Settings → Privacy & Security → Speech Recognition — is Safari toggled on there?
   - if no speech voice found, add instructions how to add it
-- add setting for speech rate
+- add a user-facing setting for speech rate (current rate correction, 2026-08-01, only normalizes
+  speed _across voice engines_ to a consistent baseline — it isn't a slower/faster control, see
+  decisions.md)
 - use generation_config.thinking_level: "low" for genAI (https://ai.google.dev/gemini-api/docs/text-generation) in regular chat; omit it in evaluation
 - add cancel option to listening phase; call recognition.abort()
 - add lang attribute to speech output elements
@@ -64,6 +66,15 @@ rather than dropping it.
 - once real scenarios exist in the `scenarios` array alongside the two freeform-chat `Scenario`
   objects, nothing distinguishes "this is a freeform-chat mode" from "this is a real scenario" at the
   type level — a `category`-type field may be needed (see decisions.md, 2026-07-30)
+- voice-availability detection now exists (`ChatContainer`'s `supportedLanguageVoices`/
+  `speechIsSupported`, 2026-07-31, see decisions.md) but nothing in the UI reacts to it yet — still
+  need: if no voice is found, only use written text and show an icon on language selection
+- cleanup from the TTS build (2026-08-01, see decisions.md): `AIThreadItemContent.tsx` is orphaned
+  (no longer imported since the speak trigger moved to `ThreadView`'s phase-driven effect);
+  `textToSpeechTest.ts`/`speechRateAnalysis.ts` are dev-only rate-calibration scratch code, not
+  imported by any production path — decide whether to delete, or keep/relocate as documentation of
+  how `speechRatePairings` was derived
+- reveal ai text while being spoken. we can only approximate this. Divide text into words, then based on speech rate estimate total speaking time, use interval for showing words. create extra ChatAction ABORT_SPEECH and status abortingSpeech. that should reveal all text and dispatch AI_FINISHED_SPEAKING. ABORT_SPEECH can also be used in cleanup of useEffect that starts speech, and when we have no languageVoice. Maybe we need to add next chatAction to ABORT_SPEECH's payload to determine if it should go to user's turn, or end conversation.
 
 ## Icebox
 

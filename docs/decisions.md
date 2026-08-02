@@ -924,3 +924,136 @@ for "mount effect hasn't fired yet" would collide with that existing convention.
 **Consequence:** The mount effect needs a ref guard against React 19 StrictMode's dev-mode
 double-invocation of effects, to avoid firing the start logic — and, once off the mock API, a real
 duplicate request — twice.
+
+### iOS Safari TTS silent failure: speechSynthesis requires a user-gesture unlock
+
+**Date:** 2026-07-31
+**Decision:** `unlockSpeechSynthesis()` — speaking a single empty `SpeechSynthesisUtterance` — is
+called in `ChatContainer`, synchronously inside a real tap handler (e.g. "Start conversation").
+**Rationale:** iOS Safari only allows `speechSynthesis.speak()` to actually produce audio when
+called synchronously inside a user-gesture handler. `ThreadView`'s TTS call fires from a
+`useEffect` reacting to `phase === 'aiTurnSpeaking'`, which is triggered by an async Gemini
+response — not a user gesture. On iOS Safari this fails silently: `speak()` runs, `onresult`-style
+logs fire, `synth.speaking` even reports `true`, but no audio plays. Chrome doesn't enforce this,
+which is why the bug wasn't caught until iPad/ngrok testing. Calling `speak('')` once, synchronously
+inside a genuine tap, "unlocks" the audio session for the rest of the page's lifetime — subsequent
+`speak()` calls from async contexts then work normally.
+**Known limitation:** the unlock doesn't persist across reloads/new tabs — must fire again on every
+fresh page load.
+**Status:** Done.
+
+---
+
+## TTS output implemented (2026-07-31 – 2026-08-01)
+
+### `speakMessage` extracted to `src/lib/textToSpeech.ts`, driven by `ThreadView`'s `aiTurnSpeaking` effect
+
+**Date:** 2026-07-31
+**Decision:** Real TTS playback replaces the `setTimeout`/console.log stub. `textToSpeech.ts`
+exports `initSpeech(onSuccess, onFail)` (wraps `speechSynthesis.getVoices()`/the `voiceschanged`
+event, since Chrome vs. Firefox differ on whether voices are available synchronously) and
+`speakMessage(message, voice, onSpeechEnd)`. `speakMessage` sanitizes whitespace (raw `\n`/tabs are
+read as pause cues by Chrome), splits the message into sentences (Chrome caps utterance length at
+~200-300 words), queues one `SpeechSynthesisUtterance` per sentence, and calls `onSpeechEnd` only on
+the last utterance's `end` event. `ThreadView.tsx` (not `ChatConversation.tsx`) owns the trigger: a
+`useEffect` keyed on `phase.status === 'aiTurnSpeaking'` calls `speakMessage` with the last thread
+item, and its `onSpeechEnd` callback is `ChatConversation`'s `handleAISpeechEnd`, which dispatches
+the pre-existing `AI_FINISHED_SPEAKING` action.
+**Rationale:** `aiTurnSpeaking` already existed as a reducer phase (see 2026-07-23 state-model
+correction) with only a fake 500ms `setTimeout` behind it — TTS wiring only needed to satisfy the
+same `onSpeechEnd`/dispatch contract, no reducer changes required. Keeping playback in `ThreadView`
+(which already renders the message being spoken) rather than `ChatConversation` avoids passing the
+message text back down after already receiving it as a prop.
+**Status:** Done.
+
+### Voice availability detection per supported language
+
+**Date:** 2026-07-31
+**Decision:** `ChatContainer.tsx` calls `initSpeech` once on mount, builds a
+`supportedLanguageVoices` map (one `SpeechSynthesisVoice` per BCP-47 tag in `supportedLanguages`,
+first match wins) from the full `speechSynthesis.getVoices()` list, and derives `languageVoice` for
+the currently-selected `Language` via a second effect. `languageVoice` is passed down into
+`ChatConversation` → `ThreadView`, which no-ops on `speakMessage` if it's `undefined` (e.g. voice
+not installed, or `speechSynthesis` unsupported).
+**Rationale:** Resolves the mechanism half of the backlog item "check for available voices for
+supported languages" — detection now exists. The other half (UI feedback / icon when a language has
+no voice, degrading to text-only) is still unbuilt; `speechIsSupported` is tracked in `ChatContainer`
+state but not yet consumed by any component. Left open in backlog.md.
+**Status:** Detection done; UI fallback not built.
+
+### Speech-rate correction: per-voice-engine lookup table, not per-platform heuristic
+
+**Date:** 2026-08-01 (supersedes the 2026-07-31 `isIOS()`-based basic correction)
+**Decision:** `speakMessage` no longer branches on platform. It reads a single conceptual
+"Google-equivalent" rate (currently hardcoded `GOOGLE_SPEECH_RATE = 1`) and converts it to the
+actual `utterance.rate` via `googleRateToEngineRate`, which classifies the selected
+`SpeechSynthesisVoice` into `'google' | 'apple' | 'microsoft'` by sniffing `voice.voiceURI`
+(`startsWith('apple')` / `startsWith('microsoft')`, else `'google'`), then looks up the matching
+entry in a hardcoded `speechRatePairings` table (11 rows, `google` rate 0.8–1.3 in steps of 0.05,
+each paired with the `apple`/`microsoft` rate empirically found to sound the same speed).
+`src/lib/platform.ts` (`isIOS()`, added 2026-07-31) is deleted — engine detection from the voice
+itself is more precise than OS detection, since the same OS can expose voices from different
+engines.
+**Rationale:** The 2026-07-31 "working TTS; still too fast on iOs" commit shipped a single
+hardcoded `rate = 1.5`, tuned for Chrome/Google's voice, which then found "way too fast" on iOS
+Safari's Apple voices. The three engines' `rate` parameters aren't linearly comparable — the same
+numeric rate produces very different actual speeds — so a flat multiplier can't correct for it.
+`speechRatePairings` was calibrated empirically: `textToSpeechTest.ts` (`testSpeechRates`) played a
+fixed test sentence per language at a sweep of rate values (0.3–4) and timed wall-clock elapsed
+duration per utterance; `speechRateAnalysis.ts` holds the raw timing data collected this way for
+`nb-NO`/`nl-NL`/`es-ES`/`fr-FR`/`en-US`/`de-DE` across iOS and Windows voices. The
+`speechRatePairings` table in `textToSpeech.ts` is the hand-derived result of matching elapsed-time
+curves across engines from that data, not itself computed at runtime.
+**Known gap:** `speechRatePairings` was calibrated primarily against iOS and Windows/Chrome voices;
+`getVoiceEngine`'s `'google'` fallback covers both "actually Google" and "unrecognized engine" cases,
+logged via `console.warn` when hit but not surfaced to the user. `textToSpeechTest.ts`/
+`speechRateAnalysis.ts` are dev-only calibration scratch code — not imported by any production path,
+kept in-tree as the source data/method for the table rather than deleted. Flagged in backlog.md for
+a cleanup decision (keep as documentation of the method, move to a scripts/ location, or delete now
+that the table is derived).
+**Status:** Done.
+
+### Known dead code from the TTS build: `AIThreadItemContent.tsx`
+
+**Date:** 2026-08-01
+**Note:** `AIThreadItemContent.tsx` was introduced in the 2026-07-31 "check for supported voices"
+commit as the AI-message renderer (in place of inline JSX), anticipating a per-message speak/replay
+button (`languageVoice` was already threaded into it). It was replaced by inline rendering again in
+the very next commit ("working TTS; still too fast on iOs") once the speak trigger moved to a
+`phase`-driven `useEffect` in `ThreadView` instead of a per-message button — the component is no
+longer imported anywhere. Left in the tree, not deleted. Flagged in backlog.md for removal.
+
+### Speech-rate pairing table: derivation method and edge-case handling finalized
+
+**Date:** 2026-08-01
+**Decision:** Refines the "Speech-rate correction: per-voice-engine lookup table" entry above with
+the actual derivation method and three robustness fixes made while implementing it.
+
+**Derivation method:** `speechRatePairings` is not per-language — it's built by averaging elapsed
+playback time _per voice engine_ across all six tested languages (nb-NO, nl-NL, es-ES, fr-FR,
+en-US, de-DE) at each tested rate, then interpolating between those averaged points to produce
+the 0.05-step table. Google was chosen as the base scale (rather than iOS) because its
+elapsed-time curve is the most linear of the three across the tested range. The table is scoped
+to Google rates 0.8–1.3 specifically because that's the range where iOS and Windows-MS both have
+real (non-extrapolated) matching data — below 0.8, Google's curve is slower than either other
+engine's slowest tested rate, so there's no genuine match to interpolate toward.
+
+**Known limitation carried into the table:** Windows-MS's elapsed time plateaus (stays roughly
+flat) between rate ~0.8–1.2 before dropping again. This means the MS column of the pairing table
+is a much steeper, less linear mapping than the Apple column, particularly at the high end
+(Google 1.15 → 1.2 corresponds to MS rate jumping from ~0.79 to ~1.25). Not a bug in the table —
+it reflects a real discontinuity in how the MS engine's `rate` parameter behaves.
+
+**Code fixes made alongside the table (`src/lib/textToSpeech.ts`):**
+
+- `googleRateToEngineRate` now rounds the incoming rate to the nearest 0.05 step
+  (`roundToRateStep`) before the `speechRatePairings` lookup. Guards against float-equality
+  misses if a future variable-rate input (e.g. a user-facing speed slider, see backlog.md) produces
+  a value like `0.95000000000000002` instead of the literal `0.95` in the table.
+- `divideIntoSentences` now trims each sentence before filtering empties, so whitespace-only
+  segments (e.g. from `"Hi. . Bye."`) don't produce a near-silent empty utterance.
+- `speakMessage` now checks for zero sentences after sanitizing/splitting/filtering and calls
+  `onSpeechEnd()` immediately in that case, rather than silently doing nothing. Without this, an
+  empty message would leave the caller waiting on a callback that never fires.
+
+**Status:** Done.

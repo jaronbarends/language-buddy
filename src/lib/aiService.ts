@@ -68,6 +68,7 @@ export async function toAIChatResult(res: Response): Promise<AIChatResult> {
   }
 
   const { id, text } = await res.json();
+
   return {
     success: true,
     interactionId: id,
