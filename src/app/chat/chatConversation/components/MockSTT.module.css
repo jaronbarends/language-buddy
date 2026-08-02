@@ -1,5 +1,5 @@
 .mockSTT {
-  width: min(90vw, 40rem);
+  width: min(100%, 40rem);
   min-height: 4rem;
   border: 1px solid #ccc;
 }

@@ -1,6 +1,7 @@
 .threadView {
   overflow-y: scroll;
   scrollbar-gutter: stable;
+  padding-block: var(--size-16);
 }
 
 .threadItems {
@@ -10,6 +11,7 @@
 }
 
 .message {
+  margin-inline: 0 15%;
   padding: var(--size-8) var(--size-16);
   border-radius: var(--radius-8);
   background: rgba(from var(--color-primary) r g b / 0.1);
@@ -17,12 +19,11 @@
 
 .messageFromAi {
   display: flex;
-  margin-right: 20%;
   border-top-left-radius: 0;
 }
 
 .messageFromUser {
-  margin-left: 20%;
+  margin-inline: 15% 0;
   border-top-right-radius: 0;
   background: var(--color-primary);
   color: var(--color-white);

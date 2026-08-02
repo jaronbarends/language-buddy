@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { type ThreadItem } from '@/app/chat/chatConversation/chatReducer';
 import { type ChatPhase } from '@/app/chat/chatConversation/chatReducer';
@@ -21,6 +21,8 @@ export default function ThreadView({
   languageVoice,
   onAISpeechEnd,
 }: threadItemsProps) {
+  const threadViewRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (phase.status !== 'aiTurnSpeaking') {
       return;
@@ -48,8 +50,17 @@ export default function ThreadView({
     }
   }, [phase]);
 
+  useEffect(() => {
+    if (phase.status === 'aiTurnSpeaking' || phase.status === 'waitingForAI') {
+      threadViewRef.current?.scrollTo({
+        top: threadViewRef.current?.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
+  }, [threadItems]);
+
   return (
-    <div className={styles.threadView}>
+    <div className={styles.threadView} ref={threadViewRef}>
       <ol className={styles.threadItems}>
         {threadItems.map((item, idx) => {
           const authorClassName =
@@ -66,9 +77,4 @@ export default function ThreadView({
       </ol>
     </div>
   );
-
-  function startAISpeechWithLastMessage() {
-    const message = threadItems[threadItems.length - 1].message;
-    speakMessage(message, languageVoice, onAISpeechEnd);
-  }
 }
