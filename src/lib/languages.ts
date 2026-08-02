@@ -9,10 +9,10 @@ export const supportedLanguages: Language[] = [
     name: 'Norwegian (Bokmål)',
     languageTag: 'nb-NO',
   },
-  {
-    name: 'Non-existing',
-    languageTag: 'nx-NX',
-  },
+  // {
+  //   name: 'Non-existing',
+  //   languageTag: 'nx-NX',
+  // },
   // {
   //   name: 'Spaans',
   //   languageTag: 'es-ES',

@@ -29,10 +29,23 @@ export default function ThreadView({
       onAISpeechEnd();
       return;
     }
+
+    let speechIsCancelled = false;
     startAISpeechWithLastMessage();
+
     return () => {
+      speechIsCancelled = true;
       cancelSpeech();
     };
+
+    function startAISpeechWithLastMessage() {
+      const message = threadItems[threadItems.length - 1].message;
+      speakMessage(message, languageVoice, () => {
+        if (!speechIsCancelled) {
+          onAISpeechEnd();
+        }
+      });
+    }
   }, [phase]);
 
   return (

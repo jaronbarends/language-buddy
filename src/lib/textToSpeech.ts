@@ -23,7 +23,7 @@ export function initSpeech(
   }
 }
 
-const GOOGLE_SPEECH_RATE = 1;
+const GOOGLE_SPEECH_RATE = 1.3;
 
 export function speakMessage(message: string, voice: LanguageVoice, onSpeechEnd: () => void) {
   if (!voice || !('speechSynthesis' in window)) {
@@ -103,6 +103,7 @@ function googleRateToEngineRate(googleRate: number, voice: SpeechSynthesisVoice)
     const fallbackPairing = speechRatePairings.find((p) => p.google === 1);
     return fallbackPairing?.[engine] ?? 1;
   }
+  console.log(engine, pairing[engine]);
   return pairing[engine];
 }
 

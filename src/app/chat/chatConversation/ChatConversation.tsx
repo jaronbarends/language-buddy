@@ -82,7 +82,6 @@ export default function ChatConversation({
     dispatch({ type: 'STOP_CHAT' });
     requestIdRef.current++; // ensure any pending requests are made stale
     abortControllerRef.current?.abort();
-    cancelSpeech();
   }
 
   function handleStartListening() {
