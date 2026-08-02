@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 
 async function respondAfterDelay({
   data,
-  delayMs = 300,
+  delayMs = 1000,
   status = 200,
 }: {
   data: object;

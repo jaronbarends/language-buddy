@@ -105,7 +105,9 @@ export default function SpeechToText({
       .map((result) => {
         return result[0].transcript;
       })
-      .join('');
+      .join(' ')
+      .replace(/ {2,}/g, ' '); // transcripts sometimes end with space, sometimes not. remove double spaces
+
     setLiveTranscriptByRef(transcript);
   }
 

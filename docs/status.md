@@ -1,6 +1,6 @@
 # Project status
 
-**Last updated:** 2026-08-01
+**Last updated:** 2026-08-02
 **Current phase:** Early build. Concept locked (scenario-library-based conversational sparring
 partner, Norwegian, multi-turn sessions + async structured evaluation). MVP scoping in progress;
 Spikes 1–4 all complete. AI provider decided (Gemini). State machine now runs the full happy path
@@ -101,6 +101,10 @@ for the real Gemini route, then the visual/UI design pass, before evaluation.
   shared `SpeechBalloon.tsx` component (extracted from `ThreadView`'s message-bubble styling, now
   reused by both `ThreadView` and `SpeechResults`) so the in-progress transcript renders as a
   user-style chat bubble instead of a plain status `div` (see decisions.md).
+- **AI-pending speech balloon (2026-08-02):** `ThreadView.tsx` shows an ellipsis inside an
+  `author="ai"` `SpeechBalloon` while `phase.status === 'waitingForAI'`, indicating the loading
+  state while waiting for the AI response. Delayed 500ms (`setTimeout`, cleared/reset on phase
+  change) to avoid a flash on fast responses (see decisions.md).
 - **Real TTS wired up** (2026-07-31–2026-08-01, see decisions.md): `src/lib/textToSpeech.ts`
   exports `initSpeech(onSuccess, onFail)` (wraps `speechSynthesis.getVoices()`/the
   `voiceschanged` event — Chrome vs. Firefox differ on whether voices are available
@@ -135,6 +139,9 @@ for the real Gemini route, then the visual/UI design pass, before evaluation.
 - Spike code for STT/TTS exists on branch `spike-speech-to-text` (spike-only, not production code).
 - **No visual/UI design work done yet** — current components are functional/unstyled. Timing for
   the design pass is now decided (see below); the design content itself is not.
+- **`DevHelper` gated behind `NEXT_PUBLIC_SHOW_DEV_HELPER` (2026-08-02):**
+  `ChatConversation.tsx` only renders `DevHelper` when that env var is set, instead of always
+  rendering it.
 - `ChatConversation.tsx` receives a `chatConfig` prop (`ChatConfig`, from `src/lib/chatConfig.ts`)
   built via `getChatConfig(language, scenario)` — built in `ChatSetup.tsx` now, not `page.tsx` (see
   "Setup screen" bullet above; still only the two freeform-chat scenarios, not the scenario
@@ -143,7 +150,12 @@ for the real Gemini route, then the visual/UI design pass, before evaluation.
 ## What's decided
 
 - Concept: scenario library from the start (not a single hardcoded scenario)
-- Persona: generic friendly acquaintance, not a specific character (see decisions.md)
+- Persona: generic friendly acquaintance, not a specific character (see decisions.md). **Topic
+  guidance broadened (2026-08-02):** `freeformChatWithAIStart`/`freeformChatWithUserStart` now say
+  "a stranger"/"an acquaintance or a stranger" and steer explicitly past smalltalk, superseding the
+  original "discussing hobbies or where the user lives" wording — the acquaintance-only framing was
+  producing too-shallow topics (see decisions.md). The `scenarios` array's placeholder entry still
+  uses the original wording, untouched.
 - Voice: STT input is an MVP hard requirement; TTS output is now also MVP scope (moved from
   deferred after Spike 2 — see decisions.md)
 - STT transcript review step: not needed for MVP — Spike 2 showed STT accuracy is good enough to
