@@ -94,7 +94,13 @@ for the real Gemini route, then the visual/UI design pass, before evaluation.
   back empty, so development can continue by typing instead of speaking without needing a working
   mic on every pass (see decisions.md, 2026-07-29). `SpeechResults.tsx` renders `liveTranscript`
   live as the user speaks, showing a "Listening…" placeholder while it's still empty and a "…"
-  typing indicator once text has appeared, both only while `phase.status === 'listening'`.
+  typing indicator once text has appeared. **Recognition preview shown as a speech balloon
+  (2026-08-02):** the preview is now visible across `listening`/`listeningStopped`/
+  `listeningTimedOut`/`readyForSendingUserReply` (gated by the new `shouldShowRecognitionPreview`
+  helper in `chatReducer.ts`, not just `phase.status === 'listening'`), and is wrapped in a new
+  shared `SpeechBalloon.tsx` component (extracted from `ThreadView`'s message-bubble styling, now
+  reused by both `ThreadView` and `SpeechResults`) so the in-progress transcript renders as a
+  user-style chat bubble instead of a plain status `div` (see decisions.md).
 - **Real TTS wired up** (2026-07-31–2026-08-01, see decisions.md): `src/lib/textToSpeech.ts`
   exports `initSpeech(onSuccess, onFail)` (wraps `speechSynthesis.getVoices()`/the
   `voiceschanged` event — Chrome vs. Firefox differ on whether voices are available
@@ -292,6 +298,9 @@ for the real Gemini route, then the visual/UI design pass, before evaluation.
    removed, dead `canStartChat` already gone); chat-start trigger moved into a mount `useEffect`
    with a StrictMode ref guard; `ChatConversation`'s end-session handler calls `onEndSession`
    directly (see decisions.md, 2026-07-30, and "Setup screen" bullet above).
+7a. ~~Show the recognition preview as a speech balloon, visible beyond just `listening`~~ — done:
+   `SpeechBalloon.tsx` shared component, `shouldShowRecognitionPreview` helper (see decisions.md,
+   2026-08-02).
 8. ~~Wire real TTS output, replacing the `speakAIResponse` console.log/setTimeout stub~~ — done:
    `textToSpeech.ts` (`initSpeech`/`speakMessage`), triggered from `ThreadView`'s `aiTurnSpeaking`
    effect, voice detection/selection in `ChatContainer`, per-voice-engine speech-rate correction,

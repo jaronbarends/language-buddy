@@ -59,7 +59,6 @@ export default function SpeechToText({
   return (
     <div className={styles.speechToText}>
       <SpeechResults liveTranscript={liveTranscript} phase={phase} />
-      {/* <div className={styles.feedback}>listening...</div> */}
       {shouldShowMockSTT && <MockSTT ref={mockRef} phase={phase} />}
     </div>
   );

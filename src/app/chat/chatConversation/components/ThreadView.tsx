@@ -6,6 +6,8 @@ import { type ChatPhase } from '@/app/chat/chatConversation/chatReducer';
 import { type LanguageVoice } from '@/lib/language';
 import { cancelSpeech, speakMessage } from '@/lib/textToSpeech';
 
+import SpeechBalloon from './SpeechBalloon';
+
 import styles from './ThreadView.module.css';
 
 type threadItemsProps = {
@@ -66,12 +68,12 @@ export default function ThreadView({
           const authorClassName =
             item.author === 'ai' ? styles.messageFromAi : styles.messageFromUser;
           return (
-            <li key={idx} className={clsx(styles.message, authorClassName)}>
+            <SpeechBalloon key={idx} author={item.author} tag="li">
               <div className={styles.itemContent}>{item.message}</div>
               {/* {item.author === 'ai' && languageVoice && (
                 <div className={styles.buttonWrapper}>button</div>
               )} */}
-            </li>
+            </SpeechBalloon>
           );
         })}
       </ol>
