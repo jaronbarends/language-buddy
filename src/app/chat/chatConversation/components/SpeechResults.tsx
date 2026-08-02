@@ -14,13 +14,9 @@ export default function SpeechResults({ liveTranscript, phase }: SpeechResultsPr
     return null;
   }
   const suffix =
-    phase.status !== 'listening' ? (
-      ''
-    ) : liveTranscript === '' ? (
-      <span>Listening&hellip;</span>
-    ) : (
-      <span>&hellip;</span>
-    );
+    phase.status !== 'listening' ? ''
+    : liveTranscript === '' ? <span>Listening&hellip;</span>
+    : <span>&hellip;</span>;
   return (
     <SpeechBalloon author="user" tag="div">
       <div className={styles.results} role="status" aria-live="polite" aria-atomic="true">

@@ -1,11 +1,12 @@
 import clsx from 'clsx';
+import type { JSX, ReactNode } from 'react';
 
 import styles from './SpeechBalloon.module.css';
 
 export type SpeechBalloonProps = {
   author: 'ai' | 'user';
-  tag: keyof React.JSX.IntrinsicElements;
-  children?: React.ReactNode;
+  tag: keyof JSX.IntrinsicElements;
+  children?: ReactNode;
 };
 
 export default function SpeechBalloon({ tag: Tag, author, children }: SpeechBalloonProps) {

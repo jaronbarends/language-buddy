@@ -10,5 +10,6 @@
   "plugins": ["@trivago/prettier-plugin-sort-imports"],
   "importOrder": ["^@/", "^[./](?!.*\\.css$)", "\\.css$"],
   "importOrderSeparation": true,
-  "importOrderSortSpecifiersWithinImportDeclarations": true
+  "importOrderSortSpecifiersWithinImportDeclarations": true,
+  "experimentalTernaries": true
 }
