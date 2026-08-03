@@ -221,3 +221,15 @@ export function shouldShowRecognitionPreview(phase: ChatPhase): boolean {
   ];
   return allowedStatuses.includes(phase.status);
 }
+
+export function isAITurnSpeaking(phase: ChatPhase): boolean {
+  return phase.status === 'aiTurnSpeaking';
+}
+
+export function isWaitingForAI(phase: ChatPhase): boolean {
+  return phase.status === 'waitingForAI';
+}
+
+export function shouldAutoScrollThread(phase: ChatPhase): boolean {
+  return phase.status === 'aiTurnSpeaking' || phase.status === 'waitingForAI';
+}
