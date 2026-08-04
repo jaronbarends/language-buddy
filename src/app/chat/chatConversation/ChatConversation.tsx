@@ -102,8 +102,9 @@ export default function ChatConversation({
     dispatch({ type: 'TRANSCRIPT_CREATED', payload: { transcript } });
   }
 
-  function handleError() {
+  function handleError(message: string) {
     // TODO decide how to handle non-api errors
+    throw new Error(message);
   }
 
   function handleCancelListening() {

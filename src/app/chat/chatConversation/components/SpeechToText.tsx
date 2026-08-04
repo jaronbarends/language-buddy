@@ -20,7 +20,7 @@ type SpeechToTextProps = {
   phase: ChatPhase;
   onTranscriptCreated: (transcript: string) => void;
   onListeningCancelled: () => void;
-  onError: () => void;
+  onError: (message: string) => void;
   languageTag: string;
 };
 
@@ -88,7 +88,8 @@ export default function SpeechToText({
       window.SpeechRecognition ?? window.webkitSpeechRecognition;
     if (!CrossBrowserSpeechRecognition) {
       // TODO: handle this
-      throw new Error('Speech recognition is not supported in this browser');
+      onError('Speech recognition is not supported in this browser');
+      throw new Error();
     }
     const recognition = new CrossBrowserSpeechRecognition();
 

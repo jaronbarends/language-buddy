@@ -97,12 +97,14 @@ function googleRateToEngineRate(googleRate: number, voice: SpeechSynthesisVoice)
       // unlikely fallback where rate 1 is removed from pairings
       return 1;
     }
+    // eslint-disable-next-line no-console
     console.warn(
       `no rate found for ${googleRate}. Provide a value between 0.8 and 1.3, in steps of 0.05. Using rate = 1 as google rate instead`
     );
     const fallbackPairing = speechRatePairings.find((p) => p.google === 1);
     return fallbackPairing?.[engine] ?? 1;
   }
+  // eslint-disable-next-line no-console
   console.log(engine, pairing[engine]);
   return pairing[engine];
 }
@@ -114,6 +116,7 @@ function getVoiceEngine(voice: SpeechSynthesisVoice): VoiceEngine {
   } else if (voiceURI.startsWith('microsoft')) {
     return 'microsoft';
   }
+  // eslint-disable-next-line no-console
   console.warn(`No match found for ${voice.voiceURI}. Using default google instead.`);
   return 'google';
 }
