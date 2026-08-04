@@ -4,9 +4,8 @@ import { useReducer, useState, useRef, useEffect } from 'react';
 import { AIError, sendChatMessage, type AIChatResult } from '@/lib/aiService';
 import { type ChatConfig } from '@/lib/chatConfig';
 import { type LanguageVoice } from '@/lib/language';
-import { cancelSpeech } from '@/lib/textToSpeech';
 
-import { canSendReply, chatReducer, chatStartIsPending, type ChatState } from './chatReducer';
+import { shouldSendReply, chatReducer, chatStartIsPending, type ChatState } from './chatReducer';
 import ControlsArea from './components/ControlsArea';
 import DevHelper from './components/DevHelper';
 import ErrorArea from './components/ErrorArea';
@@ -41,6 +40,12 @@ export default function ChatConversation({
     startChat();
   }, [state.phase]);
 
+  useEffect(() => {
+    if (shouldSendReply(state.phase)) {
+      handleSendUserMessage();
+    }
+  });
+
   return (
     <>
       <div className={styles.component}>
@@ -54,13 +59,14 @@ export default function ChatConversation({
         <SpeechToText
           phase={state.phase}
           onTranscriptCreated={handleTranscriptCreated}
+          onListeningCancelled={handleListeningCancelled}
           onError={handleError}
           languageTag={chatConfig.language.languageTag}
         />
         <ControlsArea
-          onStopChat={handleStopChat}
           onStartListening={handleStartListening}
-          onStopListening={handleStopListening}
+          onSendRequested={handleSendRequested}
+          onCancelListening={handleCancelListening}
           onSendUserMessage={handleSendUserMessage}
           onEndSession={onEndSession}
           phase={state.phase}
@@ -80,18 +86,12 @@ export default function ChatConversation({
     }
   }
 
-  function handleStopChat() {
-    dispatch({ type: 'STOP_CHAT' });
-    requestIdRef.current++; // ensure any pending requests are made stale
-    abortControllerRef.current?.abort();
-  }
-
   function handleStartListening() {
     startListening();
   }
 
-  function handleStopListening() {
-    dispatch({ type: 'STOP_LISTENING' });
+  function handleSendRequested() {
+    dispatch({ type: 'STOP_LISTENING', payload: { intent: 'send' } });
   }
 
   function handleTranscriptCreated(transcript: string) {
@@ -104,6 +104,14 @@ export default function ChatConversation({
 
   function handleError() {
     // TODO decide how to handle non-api errors
+  }
+
+  function handleCancelListening() {
+    dispatch({ type: 'CANCEL_LISTENING' });
+  }
+
+  function handleListeningCancelled() {
+    dispatch({ type: 'LISTENING_CANCELLED' });
   }
 
   async function startChatWithAI() {
@@ -122,7 +130,7 @@ export default function ChatConversation({
   }
 
   async function handleSendUserMessage() {
-    if (!canSendReply(state.phase)) {
+    if (!shouldSendReply(state.phase)) {
       return;
     }
 

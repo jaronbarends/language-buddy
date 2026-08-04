@@ -2,9 +2,12 @@
 import { useEffect, useRef, useState } from 'react';
 
 import {
+  canStartReply,
+  canStartWithUser,
   isListening,
   isWaitingForAI,
-  listeningIsStopped,
+  listeningShouldBeStopped,
+  listeningShouldBeCancelled,
   type ChatPhase,
 } from '@/app/chat/chatConversation/chatReducer';
 
@@ -16,6 +19,7 @@ import styles from './SpeechToText.module.css';
 type SpeechToTextProps = {
   phase: ChatPhase;
   onTranscriptCreated: (transcript: string) => void;
+  onListeningCancelled: () => void;
   onError: () => void;
   languageTag: string;
 };
@@ -25,12 +29,14 @@ const shouldShowMockSTT = process.env.NEXT_PUBLIC_USE_MOCK_STT === 'true';
 export default function SpeechToText({
   phase,
   onTranscriptCreated,
+  onListeningCancelled,
   onError,
   languageTag,
 }: SpeechToTextProps) {
   const recognitionRef = useRef<SpeechRecognition>(null);
   const recognitionShouldBeActiveRef = useRef<boolean>(false);
-  // ref to ensure same object across recreated event handlers
+  const stopReasonRef = useRef<'send' | 'cancel'>('send');
+  // use ref combined with state to ensure same object across recreated event handlers
   // always update ref before setting liveTranscript
   const liveTranscriptRef = useRef<string>('');
   const [liveTranscript, setLiveTranscript] = useState<string>('');
@@ -41,24 +47,33 @@ export default function SpeechToText({
   }, [languageTag]);
 
   useEffect(() => {
-    if (!isListening(phase)) {
-      return;
+    if (canStartReply(phase) || canStartWithUser(phase)) {
+      setLiveTranscriptByRef('');
     }
-    startListening();
+  });
+
+  useEffect(() => {
+    if (isListening(phase)) {
+      startListening();
+    }
   }, [phase]);
 
   useEffect(() => {
-    if (!listeningIsStopped(phase)) {
-      return;
+    if (listeningShouldBeStopped(phase)) {
+      stopListening();
     }
-    stopListening();
   }, [phase]);
 
   useEffect(() => {
-    if (!isWaitingForAI(phase)) {
-      return;
+    if (listeningShouldBeCancelled(phase)) {
+      cancelListening();
     }
-    setLiveTranscriptByRef('');
+  }, [phase]);
+
+  useEffect(() => {
+    if (isWaitingForAI(phase)) {
+      setLiveTranscriptByRef('');
+    }
   }, [phase]);
 
   return (
@@ -95,8 +110,16 @@ export default function SpeechToText({
   }
 
   function stopListening() {
+    stopReasonRef.current = 'send';
     recognitionShouldBeActiveRef.current = false;
     recognitionRef.current?.stop();
+    // we don't have the final result here yet. we have that when onend fires
+  }
+
+  function cancelListening() {
+    stopReasonRef.current = 'cancel';
+    recognitionShouldBeActiveRef.current = false;
+    recognitionRef.current?.abort();
     // we don't have the final result here yet. we have that when onend fires
   }
 
@@ -123,11 +146,15 @@ export default function SpeechToText({
     if (recognitionShouldBeActiveRef.current) {
       recognitionRef.current?.start(); // end was triggered by silence timeout, not wanted
     } else {
-      let transcript = liveTranscriptRef.current;
-      if (transcript === '') {
-        transcript = mockRef.current?.getMockValue() ?? '';
+      if (stopReasonRef.current === 'cancel') {
+        onListeningCancelled();
+      } else {
+        let transcript = liveTranscriptRef.current;
+        if (transcript === '') {
+          transcript = mockRef.current?.getMockValue() ?? '';
+        }
+        onTranscriptCreated(transcript);
       }
-      onTranscriptCreated(transcript);
     }
   }
 

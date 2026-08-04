@@ -1,10 +1,10 @@
 import {
   canStartWithUser,
   canStartReply,
-  canStopListening,
-  canSendReply,
-  canStopChat,
-  chatHasEnded,
+  canRequestSend,
+  canStopSession,
+  shouldShowCancelButton,
+  canRequestCancel,
   hasError,
   type ChatPhase,
 } from '@/app/chat/chatConversation/chatReducer';
@@ -14,11 +14,11 @@ import styles from './ControlsArea.module.css';
 
 type ControlsAreaProps = {
   phase: ChatPhase;
-  onStopChat: () => void;
   onStartListening: () => void;
   onSendUserMessage: () => void;
   onEndSession: () => void;
-  onStopListening: () => void;
+  onSendRequested: () => void;
+  onCancelListening: () => void;
 };
 
 type PrimaryButtonProps = {
@@ -29,23 +29,27 @@ type PrimaryButtonProps = {
 
 export default function ControlsArea({
   phase,
-  onStopChat,
   onStartListening,
-  onSendUserMessage,
-  onStopListening,
+  onSendRequested,
+  onCancelListening,
   onEndSession,
 }: ControlsAreaProps) {
   const buttonProps = getPrimaryButtonProps(phase);
-  const disabled = buttonProps.disabled || false;
+
   return (
     <div className={styles.controlsArea}>
       <div className={styles.actions}>
-        <Button variant="primary" onClick={buttonProps.onClick} disabled={disabled}>
+        <Button variant="primary" onClick={buttonProps.onClick} disabled={buttonProps.disabled}>
           {buttonProps.label}
         </Button>
         {shouldShowStopButton(phase) && (
-          <Button variant="ghost" onClick={onStopChat}>
-            End conversation
+          <Button variant="ghost" onClick={onEndSession}>
+            End session
+          </Button>
+        )}
+        {shouldShowCancelButton(phase) && (
+          <Button variant="ghost" onClick={onCancelListening} disabled={!canRequestCancel(phase)}>
+            Cancel
           </Button>
         )}
       </div>
@@ -54,7 +58,7 @@ export default function ControlsArea({
 
   function shouldShowStopButton(phase: ChatPhase) {
     // if phase is error, we could technically stop the chat, but then we still need to end the session. So we'll just set primary button to End session.
-    return canStopChat(phase) && !hasError(phase);
+    return canStopSession(phase) && !hasError(phase);
   }
 
   function getPrimaryButtonProps(phase: ChatPhase): PrimaryButtonProps {
@@ -70,22 +74,10 @@ export default function ControlsArea({
         onClick: onStartListening,
       };
     }
-    if (canStopListening(phase)) {
+    if (canRequestSend(phase)) {
       return {
-        label: 'Stop listening',
-        onClick: onStopListening,
-      };
-    }
-    if (canSendReply(phase)) {
-      return {
-        label: 'Send message',
-        onClick: onSendUserMessage,
-      };
-    }
-    if (chatHasEnded(phase)) {
-      return {
-        label: 'End this session',
-        onClick: onEndSession,
+        label: 'Send',
+        onClick: onSendRequested,
       };
     }
     if (hasError(phase)) {

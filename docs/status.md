@@ -4,19 +4,35 @@
 **Current phase:** Early build. Concept locked (scenario-library-based conversational sparring
 partner, Norwegian, multi-turn sessions + async structured evaluation). MVP scoping in progress;
 Spikes 1–4 all complete. AI provider decided (Gemini). State machine now runs the full happy path
-end-to-end against real STT input and the mock AI API, `STOP_CHAT` now ends the session from
-any phase, generic error recovery (end-session-only, no dispatched action) is implemented, and
-empty-transcript input silently retries rather than sending/erroring. **The setup screen is now
-built**: `ChatContainer` renders `ChatSetup` (language + who-starts, pre-selected defaults) or
-`ChatConversation` (renamed from `ChatClient`); ending a session is a direct `onEndSession` prop
-call from `ChatConversation` to `ChatContainer`, no longer a reducer action. `chatReducer`'s
-`chatStartPending`/`chatEnded` renames and the `END_SESSION` removal are all in place (see
-decisions.md, 2026-07-30, for the one gap — `chatEnded` — caught and fixed while writing this
-update). **Real TTS output is now wired up and working end-to-end** (2026-07-31–2026-08-01, see
-"What exists" and decisions.md): actual build order departed from the plan below —
-`listeningTimedOut` is still unwired; TTS was picked up first instead. Next up: reply-phase UX redesign (flagged 2026-08-02 — too many clicks, listening-timeout value
-questioned, cancel/edit options under consideration), then swap the mock AI for the real Gemini
-route, then the visual/UI design pass, before evaluation.
+end-to-end against real STT input and the mock AI API, generic error recovery (end-session-only, no
+dispatched action) is implemented, and empty-transcript input silently retries rather than
+sending/erroring. Ending a session is always a direct `onEndSession` prop call, never a reducer
+action — this includes mid-conversation ending, not just from `error`: the `STOP_CHAT` action and
+terminal `chatEnded` phase mentioned in earlier updates here were both removed as part of the
+2026-08-04 reply-phase redesign (see decisions.md, "Reply-phase UX redesign implemented"). **The
+setup screen is now built**: `ChatContainer` renders `ChatSetup` (language + who-starts,
+pre-selected defaults) or `ChatConversation` (renamed from `ChatClient`); ending a session is a
+direct `onEndSession` prop call from `ChatConversation` to `ChatContainer`. `chatReducer`'s
+`chatStartPending` rename and the `END_SESSION` removal are in place (see decisions.md, 2026-07-30).
+**Real TTS output is now wired up and working end-to-end** (2026-07-31–2026-08-01, see
+"What exists" and decisions.md): actual build order departed from the plan below — TTS was
+picked up before the reply-phase UX redesign.
+**Reply-phase UX redesign is now implemented** (scoped 2026-08-04, built same day, see
+decisions.md): `listening` has `Send`/`Cancel` actions replacing `Stop listening`, `End session`
+replaces `End Conversation`/`End this session`, and `listeningTimedOut` is gone (no app-enforced
+timeout — recognition stays open by design). Implementation diverged from the scoped design in
+four ways caught during a docs-vs-code review, all resolved by keeping the code and correcting the
+docs (see decisions.md, "Reply-phase UX redesign implemented"): the terminal `chatEnded` phase and
+`STOP_CHAT` action were dropped entirely (ending a session is now always a direct `onEndSession`
+call, not a reducer transition — no cleanup behavior was actually lost by this, see decisions.md);
+`Cancel` waits on a new `cancellingListening` phase for `recognition.abort()`'s real `onend` rather
+than transitioning immediately; the two phases used by Send were finalized as `stoppingListening`/
+`sendingUserReply` (not `listeningStopped`/`readyForSendingUserReply` as scoped), with `intent`
+still carried on `stoppingListening`; and `End session`/`Cancel` visibility is gated by a shared
+`userIsInInputFlow` helper across the whole stop/cancel/send-in-flight window, not `listening`
+alone. Edit, evaluation, and auto-start-listening remain out of scope, per the original scoping.
+Next up: swap the mock AI for the real Gemini route, then the visual/UI design pass, before
+evaluation.
 
 ---
 
@@ -59,12 +75,18 @@ route, then the visual/UI design pass, before evaluation.
   error shape.
 - Mock chat API route (`src/app/api/aiMock/chat`), toggled via `NEXT_PUBLIC_USE_MOCK_AI`, built
   against the same `AIChatResult`/`sendChatMessage` signature as the real `/api/ai/chat` route.
-- `chatReducer.ts` — 11-state discriminated union (`chatStartPending`, `waitingForAI`,
-  `aiTurnSpeaking`, `readyForUserStart`, `readyForUserReply`, `listening`, `listeningStopped`,
-  `readyForSendingUserReply`, `listeningTimedOut`, `chatEnded`, `error`) — current names, post
-  2026-07-30 renames (see "Setup screen" bullet above and decisions.md). Reducer covers the full
-  happy-flow transitions (`chatStartPending` → `readyForUserStart`/`waitingForAI` → `aiTurnSpeaking`
-  → `readyForUserReply` → `listening` → `waitingForAI` → ... → `chatEnded`).
+- `chatReducer.ts` — 10-state discriminated union (`chatStartPending`, `waitingForAI`,
+  `aiTurnSpeaking`, `readyForUserStart`, `readyForUserReply`, `listening`, `stoppingListening`,
+  `cancellingListening`, `sendingUserReply`, `error`) — current names, post the 2026-08-04
+  reply-phase redesign (see decisions.md, "Reply-phase UX redesign implemented"). `listeningStopped`/
+  `readyForSendingUserReply`/`listeningTimedOut`/`chatEnded` from earlier are all gone: the first two
+  were renamed to `stoppingListening`/`sendingUserReply`, `listeningTimedOut` was superseded outright
+  (no app-enforced timeout planned), and `chatEnded` was dropped along with the `STOP_CHAT` action —
+  ending a session is now always a direct `onEndSession` prop call, not a reducer transition (see
+  decisions.md). Reducer covers the full happy-flow transitions (`chatStartPending` →
+  `readyForUserStart`/`waitingForAI` → `aiTurnSpeaking` → `readyForUserReply` → `listening` →
+  `waitingForAI` → ...), looping indefinitely until `onEndSession` is called from outside the
+  reducer.
 - `ChatConversation.tsx` (Client Component, see "Setup screen" bullet above) owns the `useReducer`
   and drives the loop end-to-end: sends the transcript from real STT (`SpeechToText.tsx`, see
   below) to `sendChatMessage`, dispatches on success/failure, and passes `languageVoice` plus an
@@ -73,10 +95,13 @@ route, then the visual/UI design pass, before evaluation.
   tracked in component state and threaded through each call, per Spike 3's finding that context
   (but not `systemInstruction`) carries over via `previous_interaction_id`.
 - `ControlsArea.tsx` — derives primary-button label/handler from phase via `canStartWithUser` /
-  `canStartReply` / `canSendReply` / `chatHasEnded` / `hasError` helpers in `chatReducer.ts`; "End
-  conversation" button always rendered except in `error` (dispatches `STOP_CHAT`, handled from
-  every reducer phase — see decisions.md). From `chatEnded`/`error`, the primary button reads "End
-  this session" and calls `onEndSession` directly (no dispatch — see "Setup screen" bullet above).
+  `canStartReply` / `canRequestSend` / `hasError` helpers in `chatReducer.ts`. During `listening`,
+  the primary button is "Send" (`canRequestSend`, dispatches `STOP_LISTENING; { intent: 'send' }`).
+  "End session" is shown via `canStopSession` (`!userIsInInputFlow(phase)`) and always calls
+  `onEndSession` directly — no reducer action, no intermediate phase, from every phase except the
+  `listening`/`stoppingListening`/`cancellingListening`/`sendingUserReply` input-flow window (see
+  decisions.md, "Reply-phase UX redesign implemented"). "Cancel" is shown via
+  `shouldShowCancelButton` across that same input-flow window and dispatches `CANCEL_LISTENING`.
 - `ErrorArea.tsx` — renders the raw error message from the `error` phase; unstyled, no
   per-error-type differentiation. Generic error recovery (end-session-only, no Retry) is wired up
   via the `onEndSession` prop call described above, not a reducer action.
@@ -93,8 +118,10 @@ route, then the visual/UI design pass, before evaluation.
   everywhere a `phase.status` comparison previously appeared inline (`ChatConversation.tsx`,
   `ControlsArea.tsx`, `MockSTT.tsx`, `SpeechResults.tsx`, `SpeechToText.tsx`, `ThreadView.tsx`) —
   see decisions.md.
-- **Real STT wired up** (`SpeechToText.tsx`), per the 2026-07-28 design: starts/stops Web Speech
-  API recognition keyed off `phase` (`listening` → start, `listeningStopped` → stop). With
+- **Real STT wired up** (`SpeechToText.tsx`), per the 2026-07-28 design: starts/stops/aborts Web
+  Speech API recognition keyed off `phase` (`listening` → start, `stoppingListening` → `stop()`,
+  `cancellingListening` → `abort()`, the latter reporting back via a new `onListeningCancelled`
+  prop once `onend` fires — see decisions.md, "Reply-phase UX redesign implemented"). With
   `recognition.interimResults = true`, every `onresult` event joins _all_ current results
   (interim + final) into a single `liveTranscript` string (ref + state); `onend` reads
   `liveTranscriptRef.current` directly rather than building a transcript from an accumulated array
@@ -106,9 +133,11 @@ route, then the visual/UI design pass, before evaluation.
   mic on every pass (see decisions.md, 2026-07-29). `SpeechResults.tsx` renders `liveTranscript`
   live as the user speaks, showing a "Listening…" placeholder while it's still empty and a "…"
   typing indicator once text has appeared. **Recognition preview shown as a speech balloon
-  (2026-08-02):** the preview is now visible across `listening`/`listeningStopped`/
-  `listeningTimedOut`/`readyForSendingUserReply` (gated by the new `shouldShowRecognitionPreview`
-  helper in `chatReducer.ts`, not just `phase.status === 'listening'`), and is wrapped in a new
+  (2026-08-02):** the preview is visible across `listening`/`stoppingListening`/`sendingUserReply`
+  (gated by the `shouldShowRecognitionPreview` helper in `chatReducer.ts`, not just
+  `phase.status === 'listening'` — phase names updated 2026-08-04, see decisions.md, "Reply-phase
+  UX redesign implemented"; `listeningTimedOut` dropped out of the gate along with the phase
+  itself), and is wrapped in a new
   shared `SpeechBalloon.tsx` component (extracted from `ThreadView`'s message-bubble styling, now
   reused by both `ThreadView` and `SpeechResults`) so the in-progress transcript renders as a
   user-style chat bubble instead of a plain status `div` (see decisions.md).
@@ -142,9 +171,12 @@ route, then the visual/UI design pass, before evaluation.
   server accept requests tunneled through ngrok (see decisions.md, 2026-07-29).
 - **Empty-transcript handling:** new `TRANSCRIPT_EMPTY` action. When neither real STT nor the
   `MockSTT` fallback produces a transcript, `ChatConversation.tsx` dispatches `TRANSCRIPT_EMPTY` in
-  addition to `TRANSCRIPT_CREATED`; the reducer sends `listeningStopped` straight back to
-  `readyForUserReply` (silent retry — no error, nothing sent) rather than into
-  `readyForSendingUserReply` with an empty string (see decisions.md, 2026-07-29).
+  addition to `TRANSCRIPT_CREATED`; the reducer sends `stoppingListening` straight back to
+  `readyForUserReply` (silent retry — no error, nothing sent) rather than into `sendingUserReply`
+  with an empty string (see decisions.md, 2026-07-29; phase renamed 2026-08-04). The same
+  fallthrough also fires for any non-`'send'` `intent` on `stoppingListening` — currently only
+  `'send'` is ever dispatched, but see decisions.md's "known gap" note on the dormant `'edit'`
+  intent value and the backlog item it's tracked against.
 - **Working happy flow:** user-opens-first path (`aiHasFirstTurn = false`), full turn loop via
   real STT input and the mock AI API, confirmed running end-to-end.
 - Spike code for STT/TTS exists on branch `spike-speech-to-text` (spike-only, not production code).
@@ -275,13 +307,18 @@ route, then the visual/UI design pass, before evaluation.
   showed it must be resent on every request rather than only at session start
 - Rate-limit error shape is still doc-sourced only, not empirically confirmed (accepted gap, see
   Spike 4 scope in decisions.md)
-- Turn counter / max-turns mechanism and any "wrap up the conversation" closing instruction for the
-  AI's final turn — postponed by decision, not designed (see decisions.md, 2026-07-26/07-27)
+- ~~Turn counter / max-turns mechanism~~ — discarded 2026-08-04, not merely postponed; no longer
+  open (see decisions.md). The "AI always speaks last" rule (2026-07-26) that depended on it is
+  currently unenforced as a result — a session can end via "End session" after any turn, including
+  mid-AI-turn, same as before.
 - Error UI polish only — `ErrorArea`'s message display exists but is unstyled; no Retry
   action planned for v0 (see decisions.md, 2026-07-27). End-session-from-error is
   implemented and functional (direct `onEndSession` call — see decisions.md); only the
   visual styling is outstanding, folded into the general visual/UI design pass below.
-- `listeningTimedOut` not yet wired — no dispatch site exists; deferred to STT work by decision
+- `listeningTimedOut` — superseded 2026-08-04, not merely unwired: no app-enforced timeout is
+  planned, since `recognitionShouldBeActiveRef` keeps recognition open indefinitely by design and
+  `SpeechRecognition` doesn't time out on its own (see decisions.md). If a real need resurfaces,
+  it should be scoped fresh against the `Send`/`Cancel` flow, not resumed from the original design.
 - **Visual/UI design content** — tokens, layout, component styling, accessibility approach. Timing
   is decided (after the core loop, before evaluation); the actual design.md content doesn't exist
   yet.
@@ -297,6 +334,11 @@ route, then the visual/UI design pass, before evaluation.
   moved to `ThreadView`'s phase-driven effect) and `textToSpeechTest.ts`/`speechRateAnalysis.ts`
   (dev-only calibration tooling, not imported by production code) are still in the tree; a
   cleanup decision (delete vs. keep as documented calibration method) is tracked in backlog.md.
+- **Dormant `intent: 'edit'` fallthrough** — `stoppingListening`'s `TRANSCRIPT_CREATED` handler
+  only branches explicitly on `intent === 'send'`; any other value falls through into the
+  empty-transcript branch and discards the transcript. Inert today (nothing dispatches
+  `intent: 'edit'` yet) but needs an explicit branch once Edit is built (see decisions.md,
+  "Reply-phase UX redesign implemented", and the STT-edit item in backlog.md).
 
 ## Next step
 
@@ -304,20 +346,22 @@ route, then the visual/UI design pass, before evaluation.
 2. ~~Build the mock implementation against that same type/signature~~ — done
    (`/api/aiMock/chat`, toggled via `NEXT_PUBLIC_USE_MOCK_AI`).
 3. ~~Wire the v0 state machine to the mock, drive the full happy-path loop~~ — done: typed input,
-   mock AI, full turn loop from `chatStartPending` through `chatEnded` all working.
+   mock AI, full turn loop from `chatStartPending` onward working (loops until `onEndSession` is
+   called from outside the reducer — see step 9, `chatEnded` no longer exists).
 4. ~~Fix `STOP_CHAT` to be handled from every reducer phase, not just `listening`~~ — done: checked
    once before the phase-specific switch (see decisions.md).
 5. ~~Build real error handling: reducer `error` case behavior + Retry action~~ — done:
    end-session-only recovery, an "End this session" control calls `onEndSession` directly
    (no dedicated end-session reducer action); no Retry action for v0 (see decisions.md, 2026-07-27).
 6. ~~Wire real STT input, replacing the `MockTTS` textarea~~ — done: `SpeechToText` component,
-   `listeningStopped` → `readyForSendingUserReply` phases, transcript displayed read-only before
-   send, plus empty-transcript handling (`TRANSCRIPT_EMPTY`) and `MockSTT` as a dev-only fallback
-   (see decisions.md, 2026-07-29). `listeningTimedOut` remains deferred (2026-07-27 decision) — the
-   stop/send split was built specifically so timeout can reuse the same path later.
+   `stoppingListening` → `sendingUserReply` phases (renamed 2026-08-04, see step 9), transcript
+   displayed read-only before send, plus empty-transcript handling (`TRANSCRIPT_EMPTY`) and
+   `MockSTT` as a dev-only fallback (see decisions.md, 2026-07-29). `listeningTimedOut` was
+   superseded outright rather than built (see step 9) — the stop/send split it was meant to reuse
+   is now shared with `Cancel`'s `cancellingListening` phase instead.
 7. ~~Build the setup screen extraction~~ — done: `languages.ts`, the two freeform-chat `Scenario`
    objects, `ChatSetup` (+ `LanguagePicker`), `ChatContainer`; `ChatClient` renamed to
-   `ChatConversation`; `chatReducer.ts` updated (`chatStartPending`, `chatEnded`, `END_SESSION`
+   `ChatConversation`; `chatReducer.ts` updated (`chatStartPending` rename, `END_SESSION`
    removed, dead `canStartChat` already gone); chat-start trigger moved into a mount `useEffect`
    with a StrictMode ref guard; `ChatConversation`'s end-session handler calls `onEndSession`
    directly (see decisions.md, 2026-07-30, and "Setup screen" bullet above).
@@ -329,17 +373,35 @@ route, then the visual/UI design pass, before evaluation.
    effect, voice detection/selection in `ChatContainer`, per-voice-engine speech-rate correction,
    and the iOS Safari user-gesture unlock (see decisions.md). UI fallback for unsupported
    languages and a user-facing rate control remain open (see "What's open").
-9. - **Reply-phase UX redesign** — current flow requires too many clicks; open questions on
-     auto-listen after AI turn, dropping `listeningTimedOut`, and adding Send/Cancel/Edit actions
-     during listening. Not scoped yet (see decisions.md, 2026-08-02).
-10. Swap the mock AI implementation for the real `/api/ai/chat` route behind the same
-    `sendChatMessage`/`AIChatResult` signature.
-11. **Visual/UI design pass** on the now-functionally-complete conversation loop: define tokens,
+9. ~~Reply-phase UX redesign~~ — scoped and built 2026-08-04 (see decisions.md, "Reply-phase UX
+   redesign implemented"):
+   - `listening` phase: `Stop listening` replaced by two live actions, `Send` (dispatches
+     `STOP_LISTENING`, `{ intent: 'send' }`, into `stoppingListening` → `sendingUserReply`) and
+     `Cancel` (`CANCEL_LISTENING` → a new `cancellingListening` phase, which waits for
+     `recognition.abort()`'s real `onend` — via a new `onListeningCancelled` prop dispatching
+     `LISTENING_CANCELLED` — before landing on `readyForUserReply`; not the "no intermediate
+     phase" design originally scoped, corrected after implementation).
+   - `End session` label replaces `End Conversation`/`End this session`, hidden during the whole
+     `listening`/`stoppingListening`/`cancellingListening`/`sendingUserReply` input-flow window
+     (via a shared `userIsInInputFlow` helper), not `listening` alone as originally scoped.
+   - `STOP_CHAT` action and terminal `chatEnded` phase removed entirely (not just narrowed) —
+     ending a session is now always a direct `onEndSession` call. No cleanup behavior was actually
+     lost by this (see decisions.md for why).
+   - **Not in this round:** Edit (reopened for reconsideration, not designed — see decisions.md and
+     backlog.md; the dormant `intent: 'edit'` fallthrough bug is tracked there), evaluation,
+     auto-start-listening after the AI's turn (not started).
+   - **Superseded as part of this scoping:** `listeningTimedOut` — no app-enforced timeout planned;
+     `recognitionShouldBeActiveRef` keeps recognition open indefinitely by design (see decisions.md).
+   - `abort()` vs. `stop()` cross-browser behavior: implemented (`cancelListening` uses `abort()`,
+     `stopListening` uses `stop()`) but not yet verified against the iOS Safari
+     `onresult`-after-`stop()` quirk found during initial STT integration — still an open
+     verification item, just no longer blocking implementation.
+10. **Visual/UI design pass** on the now-functionally-complete conversation loop: define tokens,
     layout, and accessibility approach; restyle `ThreadView`/`ControlsArea`/STT-and-error UI against
     it (see decisions.md, 2026-07-27).
-12. Define core data structures (session state shape, transcript shape) consistent with the state
+11. Define core data structures (session state shape, transcript shape) consistent with the state
     model — transcript must exclude the hidden opening instruction.
-13. Add evaluation as a second slice once the full v0 conversation loop (steps 4–10) is solid and
+12. Add evaluation as a second slice once the full v0 conversation loop (steps 4–10) is solid and
     styled.
-14. Revisit scenario count for v1, predefined-scenario-starter mode, and turn counter / max-turns,
+13. Revisit scenario count for v1, predefined-scenario-starter mode, and turn counter / max-turns,
     once v0 exists.

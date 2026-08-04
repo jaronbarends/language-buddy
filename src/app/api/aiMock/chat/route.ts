@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     (await request.json()) as ChatMessageParams;
   // const successResponseOutputText = `mock response.output_text (response to ${input})`;
   const successResponseOutputText =
-    'Verdensfotballforbund FIFAs plan om å selge en eierandel i et nytt VM-selskap vil ikke bli gjennomført. FIFA-president Gianni Infantino bekreftet dette i en uttalelse delt av FIFA på X. Avgjørelsen følger en global bølge av protester.';
+    'Verdensfotballforbund FIFAs plan om å selge en eierandel i et nytt VM-selskap vil ikke bli gjennomført.';
 
   switch (scenario) {
     case MOCK_SCENARIOS.success:
