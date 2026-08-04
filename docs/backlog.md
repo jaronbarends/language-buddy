@@ -77,6 +77,10 @@ rather than dropping it.
   imported by any production path — decide whether to delete, or keep/relocate as documentation of
   how `speechRatePairings` was derived
 - reveal ai text while being spoken. we can only approximate this. Divide text into words, then based on speech rate estimate total speaking time, use interval for showing words. create extra ChatAction ABORT_SPEECH and status abortingSpeech. that should reveal all text and dispatch AI_FINISHED_SPEAKING. ABORT_SPEECH can also be used in cleanup of useEffect that starts speech, and when we have no languageVoice. Maybe we need to add next chatAction to ABORT_SPEECH's payload to determine if it should go to user's turn, or end conversation.
+- **STT transcript edit capability** (reopened 2026-08-04, see decisions.md) — build `Send`/`Cancel`
+  first; Edit adds a third `listening`-phase action later, reusing the `STOP_LISTENING`
+  `{ intent: 'edit' }` seam left for it. Real design surface not yet worked through: hand-edit text
+  vs. re-run STT, and whether it reverses the 2026-07-19 read-only-transcript precedent.
 
 ## Icebox
 

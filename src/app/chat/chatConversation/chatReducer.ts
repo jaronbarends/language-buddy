@@ -18,8 +18,8 @@ export type ChatPhase =
   | { status: 'readyForUserReply' }
   | { status: 'listening' }
   | { status: 'listeningStopped' }
+  | { status: 'cancellingListening' }
   | { status: 'readyForSendingUserReply'; transcript: string }
-  | { status: 'listeningTimedOut' }
   | { status: 'chatEnded' } // ended, need to get evaluation now.
   | { status: 'error'; error: AIError };
 
@@ -31,7 +31,8 @@ export type ChatAction =
   | { type: 'STOP_CHAT' }
   | { type: 'START_LISTENING' }
   | { type: 'STOP_LISTENING' }
-  | { type: 'LISTENING_TIMED_OUT' }
+  | { type: 'CANCEL_LISTENING' }
+  | { type: 'LISTENING_CANCELLED' }
   | { type: 'TRANSCRIPT_CREATED'; payload: { transcript: string } }
   | { type: 'TRANSCRIPT_EMPTY' }
   | { type: 'USER_MESSAGE_SENT'; payload: { message: string } }
@@ -125,6 +126,11 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
             threadItems: state.threadItems,
             phase: { status: 'listeningStopped' },
           };
+        case 'CANCEL_LISTENING':
+          return {
+            threadItems: state.threadItems,
+            phase: { status: 'cancellingListening' },
+          };
         default:
           return state;
       }
@@ -143,9 +149,13 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         default:
           return state;
       }
-    case 'listeningTimedOut':
+    case 'cancellingListening':
       switch (action.type) {
-        // TODO
+        case 'LISTENING_CANCELLED':
+          return {
+            threadItems: state.threadItems,
+            phase: { status: 'readyForUserReply' },
+          };
         default:
           return state;
       }
@@ -215,12 +225,7 @@ export function hasError(phase: ChatPhase): phase is Extract<ChatPhase, { status
 }
 
 export function shouldShowRecognitionPreview(phase: ChatPhase): boolean {
-  const allowedStatuses = [
-    'listening',
-    'listeningStopped',
-    'listeningTimedOut',
-    'readyForSendingUserReply',
-  ];
+  const allowedStatuses = ['listening', 'listeningStopped', 'readyForSendingUserReply'];
   return allowedStatuses.includes(phase.status);
 }
 
@@ -236,12 +241,16 @@ export function chatStartIsPending(phase: ChatPhase): boolean {
   return phase.status === 'chatStartPending';
 }
 
+export function isListening(phase: ChatPhase): boolean {
+  return phase.status === 'listening';
+}
+
 export function listeningIsStopped(phase: ChatPhase): boolean {
   return phase.status === 'listeningStopped';
 }
 
-export function isListening(phase: ChatPhase): boolean {
-  return phase.status === 'listening';
+export function listeningShouldBeCancelled(phase: ChatPhase): boolean {
+  return phase.status === 'cancellingListening';
 }
 
 export function shouldAutoScrollThread(phase: ChatPhase): boolean {

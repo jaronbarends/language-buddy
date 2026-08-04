@@ -19,6 +19,7 @@ type ControlsAreaProps = {
   onSendUserMessage: () => void;
   onEndSession: () => void;
   onStopListening: () => void;
+  onCancelListening: () => void;
 };
 
 type PrimaryButtonProps = {
@@ -33,6 +34,7 @@ export default function ControlsArea({
   onStartListening,
   onSendUserMessage,
   onStopListening,
+  onCancelListening,
   onEndSession,
 }: ControlsAreaProps) {
   const buttonProps = getPrimaryButtonProps(phase);
@@ -48,6 +50,9 @@ export default function ControlsArea({
             End conversation
           </Button>
         )}
+        <Button variant="ghost" onClick={onCancelListening}>
+          Cancel
+        </Button>
       </div>
     </div>
   );

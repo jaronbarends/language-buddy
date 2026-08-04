@@ -54,6 +54,7 @@ export default function ChatConversation({
         <SpeechToText
           phase={state.phase}
           onTranscriptCreated={handleTranscriptCreated}
+          onListeningCancelled={handleListeningCancelled}
           onError={handleError}
           languageTag={chatConfig.language.languageTag}
         />
@@ -61,6 +62,7 @@ export default function ChatConversation({
           onStopChat={handleStopChat}
           onStartListening={handleStartListening}
           onStopListening={handleStopListening}
+          onCancelListening={handleCancelListening}
           onSendUserMessage={handleSendUserMessage}
           onEndSession={onEndSession}
           phase={state.phase}
@@ -104,6 +106,14 @@ export default function ChatConversation({
 
   function handleError() {
     // TODO decide how to handle non-api errors
+  }
+
+  function handleCancelListening() {
+    dispatch({ type: 'CANCEL_LISTENING' });
+  }
+
+  function handleListeningCancelled() {
+    dispatch({ type: 'LISTENING_CANCELLED' });
   }
 
   async function startChatWithAI() {

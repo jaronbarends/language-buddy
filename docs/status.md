@@ -12,11 +12,17 @@ built**: `ChatContainer` renders `ChatSetup` (language + who-starts, pre-selecte
 call from `ChatConversation` to `ChatContainer`, no longer a reducer action. `chatReducer`'s
 `chatStartPending`/`chatEnded` renames and the `END_SESSION` removal are all in place (see
 decisions.md, 2026-07-30, for the one gap — `chatEnded` — caught and fixed while writing this
-update). **Real TTS output is now wired up and working end-to-end** (2026-07-31–2026-08-01, see
-"What exists" and decisions.md): actual build order departed from the plan below —
-`listeningTimedOut` is still unwired; TTS was picked up first instead. Next up: reply-phase UX redesign (flagged 2026-08-02 — too many clicks, listening-timeout value
-questioned, cancel/edit options under consideration), then swap the mock AI for the real Gemini
-route, then the visual/UI design pass, before evaluation.
+update).
+**Real TTS output is now wired up and working end-to-end** (2026-07-31–2026-08-01, see
+"What exists" and decisions.md): actual build order departed from the plan below — TTS was
+picked up before the reply-phase UX redesign.
+**Reply-phase UX redesign is now scoped**
+(2026-08-04, see decisions.md): `listening` gets `Send`/`Cancel` actions replacing `Stop
+listening`, `End session` replaces `End Conversation`/`End this session` everywhere except
+`listening`, and `listeningTimedOut` is superseded outright (no app-enforced timeout planned —
+recognition stays open by design). Edit, evaluation/`chatEnded`, and auto-start-listening remain
+out of scope for this round. Not yet implemented. Next up: build the scoped reply-phase redesign,
+then swap the mock AI for the real Gemini route, then the visual/UI design pass, before evaluation.
 
 ---
 
@@ -281,7 +287,10 @@ route, then the visual/UI design pass, before evaluation.
   action planned for v0 (see decisions.md, 2026-07-27). End-session-from-error is
   implemented and functional (direct `onEndSession` call — see decisions.md); only the
   visual styling is outstanding, folded into the general visual/UI design pass below.
-- `listeningTimedOut` not yet wired — no dispatch site exists; deferred to STT work by decision
+- `listeningTimedOut` — superseded 2026-08-04, not merely unwired: no app-enforced timeout is
+  planned, since `recognitionShouldBeActiveRef` keeps recognition open indefinitely by design and
+  `SpeechRecognition` doesn't time out on its own (see decisions.md). If a real need resurfaces,
+  it should be scoped fresh against the `Send`/`Cancel` flow, not resumed from the original design.
 - **Visual/UI design content** — tokens, layout, component styling, accessibility approach. Timing
   is decided (after the core loop, before evaluation); the actual design.md content doesn't exist
   yet.
@@ -297,6 +306,8 @@ route, then the visual/UI design pass, before evaluation.
   moved to `ThreadView`'s phase-driven effect) and `textToSpeechTest.ts`/`speechRateAnalysis.ts`
   (dev-only calibration tooling, not imported by production code) are still in the tree; a
   cleanup decision (delete vs. keep as documented calibration method) is tracked in backlog.md.
+- **Reply-phase UX redesign (2026-08-04)** — `listening` phase `Send`/`Cancel` actions and the
+  `End session` relabel are designed but not implemented (see decisions.md and "Next step" #9).
 
 ## Next step
 
@@ -329,17 +340,29 @@ route, then the visual/UI design pass, before evaluation.
    effect, voice detection/selection in `ChatContainer`, per-voice-engine speech-rate correction,
    and the iOS Safari user-gesture unlock (see decisions.md). UI fallback for unsupported
    languages and a user-facing rate control remain open (see "What's open").
-9. - **Reply-phase UX redesign** — current flow requires too many clicks; open questions on
-     auto-listen after AI turn, dropping `listeningTimedOut`, and adding Send/Cancel/Edit actions
-     during listening. Not scoped yet (see decisions.md, 2026-08-02).
-10. Swap the mock AI implementation for the real `/api/ai/chat` route behind the same
-    `sendChatMessage`/`AIChatResult` signature.
-11. **Visual/UI design pass** on the now-functionally-complete conversation loop: define tokens,
+9. **Reply-phase UX redesign — scoped 2026-08-04, not yet implemented** (see decisions.md):
+   - `listening` phase: `Stop listening` replaced by two live actions, `Send` (dispatches
+     `STOP_LISTENING`, `{ intent: 'send' }`, unchanged downstream flow into `listeningStopped` →
+     `readyForSendingUserReply`) and `Cancel` (new `CANCEL_LISTENING` action, straight to
+     `readyForUserReply`, no intermediate phase or transcript wait).
+   - `End session` label replaces `End Conversation`/`End this session` everywhere except
+     `listening` itself — deliberate narrowing of the 2026-07-27 STOP_CHAT-from-every-phase
+     guarantee (see decisions.md).
+   - **Not in this round:** Edit (reopened for reconsideration, not designed — see decisions.md and
+     backlog.md), evaluation/`chatEnded` rename (parked), auto-start-listening after the AI's turn
+     (not started).
+   - **Superseded as part of this scoping:** `listeningTimedOut` — no app-enforced timeout planned;
+     `recognitionShouldBeActiveRef` keeps recognition open indefinitely by design (see decisions.md).
+   - **Open verification item before/during implementation:** `recognition.abort()` (needed for
+     `Cancel`) vs. `recognition.stop()` cross-browser behavior not yet checked, given the existing
+     iOS Safari `onresult`-after-`stop()` quirk found in initial STT integration.
+     `sendChatMessage`/`AIChatResult` signature.
+10. **Visual/UI design pass** on the now-functionally-complete conversation loop: define tokens,
     layout, and accessibility approach; restyle `ThreadView`/`ControlsArea`/STT-and-error UI against
     it (see decisions.md, 2026-07-27).
-12. Define core data structures (session state shape, transcript shape) consistent with the state
+11. Define core data structures (session state shape, transcript shape) consistent with the state
     model — transcript must exclude the hidden opening instruction.
-13. Add evaluation as a second slice once the full v0 conversation loop (steps 4–10) is solid and
+12. Add evaluation as a second slice once the full v0 conversation loop (steps 4–10) is solid and
     styled.
-14. Revisit scenario count for v1, predefined-scenario-starter mode, and turn counter / max-turns,
+13. Revisit scenario count for v1, predefined-scenario-starter mode, and turn counter / max-turns,
     once v0 exists.

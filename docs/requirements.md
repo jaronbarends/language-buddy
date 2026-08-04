@@ -33,9 +33,10 @@
 ### Explicitly deferred (tracked, not MVP)
 
 - [ ] STT transcript review/edit step before sending to AI — spike 2 showed STT accuracy is good
-      enough that this is not needed (see decisions.md). **Addendum 2026-07-28:** transcript will
-      be displayed read-only before send as STT is wired in — still no edit/review capability;
-      see decisions.md.
+      enough that this is not needed for send-as-is (see decisions.md). **Addendum 2026-07-28:**
+      transcript displayed read-only before send as STT is wired in. **Reopened 2026-08-04:**
+      reclassified from "not needed" to deferred/reconsidering — no longer a closed decision, but
+      not designed or scheduled either (see decisions.md).
 - [ ] Predefined-scenario-picks-its-own-starter setup mode ("mode 2") — the setup screen (see Core
       features above) builds only the freeform-chat case for v0; a scenario that dictates its own
       starter, selected from the growing `scenarios` array, is deferred (see decisions.md,

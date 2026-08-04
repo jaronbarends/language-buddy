@@ -1174,3 +1174,86 @@ same helper-function pattern to every remaining raw `phase.status` comparison (r
 predicate-typed and plain-boolean checks inconsistently mixed) keeps all phase checks going through
 `chatReducer.ts`'s exported helpers as the single source of truth for phase semantics.
 **Status:** Done. `tsc --noEmit` confirms clean.
+
+---
+
+## Reply-phase UX redesign resolved (2026-08-04)
+
+### STT transcript review/edit step: reopened — "deferred, reconsidering," not "not needed"
+
+**Date:** 2026-08-04
+**Decision:** The 2026-07-19 "STT transcript review step: not needed for MVP" decision is
+reclassified from closed to **deferred, reconsidering**. Editing is not being designed or built in
+this round, but it is no longer considered a settled no.
+**Rationale:** Hands-on use of the app surfaced a real want for an edit capability that spike-era
+STT-accuracy testing didn't anticipate — the original decision was scoped around "is STT accurate
+enough to skip a correction step," not "will a user ever want to change what they said before
+sending it," and those turned out to be different questions. Scope for a future edit feature (does
+it hand-edit text vs. re-run STT, does it reverse the read-only-display precedent from 2026-07-19)
+is real design surface, not yet worked through, so building it now would be guessing rather than
+deciding. Tracked as a backlog item instead.
+**Status:** Open — reconsideration only, no design started.
+
+### `listening` phase: `Send`/`Cancel` replace `Stop listening`, single-click-to-outcome
+
+**Date:** 2026-08-04
+**Decision:** During `listening`, the primary action is replaced by two live actions: `Send` and
+`Cancel`.
+
+- `Send` dispatches `STOP_LISTENING` with payload `{ intent: 'send' }` (single action with an
+  `intent` field, not separate action types per intent — see rationale below).
+  `listening` → `listeningStopped`, which is now unambiguously "stopped in order to send" (no
+  `intent` needs to live on the phase itself, since there's only one reason to reach it). Once the
+  transcript settles (existing `TRANSCRIPT_CREATED`/`TRANSCRIPT_EMPTY` mechanics, unchanged), flow
+  continues into `readyForSendingUserReply` as before.
+- `Cancel` dispatches a new action, `CANCEL_LISTENING`, going `listening` → `readyForUserReply`
+  directly — no intermediate phase, no waiting on STT to settle a final transcript.
+
+**Rationale:** Collapses "Stop listening" + "Send message" into one click for the common case, and
+adds a previously-missing way to abandon an in-progress reply without ending the whole session.
+`STOP_LISTENING` keeps a single action type with an `intent` payload (rather than one action per
+intent, e.g. `STOP_LISTENING_TO_SEND`) for consistency with the existing payload convention already
+used elsewhere in this reducer (e.g. `TRANSCRIPT_CREATED`), and to leave a seam for a future Edit
+intent (`intent: 'edit'`) to reuse the same stop-and-wait mechanics without a new action type —
+not because Edit is being built now (see the entry above; it isn't).
+`Cancel` skips the stop-and-wait path entirely, rather than sharing `listeningStopped`, because it
+discards the result either way and has no reason to wait on transcript settlement — it should use
+`recognition.abort()` rather than `recognition.stop()`, since `abort()` is the immediate,
+don't-wait-for-a-final-result call, matching what `Cancel` actually needs.
+**Open verification item:** `abort()` vs. `stop()` cross-browser behavior hasn't been checked yet.
+Given the existing iOS Safari `onresult`-after-`stop()` quirk found during initial STT integration
+(2026-07-29), `abort()` is not assumed to be a safe drop-in without testing on the same
+problem browsers.
+**Status:** Design decided. Not yet implemented.
+
+### `End session` reachable everywhere except `listening` — deliberate narrowing of the 2026-07-27 `STOP_CHAT`-from-every-phase guarantee
+
+**Date:** 2026-08-04
+**Decision:** The secondary "End Conversation"/"End this session" actions are unified under one
+label, "End session," reachable from every phase except `listening`. During `listening`, ending the
+session is not directly available — the user must `Cancel` (→ `readyForUserReply`) first, then end
+from there.
+**Rationale:** The 2026-07-27 decision made `STOP_CHAT` handled from every reducer phase
+specifically to close a gap where mid-turn ending silently no-opped — that guarantee is being
+deliberately narrowed for this one phase, not accidentally dropped as a side effect of this
+redesign. Judged low-frequency (a user mid-recording wanting to abandon the entire session, not
+just the in-progress reply) and not worth the added complexity of supporting session-end from
+inside an active recognition session. `Cancel` → `readyForUserReply` → `End session` is two clicks,
+the same number as the current `End Conversation` → `End this session` path, so this isn't a net
+capability loss in click terms, only in directness from within `listening` specifically.
+**Status:** Decided. Not yet implemented.
+
+### `listeningTimedOut`: superseded, not merely parked — no app-enforced timeout planned
+
+**Date:** 2026-08-04 (supersedes "`listeningTimedOut` deferred to STT work," 2026-07-27)
+**Decision:** There is no plan to build an app-enforced listening timeout.
+`recognitionShouldBeActiveRef` keeps Web Speech API recognition open indefinitely by design, and
+`SpeechRecognition` itself does not time out on its own.
+**Rationale:** The 2026-07-27 decision deferred `listeningTimedOut` pending real STT integration,
+on the assumption a timeout mechanism would eventually be built once STT existed to test it
+against. With `Send`/`Cancel` now covering both ways a user can deliberately end a reply (per the
+`listening` phase decision above), and recognition designed to stay open rather than lapse, the
+premise that a timeout is still needed no longer holds — this isn't "still waiting to build it," it's
+"probably won't build it as originally conceived."
+**Status:** Superseded. If a real need for a timeout resurfaces later, it should be scoped fresh
+against the current `Send`/`Cancel` flow, not resumed from the original `listeningTimedOut` design.
