@@ -1,8 +1,6 @@
 /* mocked route for ai to prevent spending unnecessary tokens during development */
 import { NextRequest, NextResponse } from 'next/server';
 
-import { type ChatMessageParams } from '../../ai/chat/route';
-
 const MOCK_SCENARIOS = {
   success: 'success',
   successLongDelay: 'successLongDelay',
@@ -20,8 +18,7 @@ const scenario: MockScenario = 'success';
 // const scenario: MockScenario = 'aiCreationError';
 
 export async function POST(request: NextRequest) {
-  const { systemInstruction, previousInteractionId, input } =
-    (await request.json()) as ChatMessageParams;
+  await request.json();
   // const successResponseOutputText = `mock response.output_text (response to ${input})`;
   const successResponseOutputText =
     'Verdensfotballforbund FIFAs plan om å selge en eierandel i et nytt VM-selskap vil ikke bli gjennomført.';

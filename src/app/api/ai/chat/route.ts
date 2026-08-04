@@ -55,13 +55,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.log('in de error', error);
     const name = error instanceof Error ? error.name : undefined;
     const status = error instanceof Error ? (error as GeminiApiError).status : 500;
     const rawBody = error instanceof Error ? (error as GeminiApiError).body : undefined;
     const message =
       extractApiErrorMessage(rawBody) ?? (error instanceof Error ? error.message : 'Unknown error');
 
+    // eslint-disable-next-line no-console
     console.log({ error: message, name }, { status: status ?? 500 });
     return NextResponse.json({ error: message, name }, { status: status ?? 500 });
   }
@@ -84,6 +84,7 @@ function extractApiErrorMessage(rawBody: string | undefined): string | undefined
 async function createAI() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
+    // eslint-disable-next-line no-console
     console.error('Missing GEMINI_API_KEY. Add it to environment variables.');
     return;
   }

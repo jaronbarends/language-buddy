@@ -65,7 +65,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       }
     case 'waitingForAI': {
       switch (action.type) {
-        case 'AI_RESPONSE_RECEIVED':
+        case 'AI_RESPONSE_RECEIVED': {
           const newItem: ThreadItem = {
             message: action.payload.message,
             author: 'ai',
@@ -74,6 +74,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
             threadItems: [...state.threadItems, newItem],
             phase: { status: 'aiTurnSpeaking', message: action.payload.message },
           };
+        }
         default:
           return state;
       }
@@ -132,6 +133,8 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
               phase: { status: 'sendingUserReply', transcript: action.payload.transcript },
             };
           }
+          // to be used for edit
+          return state;
         case 'TRANSCRIPT_EMPTY':
           return {
             threadItems: state.threadItems,
