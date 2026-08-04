@@ -1,9 +1,10 @@
 import { ChatPhase } from '@/app/chat/chatConversation/chatReducer';
+import { hasError } from '@/app/chat/chatConversation/chatReducer';
 
 import styles from './ErrorArea.module.css';
 
 export default function ErrorArea({ phase }: { phase: ChatPhase }) {
-  if (phase.status !== 'error') {
+  if (!hasError(phase)) {
     return <></>;
   }
 

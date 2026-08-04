@@ -1145,3 +1145,32 @@ the existing decision to only style once interaction design has stopped churning
     **Status:** Open. Not scoped or designed — this entry only records that a redesign is queued and
     lists the discussion points to resolve, per "define done" — no implementation starts until
     explicit done criteria exist for whatever gets decided.
+
+---
+
+## Derived-state predicates in `chatReducer.ts` (2026-08-04)
+
+### `canSendReply`/`hasError` turned into type predicates; new plain-boolean helpers added
+
+**Date:** 2026-08-04
+**Decision:** Resolves the backlog item flagged 2026-08-03. `canSendReply` and `hasError` (in
+`chatReducer.ts`) are now typed as `phase is Extract<ChatPhase, { status: '...' }>` instead of
+plain `boolean`, so calling them narrows `state.phase`/`phase` at the call site. Callers that read
+a field only present on that phase's variant — `ChatConversation.tsx`'s `handleSendUserMessage`
+(`state.phase.transcript`, after `canSendReply(state.phase)`) and `ErrorArea.tsx` (`phase.error`,
+after `hasError(phase)`) — now call the helper directly in the `if` guard instead of comparing
+`phase.status !== '...'` and relying on TS to narrow the raw comparison.
+Six new plain-`boolean` helpers were also added as part of this refactor — `isAITurnSpeaking`,
+`isWaitingForAI`, `shouldAutoScrollThread` (2026-08-03, alongside the ThreadView work below) and
+`chatStartIsPending`, `listeningIsStopped`, `isListening` (2026-08-04) — and existing raw
+`phase.status !== '...'`/`phase.status === '...'` comparisons across `ChatConversation.tsx`,
+`ControlsArea.tsx`, `MockSTT.tsx`, `SpeechResults.tsx`, `SpeechToText.tsx`, and `ThreadView.tsx`
+were replaced with calls to these and the pre-existing helpers, even where no narrowing was needed
+— for consistency with the narrowing predicates and to keep phase checks readable/DRY across the
+component tree.
+**Rationale:** The backlog item's originally-scoped fix only required predicate types for
+`canSendReply`/`hasError`, the two call sites that actually access a narrowed field. Extending the
+same helper-function pattern to every remaining raw `phase.status` comparison (rather than leaving
+predicate-typed and plain-boolean checks inconsistently mixed) keeps all phase checks going through
+`chatReducer.ts`'s exported helpers as the single source of truth for phase semantics.
+**Status:** Done. `tsc --noEmit` confirms clean.

@@ -1,4 +1,4 @@
-import { shouldShowRecognitionPreview } from '../chatReducer';
+import { isListening, shouldShowRecognitionPreview } from '../chatReducer';
 import { type ChatPhase } from '../chatReducer';
 import SpeechBalloon from './SpeechBalloon';
 
@@ -14,7 +14,7 @@ export default function SpeechResults({ liveTranscript, phase }: SpeechResultsPr
     return null;
   }
   const suffix =
-    phase.status !== 'listening' ? ''
+    !isListening(phase) ? ''
     : liveTranscript === '' ? <span>Listening&hellip;</span>
     : <span>&hellip;</span>;
   return (

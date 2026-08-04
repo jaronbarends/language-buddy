@@ -6,7 +6,7 @@ import { type ChatConfig } from '@/lib/chatConfig';
 import { type LanguageVoice } from '@/lib/language';
 import { cancelSpeech } from '@/lib/textToSpeech';
 
-import { chatReducer, type ChatState } from './chatReducer';
+import { canSendReply, chatReducer, chatStartIsPending, type ChatState } from './chatReducer';
 import ControlsArea from './components/ControlsArea';
 import DevHelper from './components/DevHelper';
 import ErrorArea from './components/ErrorArea';
@@ -34,7 +34,7 @@ export default function ChatConversation({
   const requestIdRef = useRef<number>(0);
 
   useEffect(() => {
-    if (state.phase.status !== 'chatStartPending' || hasStartedRef.current) {
+    if (!chatStartIsPending(state.phase) || hasStartedRef.current) {
       return;
     }
     hasStartedRef.current = true;
@@ -122,7 +122,7 @@ export default function ChatConversation({
   }
 
   async function handleSendUserMessage() {
-    if (state.phase.status !== 'readyForSendingUserReply') {
+    if (!canSendReply(state.phase)) {
       return;
     }
 
@@ -131,15 +131,6 @@ export default function ChatConversation({
 
     await sendMessageToAI(input);
   }
-
-  // function startAISpeech(message: string) {
-  //   // speak ai response
-  //   // use TTS finish event
-  //   //console.log(`[SpeechToText's last utterance's end event fires]`);
-  //   setTimeout(() => {
-  //     dispatch({ type: 'AI_FINISHED_SPEAKING' });
-  //   }, 500);
-  // }
 
   function handleAISpeechEnd() {
     dispatch({ type: 'AI_FINISHED_SPEAKING' });

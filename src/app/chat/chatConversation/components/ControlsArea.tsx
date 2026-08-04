@@ -54,7 +54,7 @@ export default function ControlsArea({
 
   function shouldShowStopButton(phase: ChatPhase) {
     // if phase is error, we could technically stop the chat, but then we still need to end the session. So we'll just set primary button to End session.
-    return canStopChat(phase) && phase.status !== 'error';
+    return canStopChat(phase) && !hasError(phase);
   }
 
   function getPrimaryButtonProps(phase: ChatPhase): PrimaryButtonProps {
