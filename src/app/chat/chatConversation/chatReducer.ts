@@ -22,7 +22,6 @@ export type ChatPhase =
   | { status: 'stoppingListening'; intent: StopIntent }
   | { status: 'cancellingListening' }
   | { status: 'sendingUserReply'; transcript: string }
-  | { status: 'chatEnded' } // ended, need to get evaluation now.
   | { status: 'error'; error: AIError };
 
 export type ChatAction =
@@ -30,7 +29,6 @@ export type ChatAction =
   | { type: 'START_CHAT_WITH_USER' }
   | { type: 'AI_RESPONSE_RECEIVED'; payload: { message: string } }
   | { type: 'AI_FINISHED_SPEAKING' }
-  | { type: 'STOP_CHAT' }
   | { type: 'START_LISTENING' }
   | { type: 'STOP_LISTENING'; payload: { intent: StopIntent } }
   | { type: 'CANCEL_LISTENING' }
@@ -42,17 +40,6 @@ export type ChatAction =
 
 // initial state should be { status: 'chatStartPending' }
 export function chatReducer(state: ChatState, action: ChatAction): ChatState {
-  if (
-    action.type === 'STOP_CHAT' &&
-    state.phase.status !== 'chatStartPending' &&
-    state.phase.status !== 'chatEnded'
-  ) {
-    return {
-      threadItems: state.threadItems,
-      phase: { status: 'chatEnded' },
-    };
-  }
-
   if (action.type === 'ERROR') {
     return {
       threadItems: state.threadItems,
@@ -178,11 +165,6 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         default:
           return state;
       }
-    case 'chatEnded':
-      switch (action.type) {
-        default:
-          return state;
-      }
     case 'error':
       switch (action.type) {
         default:
@@ -216,13 +198,8 @@ export function canSendReply(
   return phase.status === 'sendingUserReply';
 }
 
-export function canStopChat(phase: ChatPhase): boolean {
-  const status = phase.status;
-  return status !== 'chatStartPending' && status !== 'chatEnded';
-}
-
-export function chatHasEnded(phase: ChatPhase): boolean {
-  return phase.status === 'chatEnded';
+export function canStopSession(phase: ChatPhase): boolean {
+  return !userIsInInputFlow(phase);
 }
 
 export function hasError(phase: ChatPhase): phase is Extract<ChatPhase, { status: 'error' }> {
@@ -262,5 +239,20 @@ export function shouldShowRecognitionPreview(phase: ChatPhase): boolean {
   return allowedStatuses.includes(phase.status);
 }
 
-export function shouldShowCancelButton() {}
-export function canRequestCancel() {}
+function userIsInInputFlow(phase: ChatPhase): boolean {
+  const allowedStatuses = [
+    'listening',
+    'stoppingListening',
+    'cancellingListening',
+    'sendingUserReply',
+  ];
+  return allowedStatuses.includes(phase.status);
+}
+
+export function shouldShowCancelButton(phase: ChatPhase): boolean {
+  return userIsInInputFlow(phase);
+}
+
+export function canRequestCancel(phase: ChatPhase): boolean {
+  return phase.status === 'listening';
+}

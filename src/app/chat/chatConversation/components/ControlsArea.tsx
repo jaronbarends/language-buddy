@@ -2,9 +2,9 @@ import {
   canStartWithUser,
   canStartReply,
   canRequestSend,
-  canSendReply,
-  canStopChat,
-  chatHasEnded,
+  canStopSession,
+  shouldShowCancelButton,
+  canRequestCancel,
   hasError,
   type ChatPhase,
 } from '@/app/chat/chatConversation/chatReducer';
@@ -14,7 +14,6 @@ import styles from './ControlsArea.module.css';
 
 type ControlsAreaProps = {
   phase: ChatPhase;
-  onStopChat: () => void;
   onStartListening: () => void;
   onSendUserMessage: () => void;
   onEndSession: () => void;
@@ -30,9 +29,7 @@ type PrimaryButtonProps = {
 
 export default function ControlsArea({
   phase,
-  onStopChat,
   onStartListening,
-  onSendUserMessage,
   onSendRequested,
   onCancelListening,
   onEndSession,
@@ -42,24 +39,26 @@ export default function ControlsArea({
   return (
     <div className={styles.controlsArea}>
       <div className={styles.actions}>
-        <Button variant="primary" onClick={buttonProps.onClick} disabled={disabled}>
+        <Button variant="primary" onClick={buttonProps.onClick} disabled={buttonProps.disabled}>
           {buttonProps.label}
         </Button>
         {shouldShowStopButton(phase) && (
-          <Button variant="ghost" onClick={onStopChat}>
-            End conversation
+          <Button variant="ghost" onClick={onEndSession}>
+            End session
           </Button>
         )}
-        <Button variant="ghost" onClick={onCancelListening}>
-          Cancel
-        </Button>
+        {shouldShowCancelButton(phase) && (
+          <Button variant="ghost" onClick={onCancelListening} disabled={!canRequestCancel}>
+            Cancel
+          </Button>
+        )}
       </div>
     </div>
   );
 
   function shouldShowStopButton(phase: ChatPhase) {
     // if phase is error, we could technically stop the chat, but then we still need to end the session. So we'll just set primary button to End session.
-    return canStopChat(phase) && !hasError(phase);
+    return canStopSession(phase) && !hasError(phase);
   }
 
   function getPrimaryButtonProps(phase: ChatPhase): PrimaryButtonProps {
@@ -79,12 +78,6 @@ export default function ControlsArea({
       return {
         label: 'Send',
         onClick: onSendRequested,
-      };
-    }
-    if (chatHasEnded(phase)) {
-      return {
-        label: 'End this session',
-        onClick: onEndSession,
       };
     }
     if (hasError(phase)) {

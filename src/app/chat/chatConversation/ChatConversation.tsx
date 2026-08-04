@@ -4,7 +4,6 @@ import { useReducer, useState, useRef, useEffect } from 'react';
 import { AIError, sendChatMessage, type AIChatResult } from '@/lib/aiService';
 import { type ChatConfig } from '@/lib/chatConfig';
 import { type LanguageVoice } from '@/lib/language';
-import { cancelSpeech } from '@/lib/textToSpeech';
 
 import { canSendReply, chatReducer, chatStartIsPending, type ChatState } from './chatReducer';
 import ControlsArea from './components/ControlsArea';
@@ -65,7 +64,6 @@ export default function ChatConversation({
           languageTag={chatConfig.language.languageTag}
         />
         <ControlsArea
-          onStopChat={handleStopChat}
           onStartListening={handleStartListening}
           onSendRequested={handleSendRequested}
           onCancelListening={handleCancelListening}
@@ -86,12 +84,6 @@ export default function ChatConversation({
     } else {
       startChatWithUser();
     }
-  }
-
-  function handleStopChat() {
-    dispatch({ type: 'STOP_CHAT' });
-    requestIdRef.current++; // ensure any pending requests are made stale
-    abortControllerRef.current?.abort();
   }
 
   function handleStartListening() {
