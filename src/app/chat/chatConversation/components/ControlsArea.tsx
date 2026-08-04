@@ -1,7 +1,7 @@
 import {
   canStartWithUser,
   canStartReply,
-  canStopListening,
+  canRequestSend,
   canSendReply,
   canStopChat,
   chatHasEnded,
@@ -18,7 +18,7 @@ type ControlsAreaProps = {
   onStartListening: () => void;
   onSendUserMessage: () => void;
   onEndSession: () => void;
-  onStopListening: () => void;
+  onSendRequested: () => void;
   onCancelListening: () => void;
 };
 
@@ -33,7 +33,7 @@ export default function ControlsArea({
   onStopChat,
   onStartListening,
   onSendUserMessage,
-  onStopListening,
+  onSendRequested,
   onCancelListening,
   onEndSession,
 }: ControlsAreaProps) {
@@ -75,16 +75,10 @@ export default function ControlsArea({
         onClick: onStartListening,
       };
     }
-    if (canStopListening(phase)) {
+    if (canRequestSend(phase)) {
       return {
-        label: 'Stop listening',
-        onClick: onStopListening,
-      };
-    }
-    if (canSendReply(phase)) {
-      return {
-        label: 'Send message',
-        onClick: onSendUserMessage,
+        label: 'Send',
+        onClick: onSendRequested,
       };
     }
     if (chatHasEnded(phase)) {

@@ -41,6 +41,12 @@ export default function ChatConversation({
     startChat();
   }, [state.phase]);
 
+  useEffect(() => {
+    if (canSendReply(state.phase)) {
+      handleSendUserMessage();
+    }
+  });
+
   return (
     <>
       <div className={styles.component}>
@@ -61,7 +67,7 @@ export default function ChatConversation({
         <ControlsArea
           onStopChat={handleStopChat}
           onStartListening={handleStartListening}
-          onStopListening={handleStopListening}
+          onSendRequested={handleSendRequested}
           onCancelListening={handleCancelListening}
           onSendUserMessage={handleSendUserMessage}
           onEndSession={onEndSession}
@@ -92,8 +98,8 @@ export default function ChatConversation({
     startListening();
   }
 
-  function handleStopListening() {
-    dispatch({ type: 'STOP_LISTENING' });
+  function handleSendRequested() {
+    dispatch({ type: 'STOP_LISTENING', payload: { intent: 'send' } });
   }
 
   function handleTranscriptCreated(transcript: string) {

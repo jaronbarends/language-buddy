@@ -6,7 +6,7 @@ import {
   canStartWithUser,
   isListening,
   isWaitingForAI,
-  listeningIsStopped,
+  listeningShouldBeStopped,
   listeningShouldBeCancelled,
   type ChatPhase,
 } from '@/app/chat/chatConversation/chatReducer';
@@ -59,7 +59,7 @@ export default function SpeechToText({
   }, [phase]);
 
   useEffect(() => {
-    if (listeningIsStopped(phase)) {
+    if (listeningShouldBeStopped(phase)) {
       stopListening();
     }
   }, [phase]);
