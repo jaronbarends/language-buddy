@@ -21,19 +21,16 @@ export default function ChatContainer() {
   const [supportedLanguageVoices, setSupportedLanguageVoices] = useState<SupportedLanguageVoices>(
     {}
   );
-  const [languageVoice, setLanguageVoice] = useState<LanguageVoice>();
 
   useEffect(() => {
     initSpeech(handleSpeechInitSuccess, handleSpeechInitFail);
   }, []);
 
-  useEffect(() => {
-    setLanguageVoice(supportedLanguageVoices[language.languageTag]);
-  }, [language, supportedLanguageVoices]);
+  const languageVoice: LanguageVoice = supportedLanguageVoices[language.languageTag];
 
   return (
     <>
-      {containerState.status === 'setup' ? (
+      {containerState.status === 'setup' ?
         <ChatSetup
           onStartSession={handleSessionStart}
           onChangeLanguage={setLanguage}
@@ -42,13 +39,12 @@ export default function ChatContainer() {
           speechSupportIsChecked={speechSupportIsChecked}
           supportedLanguageVoices={supportedLanguageVoices}
         />
-      ) : (
-        <ChatConversation
+      : <ChatConversation
           chatConfig={containerState.chatConfig}
           onEndSession={handleSessionEnd}
           languageVoice={languageVoice}
         />
-      )}
+      }
     </>
   );
 

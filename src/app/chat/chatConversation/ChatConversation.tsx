@@ -38,7 +38,7 @@ export default function ChatConversation({
     }
     hasStartedRef.current = true;
     startChat();
-  }, [state.phase]);
+  }, [state.phase, startChat]);
 
   useEffect(() => {
     if (shouldSendReply(state.phase)) {

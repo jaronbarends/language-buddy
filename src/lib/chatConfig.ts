@@ -1,6 +1,5 @@
 // src/lib/chatConfig.ts
 import { getBaseInstruction } from '@/lib/getBaseInstruction';
-import type { BaseInstruction } from '@/lib/getBaseInstruction';
 import type { Language } from '@/lib/language';
 import type { Scenario } from '@/lib/scenarios';
 

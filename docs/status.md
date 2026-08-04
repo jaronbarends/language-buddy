@@ -340,6 +340,19 @@ evaluation.
   `intent: 'edit'` yet) but needs an explicit branch once Edit is built (see decisions.md,
   "Reply-phase UX redesign implemented", and the STT-edit item in backlog.md).
 
+## Infra note (2026-08-04, branch `nextjs-downgrade`, not yet merged)
+
+Downgraded `next`/`eslint-config-next` from `16.2.11` to `15.5.22` (see decisions.md, "Next.js 16 →
+15 downgrade"). Build and dev server both verified working. Required rewriting `eslint.config.mjs`
+to use the `FlatCompat` bridge (v15's `eslint-config-next` ships legacy-format configs, not flat
+arrays) and bumping the externally-maintained `@jaronbarends/frontend-tooling-config` package to
+`1.0.6` to fix a `@next/eslint-plugin-next` version conflict and a `no-undef`/TypeScript
+false-positive gap in its `base.mjs` (see decisions.md for both). Two pre-existing issues surfaced
+as a side effect (lint could not previously run to completion): `src/mock/real-chat-response.js` is
+not valid JS, and `npm run build` does not currently fail on ESLint errors the way Next's docs say
+it should (root cause not found — see decisions.md's "Known follow-up" note). Branch not yet merged
+to main; spike files under `spikes/` are to be removed in a separate branch.
+
 ## Next step
 
 1. ~~Define the real `ConversationApiResult` type~~ — done, as `AIChatResult` (see decisions.md).
