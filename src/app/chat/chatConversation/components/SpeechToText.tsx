@@ -1,7 +1,12 @@
 // import 'dotenv/config';
 import { useEffect, useRef, useState } from 'react';
 
-import { type ChatPhase } from '@/app/chat/chatConversation/chatReducer';
+import {
+  isListening,
+  isWaitingForAI,
+  listeningIsStopped,
+  type ChatPhase,
+} from '@/app/chat/chatConversation/chatReducer';
 
 import MockSTT, { type MockSTTHandle } from './MockSTT';
 import SpeechResults from './SpeechResults';
@@ -36,21 +41,21 @@ export default function SpeechToText({
   }, [languageTag]);
 
   useEffect(() => {
-    if (phase.status !== 'listening') {
+    if (!isListening(phase)) {
       return;
     }
     startListening();
   }, [phase]);
 
   useEffect(() => {
-    if (phase.status !== 'listeningStopped') {
+    if (!listeningIsStopped(phase)) {
       return;
     }
     stopListening();
   }, [phase]);
 
   useEffect(() => {
-    if (phase.status !== 'waitingForAI') {
+    if (!isWaitingForAI(phase)) {
       return;
     }
     setLiveTranscriptByRef('');

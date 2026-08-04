@@ -1,8 +1,12 @@
-import clsx from 'clsx';
 import { useEffect, useRef, useState } from 'react';
 
-import { type ThreadItem } from '@/app/chat/chatConversation/chatReducer';
-import { type ChatPhase } from '@/app/chat/chatConversation/chatReducer';
+import {
+  isAITurnSpeaking,
+  isWaitingForAI,
+  shouldAutoScrollThread,
+  type ThreadItem,
+  type ChatPhase,
+} from '@/app/chat/chatConversation/chatReducer';
 import { type LanguageVoice } from '@/lib/language';
 import { cancelSpeech, speakMessage } from '@/lib/textToSpeech';
 
@@ -27,7 +31,7 @@ export default function ThreadView({
   const [showAIPendingBalloon, setShowAIPendingBalloon] = useState<boolean>(false);
 
   useEffect(() => {
-    if (phase.status !== 'aiTurnSpeaking') {
+    if (!isAITurnSpeaking(phase)) {
       return;
     }
     if (!languageVoice) {
@@ -54,7 +58,7 @@ export default function ThreadView({
   }, [phase]);
 
   useEffect(() => {
-    if (phase.status === 'aiTurnSpeaking' || phase.status === 'waitingForAI') {
+    if (shouldAutoScrollThread(phase)) {
       threadViewRef.current?.scrollTo({
         top: threadViewRef.current?.scrollHeight,
         behavior: 'smooth',
@@ -63,7 +67,7 @@ export default function ThreadView({
   }, [threadItems, showAIPendingBalloon]);
 
   useEffect(() => {
-    if (phase.status !== 'waitingForAI') {
+    if (!isWaitingForAI(phase)) {
       return;
     }
 

@@ -1,6 +1,6 @@
 # Project status
 
-**Last updated:** 2026-08-02
+**Last updated:** 2026-08-04
 **Current phase:** Early build. Concept locked (scenario-library-based conversational sparring
 partner, Norwegian, multi-turn sessions + async structured evaluation). MVP scoping in progress;
 Spikes 1–4 all complete. AI provider decided (Gemini). State machine now runs the full happy path
@@ -83,6 +83,16 @@ route, then the visual/UI design pass, before evaluation.
 - `ThreadView.tsx` — renders `threadItems` from state, styled by author (`ai`/`user`); also owns
   the TTS playback trigger (see "Real TTS wired up" below) via a `useEffect` keyed on
   `phase.status === 'aiTurnSpeaking'`.
+- **Derived-state predicates in `chatReducer.ts` (2026-08-03–2026-08-04):** `canSendReply` and
+  `hasError` are now type predicates (`phase is Extract<ChatPhase, { status: '...' }>`), narrowing
+  `ChatPhase` at the call site instead of requiring a separate raw `phase.status !== '...'`
+  comparison before reading a phase-specific field (`state.phase.transcript` in
+  `ChatConversation.tsx`, `phase.error` in `ErrorArea.tsx`). Six more plain-boolean helpers
+  (`isAITurnSpeaking`, `isWaitingForAI`, `shouldAutoScrollThread`, `chatStartIsPending`,
+  `listeningIsStopped`, `isListening`) were added and now used, alongside the existing helpers,
+  everywhere a `phase.status` comparison previously appeared inline (`ChatConversation.tsx`,
+  `ControlsArea.tsx`, `MockSTT.tsx`, `SpeechResults.tsx`, `SpeechToText.tsx`, `ThreadView.tsx`) —
+  see decisions.md.
 - **Real STT wired up** (`SpeechToText.tsx`), per the 2026-07-28 design: starts/stops Web Speech
   API recognition keyed off `phase` (`listening` → start, `listeningStopped` → stop). With
   `recognition.interimResults = true`, every `onresult` event joins _all_ current results

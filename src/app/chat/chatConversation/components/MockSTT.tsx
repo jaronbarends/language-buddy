@@ -1,6 +1,6 @@
 import { useImperativeHandle, useState, useRef, useEffect, type Ref } from 'react';
 
-import { type ChatPhase } from '../chatReducer';
+import { isListening, isWaitingForAI, type ChatPhase } from '../chatReducer';
 
 import styles from './MockSTT.module.css';
 
@@ -26,7 +26,7 @@ export default function MockSTT({ ref, phase }: MockSTTProps) {
   }, []);
 
   useEffect(() => {
-    if (phase.status !== 'waitingForAI') {
+    if (!isWaitingForAI(phase)) {
       return;
     }
     setTranscriptByRef('');
@@ -36,7 +36,7 @@ export default function MockSTT({ ref, phase }: MockSTTProps) {
     <textarea
       ref={textareaRef}
       className={styles.mockSTT}
-      disabled={phase.status !== 'listening'}
+      disabled={!isListening(phase)}
       value={transcript}
       onChange={(event) => setTranscriptByRef(event.target.value)}
     ></textarea>
