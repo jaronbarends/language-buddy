@@ -20,10 +20,12 @@ wired to the mock for all UI dev.
 
 ### Turn counter / max-turns
 
-**Postponed:** 2026-07-27 — see decisions.md.
-Enforces the 2026-07-26 "AI always speaks last" rule once built. Until then, explicit user-triggered
-"End conversation" is the only way a v0 session ends. Related idea below (closing instruction for
-the AI's final turn) is part of the same mechanism, not a separate decision.
+**Discarded:** 2026-08-04 — see decisions.md ("Turn counter / max-turns: discarded, not merely
+postponed"). Not planned; explicit user-triggered "End session" remains the only way a session
+ends, indefinitely. The 2026-07-26 "AI always speaks last" rule loses its enforcement mechanism as
+a consequence — currently just describes the shape of a normal ending, not a guarantee. Related
+idea below (closing instruction for the AI's final turn) was part of the same now-discarded
+mechanism.
 
 ### Per-error-type recovery (fatal vs retryable, Retry action)
 
@@ -53,7 +55,6 @@ rather than dropping it.
 - open app with vocab suggestion of the day
 - be able to choose language level
 - let app assert language level
-- add separate instruction to end conversation on ai's last turn
 - safari takes some time to start listening the first time after it requests permission. Can we ask for permission beforehand?
 - troubleshooting
   - error "Speech recognition service permission check has failed" op iOs: Settings → Privacy & Security → Speech Recognition — is Safari toggled on there?
@@ -81,6 +82,12 @@ rather than dropping it.
   first; Edit adds a third `listening`-phase action later, reusing the `STOP_LISTENING`
   `{ intent: 'edit' }` seam left for it. Real design surface not yet worked through: hand-edit text
   vs. re-run STT, and whether it reverses the 2026-07-19 read-only-transcript precedent.
+  **Known landmine to fix when this is built:** `chatReducer.ts`'s `stoppingListening` case only
+  has an explicit `TRANSCRIPT_CREATED` branch for `intent === 'send'`; any other `intent` value
+  (i.e. `'edit'`, once dispatched) falls through with no `break`/`return` into the
+  `TRANSCRIPT_EMPTY` branch and silently discards the transcript instead of routing to an edit UI.
+  Inert today since nothing dispatches `intent: 'edit'` yet (see decisions.md, "Reply-phase UX
+  redesign implemented").
 
 ## Icebox
 

@@ -9,7 +9,9 @@
 - [ ] Speech-to-text input (hard MVP requirement)
 - [ ] Text-to-speech output (AI speaking its responses) — moved into MVP scope after spike 2 (see decisions.md)
 - [ ] Multi-turn conversation loop against AI persona, in-scenario
-- [ ] Session ends via max-turn limit or explicit user action ("End conversation")
+- [ ] Session ends via explicit user action only ("End session" — relabeled 2026-08-04). A
+      max-turn limit was considered but discarded, not built (see decisions.md, 2026-08-04, "Turn
+      counter / max-turns: discarded").
 - [ ] Async structured evaluation after session ends: grammar, vocabulary upgrades, semantic nuance
 - [ ] Session state is in-memory only for MVP — no persistence across refresh/tab close/return visits
 - [x] Setup screen before the conversation loop: pick language (from a limited, config-driven list)
@@ -19,13 +21,20 @@
 
 #### v0 interaction/state model
 
-- [x] 9-state model implemented via useReducer + discriminated union (see decisions.md,
-      2026-07-22 through 2026-07-27, for full state list and transitions — the original
-      2026-07-22/07-23 model has since dropped `sending` and `initializing`). Real STT wiring
-      (2026-07-28) added two further phases, `listeningStopped` and `readyForSendingUserReply` —
-      see decisions.md. 2026-07-30: `readyForNewChat` → `chatStartPending` and `ended` →
-      `chatEnded`; the `END_SESSION` action is removed — ending a session is a direct component
-      call (`onEndSession`), not a reducer action (see decisions.md). All renames applied.
+- [x] 10-state model implemented via useReducer + discriminated union (see decisions.md,
+      2026-07-22 through 2026-08-04, for full state list and transitions — the original
+      2026-07-22/07-23 model has since dropped `sending` and `initializing`). 2026-07-30:
+      `readyForNewChat` → `chatStartPending`; the `END_SESSION` action is removed — ending a
+      session is a direct component call (`onEndSession`), not a reducer action. 2026-08-04
+      (reply-phase redesign): `listeningStopped`/`readyForSendingUserReply` (added 2026-07-28)
+      renamed to `stoppingListening`/`sendingUserReply`; `cancellingListening` added for `Cancel`;
+      `listeningTimedOut` superseded (never built, no app-enforced timeout planned); `STOP_CHAT`
+      action and terminal `chatEnded` phase removed entirely — ending a session, including
+      mid-conversation, is now always the direct `onEndSession` component call, not a reducer
+      transition (see decisions.md, "Reply-phase UX redesign implemented"). Current phase list:
+      `chatStartPending`, `waitingForAI`, `aiTurnSpeaking`, `readyForUserStart`,
+      `readyForUserReply`, `listening`, `stoppingListening`, `cancellingListening`,
+      `sendingUserReply`, `error`.
 - [ ] Error/retry, end-conversation-from-anywhere, and listening-timeout behaviors implemented per
       decisions.md
 - [ ] Hidden AI-opening instruction excluded from transcript and from future evaluation input
@@ -48,8 +57,8 @@
       the planned OpenAI comparison spike was deliberately skipped rather than spend further to confirm
       an already-satisfactory result (see decisions.md, 2026-07-21).
 - [x] Max number of turns per session: no fixed number from Spike 1 — no drift/breaking point
-      appeared within the 10 turns tested, so this will be tuned during build rather than derived from
-      a spike ceiling (see decisions.md, 2026-07-21).
+      appeared within the 10 turns tested (see decisions.md, 2026-07-21). No turn-counter/max-turns
+      mechanism will be built at all — discarded 2026-08-04, not merely postponed (see decisions.md).
 - [x] Auth: none for MVP (see decisions.md, 2026-07-22).
 - [x] v0 scenario scope: one hardcoded scenario for the first build; scenario library remains the
       eventual target, generalized after v0 (see decisions.md, 2026-07-22).

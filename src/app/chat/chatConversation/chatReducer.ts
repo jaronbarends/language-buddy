@@ -191,15 +191,11 @@ export function canRequestSend(phase: ChatPhase): boolean {
   return phase.status === 'listening';
 }
 
-export function canSendReply(
+export function shouldSendReply(
   // reply is actually ready to be sent
   phase: ChatPhase
 ): phase is Extract<ChatPhase, { status: 'sendingUserReply' }> {
   return phase.status === 'sendingUserReply';
-}
-
-export function canStopSession(phase: ChatPhase): boolean {
-  return !userIsInInputFlow(phase);
 }
 
 export function hasError(phase: ChatPhase): phase is Extract<ChatPhase, { status: 'error' }> {
@@ -230,6 +226,10 @@ export function listeningShouldBeCancelled(phase: ChatPhase): boolean {
   return phase.status === 'cancellingListening';
 }
 
+export function canStopSession(phase: ChatPhase): boolean {
+  return !userIsInInputFlow(phase);
+}
+
 export function shouldAutoScrollThread(phase: ChatPhase): boolean {
   return phase.status === 'aiTurnSpeaking' || phase.status === 'waitingForAI';
 }
@@ -239,7 +239,7 @@ export function shouldShowRecognitionPreview(phase: ChatPhase): boolean {
   return allowedStatuses.includes(phase.status);
 }
 
-function userIsInInputFlow(phase: ChatPhase): boolean {
+export function userIsInInputFlow(phase: ChatPhase): boolean {
   const allowedStatuses = [
     'listening',
     'stoppingListening',

@@ -35,7 +35,7 @@ export default function ControlsArea({
   onEndSession,
 }: ControlsAreaProps) {
   const buttonProps = getPrimaryButtonProps(phase);
-  const disabled = buttonProps.disabled || false;
+
   return (
     <div className={styles.controlsArea}>
       <div className={styles.actions}>
@@ -48,7 +48,7 @@ export default function ControlsArea({
           </Button>
         )}
         {shouldShowCancelButton(phase) && (
-          <Button variant="ghost" onClick={onCancelListening} disabled={!canRequestCancel}>
+          <Button variant="ghost" onClick={onCancelListening} disabled={!canRequestCancel(phase)}>
             Cancel
           </Button>
         )}

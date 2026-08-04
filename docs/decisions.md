@@ -494,7 +494,12 @@ completes" to a check that fires before sending what would be the closing AI req
 turn counter needs to exist in state, which it doesn't yet. Not designing that mechanism now (see
 backlog: separate closing-instruction for the AI's final turn, deferred).
 **Status:** Turn-counter mechanism and any "wrap up the conversation" instruction are open — tracked
-in backlog.md, not designed here.
+in backlog.md, not designed here. **Update 2026-08-04:** the turn-counter mechanism this depended on
+is discarded (see "Turn counter / max-turns: discarded" below) — "AI always speaks last" is no
+longer actively enforceable and currently isn't enforced: a session can end via "End session" after
+any turn, including mid-AI-turn, the same way `STOP_CHAT` always could before it (see decisions.md,
+"Reply-phase UX redesign implemented"). This rule now describes the intended shape of a *normal*
+session ending (nothing currently forces it), not a guarantee.
 
 ### No dedicated `sending` state
 
@@ -524,6 +529,21 @@ scenario loading exists.
 user action) is the only way a session ends.
 **Rationale:** Avoids building termination logic that isn't blocking anything yet. When it is
 built, the 2026-07-26 rule stands: AI always speaks last.
+**Status:** Superseded 2026-08-04 — see "Turn counter / max-turns: discarded" below. No longer
+just postponed; not planned.
+
+### Turn counter / max-turns: discarded, not merely postponed
+
+**Date:** 2026-08-04
+**Decision:** No turn counter / max-turns mechanism will be built. Explicit "End session" remains
+the only way a session ends, indefinitely — this is not a temporary state pending a future build.
+**Rationale:** Direct call, not derived from new evidence — the postponed mechanism was never
+blocking anything, and there's no plan to pick it up. Discarding it outright (rather than leaving
+it open in backlog.md) avoids carrying a stale "still to do" item.
+**Consequence:** The 2026-07-26 "conversation always ends with AI speaking last" rule loses its
+only planned enforcement mechanism — see the update appended to that entry above. Tracked as
+discarded (not "postponed") in backlog.md.
+**Status:** Done — reflected in backlog.md, requirements.md, and status.md.
 
 ### `listeningTimedOut` deferred to STT work
 
@@ -572,6 +592,10 @@ conversation" button is always rendered and always dispatches `STOP_CHAT` (see `
 in status.md). This was the exact failure mode the original useReducer decision entry flagged as a
 risk to guard against. A single top-level check (rather than repeating a `STOP_CHAT` case in every
 phase's inner switch) keeps the guard in one place instead of duplicated across every branch.
+**Status:** Superseded 2026-08-04 — the `STOP_CHAT` action (and the `ended`/`chatEnded` phase it
+transitioned to) is removed entirely as part of the reply-phase redesign; ending a session is now
+always a direct `onEndSession` component call, not a reducer action, from every phase except the
+`listening`-adjacent input-flow window. See "Reply-phase UX redesign implemented" below.
 
 ### Error message extraction: `error.message` unreliable, parse `error.body` instead
 
@@ -869,7 +893,9 @@ now return to setup," which is a separate, component-level concern handled by `C
 **Status:** Decided 2026-07-30 but not applied when the rest of the setup screen was implemented —
 `chatReducer.ts` still read `'ended'` throughout. Caught and applied while updating docs after the
 setup screen implementation landed (2026-07-30 session); confirmed via `tsc --noEmit` that no other
-file referenced the literal.
+file referenced the literal. Superseded 2026-08-04 — `chatEnded` is removed as a phase entirely
+(not renamed again), as part of the reply-phase redesign; see "Reply-phase UX redesign
+implemented" below.
 
 ---
 
@@ -1257,3 +1283,96 @@ premise that a timeout is still needed no longer holds — this isn't "still wai
 "probably won't build it as originally conceived."
 **Status:** Superseded. If a real need for a timeout resurfaces later, it should be scoped fresh
 against the current `Send`/`Cancel` flow, not resumed from the original `listeningTimedOut` design.
+
+---
+
+## Reply-phase UX redesign implemented (2026-08-04) — corrections to the design above
+
+Implementation surfaced four places where the built behavior diverges from the design decided
+earlier the same day (see "Reply-phase UX redesign resolved" above). Caught by comparing the code
+against these docs after implementation, not during a spike — logged here rather than silently
+editing the entries above, per this project's documented decisions.
+
+### `chatEnded` phase and `STOP_CHAT` action removed entirely — ending a session is always a direct `onEndSession` call
+
+**Date:** 2026-08-04 (supersedes "`STOP_CHAT` handled from every reducer phase," 2026-07-27, and the
+`chatEnded` half of "`ended` renamed to `chatEnded`," 2026-07-30)
+**Decision:** `STOP_CHAT` and the terminal `chatEnded` phase are removed from `chatReducer.ts`
+entirely — not renamed, not superseded-but-present, gone. "End session" (`ControlsArea.tsx`) now
+calls the `onEndSession` prop directly from whichever phase it's visible in (see the input-flow
+gating entry below), the same way `error`-phase recovery already worked pre-redesign. There is no
+longer an intermediate "conversation has ended" screen between clicking "End session" and
+`ChatContainer` unmounting `ChatConversation` back to `ChatSetup`.
+**Rationale:** Checked before deciding this wasn't a silent regression: the terminal `chatEnded`
+phase's only value was showing that intermediate screen — the abort-in-flight-request/stop-TTS/
+stop-STT cleanup implied by the original 2026-07-22 "End conversation (always live)" design was
+never actually built against `STOP_CHAT` in the first place (that 2026-07-27 entry only ever
+described a phase transition to `ended`, nothing that touched `abortControllerRef` or called
+`cancelSpeech`/recognition stop directly). TTS cleanup already happens for free via React's normal
+unmount lifecycle (`ThreadView.tsx`'s `aiTurnSpeaking` effect cleanup calls `cancelSpeech()`
+regardless of why the component unmounts), and STT was never reachable while "End session" is
+visible (see input-flow gating below) — so removing the phase loses only the intermediate screen,
+not any cleanup behavior. Judged not worth keeping a phase/action pair whose sole purpose was a
+screen nobody asked for.
+**Consequence:** requirements.md's "Hidden AI-opening instruction..." and state-model checklist
+items, and status.md's phase-count references, need updating to the current 10-phase model (see
+below). The in-flight-fetch-abort gap (`abortControllerRef` never `.abort()`-ed on session end) is
+a pre-existing gap, not introduced here — flagged in backlog.md if it's ever worth closing.
+**Status:** Done.
+
+### Cancel implemented with an intermediate `cancellingListening` phase — supersedes "no intermediate phase"
+
+**Date:** 2026-08-04 (supersedes the "no intermediate phase, no waiting on STT to settle" line in
+the `listening`-phase `Send`/`Cancel` design above)
+**Decision:** `CANCEL_LISTENING` transitions `listening` → a new `cancellingListening` phase, not
+straight to `readyForUserReply`. `SpeechToText.tsx` reacts to `cancellingListening` by calling
+`recognition.abort()`; only once the real `onend` event fires does it call the new
+`onListeningCancelled` prop, which dispatches a new `LISTENING_CANCELLED` action that finally moves
+`cancellingListening` → `readyForUserReply`.
+**Rationale:** The original design's premise — that Cancel could skip waiting on STT — didn't survive
+contact with the real Web Speech API: `recognition.abort()` is still async and its effects (including
+whether a stray `onresult` fires first, per the existing iOS Safari quirk noted in the original
+design's "open verification item") can only be observed via `onend`. There's no way to "not wait" for
+a browser event that hasn't fired yet without risking a race. Mirrors the existing `listening` →
+`stoppingListening` → `readyForSendingUserReply`-style pattern (stop-and-wait, not stop-and-assume)
+already used for Send, rather than inventing a second, different waiting mechanism.
+**Status:** Done. Keeping this design going forward — not revisiting the "no intermediate phase"
+approach.
+
+### Phase names finalized during implementation: `stoppingListening`, `sendingUserReply`; `intent` carried on `stoppingListening`
+
+**Date:** 2026-08-04
+**Decision:** The phase referred to as `listeningStopped` in the design entries above shipped as
+`stoppingListening`; `readyForSendingUserReply` shipped as `sendingUserReply`. `stoppingListening`
+carries `intent: StopIntent` (`'send' | 'edit'`) on the phase object, contradicting the design
+entry's "no intent needs to live on the phase itself" line.
+**Rationale:** Naming: `stoppingListening`/`cancellingListening` read consistently as a matched
+pair (both name the in-progress action, not a past-tense state) once `cancellingListening` existed
+as a sibling phase — `listeningStopped` next to `cancellingListening` would have mismatched tense.
+Keeping `intent` on the phase (rather than dropping it, as the design assumed) costs nothing now and
+keeps the seam for a future Edit intent concrete rather than needing to be re-added later.
+**Known gap carried over, not fixed now:** `stoppingListening`'s `TRANSCRIPT_CREATED` handler
+only has an explicit branch for `intent === 'send'`; any other `intent` value falls through
+(no `break`/`return`) into the `TRANSCRIPT_EMPTY` branch, silently discarding the transcript. Inert
+today — nothing dispatches `intent: 'edit'` yet — but will need an explicit branch (or a
+different design) before Edit is built. Tracked in backlog.md against the existing STT-edit item
+rather than fixed speculatively now.
+**Status:** Done.
+
+### `End session`/`Cancel` visibility gated by the existing `userIsInInputFlow` helper across the whole input flow, not just `listening`
+
+**Date:** 2026-08-04 (supersedes "reachable from every phase except `listening`" in the `End
+session` design entry above)
+**Decision:** `canStopSession` (gates "End session") and `shouldShowCancelButton` (gates "Cancel")
+both key off the same `chatReducer.ts` helper, `userIsInInputFlow`, which covers `listening`,
+`stoppingListening`, `cancellingListening`, and `sendingUserReply` — not `listening` alone. So "End
+session" is hidden, and "Cancel" shown, across the entire stop/cancel/send-in-flight window, not
+just while recognition is actively listening.
+**Rationale:** The transitional phases (`stoppingListening`, `cancellingListening`,
+`sendingUserReply`) are all mid-flight the same way `listening` is — there's no clean way to "end
+the session" while recognition is still settling a result or a message is already being sent, so
+hiding "End session" only during literal `listening` and re-showing it during those transitional
+phases would flash the button on and off for a few hundred ms with nothing useful to do with it.
+Sharing one helper (`userIsInInputFlow`) for both gates, instead of two separately-scoped checks,
+also keeps "what counts as mid-reply" defined in one place.
+**Status:** Done. Keeping this design going forward — not narrowing to literal `listening` only.

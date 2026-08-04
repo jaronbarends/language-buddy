@@ -5,7 +5,7 @@ import { AIError, sendChatMessage, type AIChatResult } from '@/lib/aiService';
 import { type ChatConfig } from '@/lib/chatConfig';
 import { type LanguageVoice } from '@/lib/language';
 
-import { canSendReply, chatReducer, chatStartIsPending, type ChatState } from './chatReducer';
+import { shouldSendReply, chatReducer, chatStartIsPending, type ChatState } from './chatReducer';
 import ControlsArea from './components/ControlsArea';
 import DevHelper from './components/DevHelper';
 import ErrorArea from './components/ErrorArea';
@@ -41,7 +41,7 @@ export default function ChatConversation({
   }, [state.phase]);
 
   useEffect(() => {
-    if (canSendReply(state.phase)) {
+    if (shouldSendReply(state.phase)) {
       handleSendUserMessage();
     }
   });
@@ -130,7 +130,7 @@ export default function ChatConversation({
   }
 
   async function handleSendUserMessage() {
-    if (!canSendReply(state.phase)) {
+    if (!shouldSendReply(state.phase)) {
       return;
     }
 
