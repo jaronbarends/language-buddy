@@ -1,6 +1,6 @@
 # Project status
 
-**Last updated:** 2026-08-04
+**Last updated:** 2026-08-05
 **Current phase:** Early build. Concept locked (scenario-library-based conversational sparring
 partner, Norwegian, multi-turn sessions + async structured evaluation). MVP scoping in progress;
 Spikes 1–4 all complete. AI provider decided (Gemini). State machine now runs the full happy path
@@ -340,18 +340,29 @@ evaluation.
   `intent: 'edit'` yet) but needs an explicit branch once Edit is built (see decisions.md,
   "Reply-phase UX redesign implemented", and the STT-edit item in backlog.md).
 
-## Infra note (2026-08-04, branch `nextjs-downgrade`, not yet merged)
+## Infra note (2026-08-04–08-05, Next.js 16 → 15 downgrade — merged)
 
-Downgraded `next`/`eslint-config-next` from `16.2.11` to `15.5.22` (see decisions.md, "Next.js 16 →
-15 downgrade"). Build and dev server both verified working. Required rewriting `eslint.config.mjs`
-to use the `FlatCompat` bridge (v15's `eslint-config-next` ships legacy-format configs, not flat
-arrays) and bumping the externally-maintained `@jaronbarends/frontend-tooling-config` package to
-`1.0.6` to fix a `@next/eslint-plugin-next` version conflict and a `no-undef`/TypeScript
-false-positive gap in its `base.mjs` (see decisions.md for both). Two pre-existing issues surfaced
-as a side effect (lint could not previously run to completion): `src/mock/real-chat-response.js` is
-not valid JS, and `npm run build` does not currently fail on ESLint errors the way Next's docs say
-it should (root cause not found — see decisions.md's "Known follow-up" note). Branch not yet merged
-to main; spike files under `spikes/` are to be removed in a separate branch.
+Downgraded `next`/`eslint-config-next` from `16.2.11` to `15.5.22` on branch `nextjs-downgrade`,
+**merged to `main` 2026-08-05** (`44c5012`; see decisions.md, "Next.js 16 → 15 downgrade"). Build
+and dev server both verified working. Required rewriting `eslint.config.mjs` to use the
+`FlatCompat` bridge (v15's `eslint-config-next` ships legacy-format configs, not flat arrays) and
+bumping the externally-maintained `@jaronbarends/frontend-tooling-config` package to `1.0.6` to fix
+a `@next/eslint-plugin-next` version conflict and a `no-undef`/TypeScript false-positive gap in its
+`base.mjs` (see decisions.md for both); `@eslint/eslintrc` was also added as an explicit
+devDependency rather than relying on transitive hoisting.
+
+Getting lint to actually run to completion (rather than crash) surfaced further follow-up work, all
+now done (see decisions.md, "Downgrade branch merged; lint-now-runs-to-completion follow-up
+fixes"): `src/mock/real-chat-response.js` (not valid JS) was deleted; three `react-hooks/
+exhaustive-deps` violations were fixed in `ChatConversation.tsx`, `SpeechToText.tsx`, and
+`ThreadView.tsx`. The previously-open "build doesn't fail on ESLint errors" note is resolved, not
+just worked around — re-tested 2026-08-05 by deliberately injecting a lint error, which now
+correctly fails `npm run build` ("Failed to compile."); the original observation turned out to be an
+artifact of the two now-fixed/removed error sources, not a real build/lint integration gap.
+
+Two calibration-only files still remain under `spikes/language-speech-rates/`
+(`speechRateREsults.ts`, `textToSpeechTest.ts`) — same files already tracked under "What's open" >
+"Dead code from the TTS build" below, not new fallout from the downgrade.
 
 ## Next step
 

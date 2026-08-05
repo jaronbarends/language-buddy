@@ -1439,13 +1439,47 @@ typescript-eslint's own docs recommend disabling it for TS files and relying on 
 **Status:** Done. Both fixes are published and installed; `npm run lint` now reports only
 legitimate, pre-existing findings (unrelated app-code issues and two known-broken spike/mock files,
 see below) — confirmed by comparing before/after error counts (20 → 8 errors).
-**Known follow-up, not fixed now:** `npm run build`'s lint pass currently does not fail the build on
-ESLint errors as Next's docs say it should (observed: build exits `0` despite printed `Error:`-level
-findings like `no-case-declarations`/`no-fallthrough` in `chatReducer.ts` and a genuine parse error
-in `src/mock/real-chat-response.js`). Not root-caused — plausibly an interaction between Next's
-internal build-time lint runner and the `FlatCompat`-wrapped config. Not blocking (dev-time lint via
-CLI and the editor both correctly report severity), but means the build can't currently be trusted
-as an error gate; tracked as an open question, not yet in backlog.md.
-**Also found (unrelated, not fixed):** `src/mock/real-chat-response.js` is not valid JavaScript — it
-appears to be pasted console/debug output saved with a `.js` extension, not an actual module. Pre-
-existing; only surfaced once lint began parsing it successfully past the earlier crash.
+**Follow-up note, since resolved (was "Known follow-up, not fixed now"):** at the time this entry
+was first written, `npm run build`'s lint pass appeared not to fail the build on ESLint errors
+(build exited `0` despite printed `Error:`-level findings like `no-case-declarations`/
+`no-fallthrough` in `chatReducer.ts` and a genuine parse error in `src/mock/real-chat-response.js`).
+Re-tested 2026-08-05 after both of those specific error sources were independently fixed/removed
+(see below): deliberately injecting a fresh lint error (an `any`-typed const in `src/lib/languages.ts`,
+reverted after the test) now correctly fails `npm run build` with `Failed to compile.`. So this was
+never a real build/lint integration bug — the two cited examples were the only errors present at the
+time, and once both were gone there was nothing left to demonstrate the (non-existent) gap with.
+**Also found, since removed:** `src/mock/real-chat-response.js` was not valid JavaScript — it
+appeared to be pasted console/debug output saved with a `.js` extension, not an actual module.
+Deleted in `70a2cd0` ("fix more linting errors; remove real-chat-response.js", 2026-08-04) once it
+was confirmed unused.
+
+### Downgrade branch merged; lint-now-runs-to-completion follow-up fixes
+
+**Date:** 2026-08-05
+**Decision:** `nextjs-downgrade` merged to `main` (`44c5012`). Three follow-up commits fixed
+`react-hooks/exhaustive-deps` violations that only became visible once lint could run to completion
+past the crash described above:
+
+- `ChatConversation.tsx` (`0796323`, `35726cf`): the mount effect that triggers chat start no longer
+  depends on a locally-defined `startChat` function. Instead, a `startChatRef` is kept current by a
+  separate effect with **no** dependency array (deliberately runs every render, keeping the ref's
+  closure fresh over `chatConfig`/`startChatWithAI`/`startChatWithUser`), and the start-triggering
+  effect only depends on `state.phase`, calling `startChatRef.current()`. Avoids the alternative
+  (`useCallback`-wrapping `startChat` and listing it as a dependency), which would re-run the
+  start-trigger effect any time the callback identity changed rather than only on the intended
+  `state.phase` change.
+- `SpeechToText.tsx` (`35726cf`): the recognition-init effect's dependency array is intentionally
+  emptied (was `[languageTag]`), with an `eslint-disable-next-line react-hooks/exhaustive-deps` and
+  a comment explaining why: if `languageTag` changes, only `recognition.lang` would need
+  reassigning, not recreating the whole recognition object; the handlers assigned inside
+  `initSpeechRecognition` close over refs (read via `.current`, never stale) and over callback props
+  that themselves only forward to a stable `dispatch`.
+- `ThreadView.tsx` (`329ea69`): the TTS-trigger effect's dependency array gained `threadItems`,
+  `languageVoice`, `onAISpeechEnd` (was `[phase]` only); the autoscroll effect gained `phase` (was
+  `[threadItems, showAIPendingBalloon]` only) — both now list their actual dependencies instead of a
+  partial subset.
+
+**Rationale:** These weren't cosmetic — `eslint-plugin-react-hooks`'s `exhaustive-deps` rule is a
+real correctness check (stale closures over props/state), not just a style rule; it simply couldn't
+run before the FlatCompat/plugin-version fixes above let lint complete without crashing.
+**Status:** Done. `npm run lint` and `npm run build` both clean on `main` as of `44c5012`.
