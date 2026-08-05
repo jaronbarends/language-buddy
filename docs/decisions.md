@@ -1483,3 +1483,57 @@ past the crash described above:
 real correctness check (stale closures over props/state), not just a style rule; it simply couldn't
 run before the FlatCompat/plugin-version fixes above let lint complete without crashing.
 **Status:** Done. `npm run lint` and `npm run build` both clean on `main` as of `44c5012`.
+
+---
+
+## Unsupported-`SpeechRecognition` handling (2026-08-05)
+
+### Starting a conversation now requires `SpeechRecognition` support; the old in-conversation error path is removed
+
+**Date:** 2026-08-05
+**Decision:** Browser support for the Web Speech API's `SpeechRecognition` constructor is now
+checked on `ChatSetup`, not discovered mid-conversation. New `src/lib/speechRecognition.ts`:
+
+- `speechRecognitionIsSupported()` — reads `window.SpeechRecognition ?? window.webkitSpeechRecognition`
+  and returns whether a constructor exists; returns `false` (via an internal `typeof window ===
+  'undefined'` guard) when called during SSR.
+- `getCrossBrowserSpeechRecognition()` — returns `new Constructor()` if supported, `undefined`
+  otherwise. `SpeechToText.tsx`'s `initSpeechRecognition` now returns `SpeechRecognition | undefined`
+  instead of throwing when unsupported; `startListening`/`stopListening`/`cancelListening` already
+  used `recognitionRef.current?.` optional chaining, so an `undefined` recognition object is a
+  silent no-op rather than a crash. In practice this path shouldn't be reachable — `ChatSetup` gates
+  the button below — this is defense-in-depth, not the actual gate.
+- `useSpeechRecognitionIsSupported()` — a `useSyncExternalStore` wrapper around
+  `speechRecognitionIsSupported`, with a `subscribe` that never fires (support doesn't change mid-
+  session, so there's nothing to subscribe to) and `getServerSnapshot` hardcoded to `false`.
+
+`ChatSetup.tsx` calls the hook, shows a message ("This app needs speech recognition; this browser
+does not support that. Use another browser (like Chrome, Edge or Safari)") when unsupported, and
+disables the "Start conversation" button on the same condition (alongside the existing
+`speechSupportIsChecked` check — an unrelated TTS-voice-detection flag from `ChatContainer`, not to
+be confused with this STT check despite the similar name). `ChatConversation.tsx`'s `onError` prop
+on `SpeechToText` and its `handleError` (`// TODO decide how to handle non-api errors` →
+`throw new Error(message)`) are removed entirely, since the one thing that prop existed to report
+(recognition unsupported) can no longer occur once a session has started.
+**Rationale:** Discovering "this browser can't do STT" only after the user has already picked a
+language/starter and landed in a live conversation is a worse failure mode than blocking it upfront
+— STT is a hard MVP requirement (see 2026-07-17 decision), so a browser without it can't run a
+session at all, and there's no partial/degraded mode to fall back into.
+
+### SSR/CSR mismatch fix: `useSyncExternalStore`, not a direct function call
+
+**Date:** 2026-08-05
+**Decision:** The first version of this check called `speechRecognitionIsSupported()` directly in
+`ChatSetup`'s render body. Superseded same-day by the `useSyncExternalStore`-based
+`useSpeechRecognitionIsSupported()` hook described above.
+**Rationale:** `chat/page.tsx` is a Server Component tree — `ChatSetup` renders once on the server
+first. `window` doesn't exist there, so a direct call would need to assume `false` during SSR and
+would only get the real answer on client re-render; without `useSyncExternalStore`, React has no way
+to know the SSR-rendered value is provisional, and React 19 hydration would throw a mismatch error
+the moment a browser that *does* support `SpeechRecognition` hydrates to a different boolean than
+what was server-rendered. `useSyncExternalStore`'s `getServerSnapshot` param exists exactly for this
+case: it tells React explicitly what value to expect during the SSR pass, so hydration reconciles
+cleanly and the real client value takes over on mount.
+**Status:** Done. Implemented identically on two branches independently (commits `9141751`/`bbded6f`
+and `c43dbc3`/`cab5c63`), merged together in `442b350` with no conflicts since both diffs were
+identical.
