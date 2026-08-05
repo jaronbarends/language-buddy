@@ -76,7 +76,6 @@ export default function ChatConversation({
           phase={state.phase}
           onTranscriptCreated={handleTranscriptCreated}
           onListeningCancelled={handleListeningCancelled}
-          onError={handleError}
           languageTag={chatConfig.language.languageTag}
         />
         <ControlsArea
@@ -108,11 +107,6 @@ export default function ChatConversation({
       return;
     }
     dispatch({ type: 'TRANSCRIPT_CREATED', payload: { transcript } });
-  }
-
-  function handleError(message: string) {
-    // TODO decide how to handle non-api errors
-    throw new Error(message);
   }
 
   function handleCancelListening() {

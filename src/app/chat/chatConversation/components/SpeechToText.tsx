@@ -10,6 +10,7 @@ import {
   listeningShouldBeCancelled,
   type ChatPhase,
 } from '@/app/chat/chatConversation/chatReducer';
+import { getCrossBrowserSpeechRecognition } from '@/lib/speechRecognition';
 
 import MockSTT, { type MockSTTHandle } from './MockSTT';
 import SpeechResults from './SpeechResults';
@@ -20,7 +21,6 @@ type SpeechToTextProps = {
   phase: ChatPhase;
   onTranscriptCreated: (transcript: string) => void;
   onListeningCancelled: () => void;
-  onError: (message: string) => void;
   languageTag: string;
 };
 
@@ -30,10 +30,9 @@ export default function SpeechToText({
   phase,
   onTranscriptCreated,
   onListeningCancelled,
-  onError,
   languageTag,
 }: SpeechToTextProps) {
-  const recognitionRef = useRef<SpeechRecognition>(null);
+  const recognitionRef = useRef<SpeechRecognition | undefined>(null);
   const recognitionShouldBeActiveRef = useRef<boolean>(false);
   const stopReasonRef = useRef<'send' | 'cancel'>('send');
   // use ref combined with state to ensure same object across recreated event handlers
@@ -49,7 +48,7 @@ export default function SpeechToText({
     // (there is no logical case to change language during chat)
     // handleResult/handleEnd (assigned inside initSpeechRecognition) close over
     // refs (always read via .current, so no staleness) and over onTranscriptCreated/
-    // onListeningCancelled/onError, which themselves only forward to a stable dispatch.
+    // onListeningCancelled/onSpeechRecognitionNotSupported, which themselves only forward to a stable dispatch.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -90,15 +89,11 @@ export default function SpeechToText({
     </div>
   );
 
-  function initSpeechRecognition(languageTag: string): SpeechRecognition {
-    const CrossBrowserSpeechRecognition =
-      window.SpeechRecognition ?? window.webkitSpeechRecognition;
-    if (!CrossBrowserSpeechRecognition) {
-      // TODO: handle this
-      onError('Speech recognition is not supported in this browser');
-      throw new Error();
+  function initSpeechRecognition(languageTag: string): SpeechRecognition | undefined {
+    const recognition = getCrossBrowserSpeechRecognition();
+    if (!recognition) {
+      return undefined;
     }
-    const recognition = new CrossBrowserSpeechRecognition();
 
     recognition.continuous = true;
     recognition.lang = languageTag;
