@@ -33,6 +33,13 @@ still carried on `stoppingListening`; and `End session`/`Cancel` visibility is g
 alone. Edit, evaluation, and auto-start-listening remain out of scope, per the original scoping.
 Next up: swap the mock AI for the real Gemini route, then the visual/UI design pass, before
 evaluation.
+**Starting a conversation now requires browser `SpeechRecognition` support (2026-08-05, see
+decisions.md):** `ChatSetup` disables "Start conversation" and shows a fallback message when the
+browser has no `SpeechRecognition`/`webkitSpeechRecognition` constructor, via a new
+`useSpeechRecognitionIsSupported` hook (`src/lib/speechRecognition.ts`, SSR-safe via
+`useSyncExternalStore`). The old in-conversation `onError`/`handleError` path on `SpeechToText` (a
+`// TODO decide how to handle non-api errors` stub) is removed — unsupported browsers can no longer
+reach a live conversation, so that error can no longer occur there.
 
 ---
 
@@ -167,6 +174,17 @@ evaluation.
   behind the rate table; neither is imported by any production path (see decisions.md,
   "known dead code" note, and backlog.md for a cleanup item covering these plus the now-orphaned
   `AIThreadItemContent.tsx`).
+- **`SpeechRecognition` support gating (2026-08-05, see decisions.md):** `src/lib/speechRecognition.ts`
+  exports `speechRecognitionIsSupported()`/`getCrossBrowserSpeechRecognition()` (SSR-safe via a
+  `typeof window === 'undefined'` guard) and `useSpeechRecognitionIsSupported()` (a
+  `useSyncExternalStore` wrapper, needed because `ChatSetup` renders inside a Server Component tree
+  and a direct function call would mismatch between the SSR pass and client hydration). `ChatSetup`
+  uses the hook to disable "Start conversation" and show a fallback message when unsupported.
+  `SpeechToText.tsx`'s `initSpeechRecognition` now returns `SpeechRecognition | undefined` instead of
+  throwing; the existing `?.` optional chaining on `recognitionRef.current` already made
+  start/stop/cancel safe no-ops against `undefined`. Distinct from the unrelated
+  `speechSupportIsChecked` flag (TTS voice detection, owned by `ChatContainer`) despite the similar
+  name.
 - `next.config.ts` sets `allowedDevOrigins: ['*.ngrok-free.app']`, letting the Next.js dev
   server accept requests tunneled through ngrok (see decisions.md, 2026-07-29).
 - **Empty-transcript handling:** new `TRANSCRIPT_EMPTY` action. When neither real STT nor the
