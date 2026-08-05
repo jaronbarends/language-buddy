@@ -34,9 +34,9 @@ export default function ChatConversation({
   const startChatRef = useRef<() => void>(() => {});
 
   // Keep up to date via this effect (not useCallback) so startChat always uses
-  // the latest chatConfig and startChatWithUser. We don't want chatConfig or
-  // startChatWithUser as dependencies in the useEffect that calls startChatRef.current
-  // below, because them changing mid-session shouldn't re-trigger chat start.
+  // the latest chatConfig/startChatWithAI/startChatWithUser. We don't want those as
+  // dependencies in the useEffect that calls startChatRef.current below, because
+  // them changing mid-session shouldn't re-trigger chat start.
   useEffect(() => {
     startChatRef.current = () => {
       if (chatConfig.aiHasFirstTurn) {

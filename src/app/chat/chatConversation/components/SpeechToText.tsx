@@ -44,7 +44,13 @@ export default function SpeechToText({
 
   useEffect(() => {
     recognitionRef.current = initSpeechRecognition(languageTag);
-  }, [languageTag]);
+    // deliberately leave deps array empty. If languageTag were to change,
+    // we'd only need to reassign recognition's lang property, not recreate it.
+    // handleResult/handleEnd (assigned inside initSpeechRecognition) close over
+    // refs (always read via .current, so no staleness) and over onTranscriptCreated/
+    // onListeningCancelled/onError, which themselves only forward to a stable dispatch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (canStartReply(phase) || canStartWithUser(phase)) {
