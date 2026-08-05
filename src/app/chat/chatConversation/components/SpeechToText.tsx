@@ -20,7 +20,7 @@ type SpeechToTextProps = {
   phase: ChatPhase;
   onTranscriptCreated: (transcript: string) => void;
   onListeningCancelled: () => void;
-  onError: () => void;
+  onError: (message: string) => void;
   languageTag: string;
 };
 
@@ -44,7 +44,14 @@ export default function SpeechToText({
 
   useEffect(() => {
     recognitionRef.current = initSpeechRecognition(languageTag);
-  }, [languageTag]);
+    // deliberately leave deps array empty. If languageTag were to change,
+    // we'd only need to reassign recognition's lang property, not recreate it.
+    // (there is no logical case to change language during chat)
+    // handleResult/handleEnd (assigned inside initSpeechRecognition) close over
+    // refs (always read via .current, so no staleness) and over onTranscriptCreated/
+    // onListeningCancelled/onError, which themselves only forward to a stable dispatch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (canStartReply(phase) || canStartWithUser(phase)) {
@@ -88,7 +95,8 @@ export default function SpeechToText({
       window.SpeechRecognition ?? window.webkitSpeechRecognition;
     if (!CrossBrowserSpeechRecognition) {
       // TODO: handle this
-      throw new Error('Speech recognition is not supported in this browser');
+      onError('Speech recognition is not supported in this browser');
+      throw new Error();
     }
     const recognition = new CrossBrowserSpeechRecognition();
 

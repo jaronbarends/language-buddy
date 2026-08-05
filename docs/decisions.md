@@ -1376,3 +1376,76 @@ phases would flash the button on and off for a few hundred ms with nothing usefu
 Sharing one helper (`userIsInInputFlow`) for both gates, instead of two separately-scoped checks,
 also keeps "what counts as mid-reply" defined in one place.
 **Status:** Done. Keeping this design going forward — not narrowing to literal `listening` only.
+
+---
+
+## Next.js 16 → 15 downgrade (2026-08-04)
+
+### Downgrade `next`/`eslint-config-next` from 16.2.11 to 15.5.22
+
+**Date:** 2026-08-04
+**Decision:** Downgraded `next` and `eslint-config-next` to the latest 15.x (`15.5.22`) on branch
+`nextjs-downgrade`, done via `npm install next@15.5.22 eslint-config-next@15.5.22` (not a manual
+`package.json` edit).
+**Rationale:** Revert to the stable/well-documented major version. Checked first that nothing in
+the repo depended on 16-only surface: no `middleware.ts`/`proxy.ts` exists (the 16 rename is moot),
+`next.config.ts` only sets `allowedDevOrigins` (no Cache Components/`reactCompiler`/other 16-only
+experimental keys), and a grep of `src/` found no use of `use cache`, `cacheLife`,
+`unstable_cache`, or `next/after` — App Router caching APIs whose availability varies across the
+14/15/16 line, so their absence sidesteps needing to check compatibility per version. Installed
+TypeScript (`5.9.3`) is well below the `<7.0`
+compatibility-patch threshold, so that was a non-issue too. Turbopack reverts to opt-in (v15
+default is webpack); no script changes needed since `dev`/`build` never passed `--turbopack`.
+**Status:** Done. Build (`npm run build`) and dev server (`npm run dev`) both verified working on
+15.5.22.
+
+### `eslint.config.mjs` rewritten to use `FlatCompat`, not direct flat-config imports
+
+**Date:** 2026-08-04
+**Decision:** `eslint-config-next@15.x` ships legacy `.eslintrc`-style config objects
+(`module.exports = { extends: [...], plugins: [...] }`), not flat-config arrays — unlike v16, whose
+`eslint-config-next/core-web-vitals` and `/typescript` subpaths exported ready-to-spread flat arrays
+(the original `eslint.config.mjs` did `...nextVitals`/`...nextTs` directly). `eslint.config.mjs` now
+uses the `FlatCompat` bridge from `@eslint/eslintrc` (`compat.extends("next/core-web-vitals",
+"next/typescript")`), matching Next's own documented v15 flat-config recipe.
+**Rationale:** No other way to consume v15's legacy-format shareable configs under ESLint 9's flat
+config without either hand-porting the rules or wrapping them. `@eslint/eslintrc` was initially left
+out of `package.json`, relying on it being hoisted transitively (a dependency of
+`eslint-config-next`) — but since `eslint.config.mjs` imports `FlatCompat` from it directly, that's
+an undeclared dependency on hoisting behavior, not guaranteed by npm's resolution rules. Added as an
+explicit `devDependency` and regenerated the lockfile.
+**Status:** Done. `npm run lint` runs clean (no crash) via the CLI.
+
+### `@next/eslint-plugin-next` version conflict with `@jaronbarends/frontend-tooling-config`
+
+**Date:** 2026-08-04
+**Decision:** Bumped the externally-maintained `@jaronbarends/frontend-tooling-config` package
+(this repo's shared ESLint/Prettier config, published separately) from `1.0.4` to `1.0.6`, to widen
+its `@next/eslint-plugin-next` peer dependency from a hard `^16.0.0` pin down to `^15.0.0` (published
+as `1.0.5`), then again to disable core ESLint's `no-undef` rule for `.ts`/`.tsx` files in `base.mjs`
+(published as `1.0.6`).
+**Rationale:** `eslint-config-next@15.x`'s `plugin:@next/next/recommended` reference resolves via
+plain Node module resolution (unlike its other sub-dependencies, which it pins explicitly via a
+resolution hook) — so it was picking up whatever `@next/eslint-plugin-next` version got hoisted to
+the top of `node_modules`. `frontend-tooling-config`'s hard `^16.0.0` peer dependency was hoisting
+the v16 plugin, which ships flat-config-shaped rule objects (`name` field) that `FlatCompat`'s
+legacy-schema validator rejects outright. Separately, `base.mjs` applied `js.configs.recommended`
+(enabling core `no-undef`) to `.ts`/`.tsx` files without an override — this had apparently always
+been present, but only surfaced once lint could run to completion past the plugin-version crash. It
+produced false positives on any identifier used only in a type position sourced from an ambient
+`.d.ts` global (`React.ReactNode`, `BodyInit`, `SpeechRecognition`, `SpeechSynthesisVoice`) — core
+ESLint's `no-undef` has no concept of TypeScript's ambient global declarations, which is exactly why
+typescript-eslint's own docs recommend disabling it for TS files and relying on `tsc` instead.
+**Status:** Done. Both fixes are published and installed; `npm run lint` now reports only
+legitimate, pre-existing findings (unrelated app-code issues and two known-broken spike/mock files,
+see below) — confirmed by comparing before/after error counts (20 → 8 errors).
+**Known follow-up, not fixed now:** `npm run build`'s lint pass currently does not fail the build on
+ESLint errors as Next's docs say it should (observed: build exits `0` despite printed `Error:`-level
+findings like `no-case-declarations`/`no-fallthrough` in `chatReducer.ts` and a genuine parse error
+in `src/mock/real-chat-response.js`). Not root-caused — plausibly an interaction between Next's
+internal build-time lint runner and the `FlatCompat`-wrapped config. Not blocking (dev-time lint via
+CLI and the editor both correctly report severity), but means the build can't currently be trusted
+as an error gate; tracked as an open question, not yet in backlog.md.
+**Also found (unrelated, not fixed):** `src/mock/real-chat-response.js` is not valid JavaScript — it
+appears to be pasted console/debug output saved with a `.js` extension, not an actual module. Pre-
+existing; only surfaced once lint began parsing it successfully past the earlier crash.

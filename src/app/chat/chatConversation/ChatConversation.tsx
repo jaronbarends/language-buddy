@@ -31,13 +31,29 @@ export default function ChatConversation({
   const abortControllerRef = useRef<AbortController | undefined>(undefined);
   const hasStartedRef = useRef<boolean>(false);
   const requestIdRef = useRef<number>(0);
+  const startChatRef = useRef<() => void>(() => {});
+
+  // Keep up to date via this effect (not useCallback) so startChat always uses
+  // the latest chatConfig/startChatWithAI/startChatWithUser. We don't want those as
+  // dependencies in the useEffect that calls startChatRef.current below, because
+  // them changing mid-session shouldn't re-trigger chat start.
+  useEffect(() => {
+    startChatRef.current = () => {
+      if (chatConfig.aiHasFirstTurn) {
+        startChatWithAI();
+      } else {
+        startChatWithUser();
+      }
+    };
+    // deliberately leave out dependency array - we want this to run on every render to stay current
+  });
 
   useEffect(() => {
     if (!chatStartIsPending(state.phase) || hasStartedRef.current) {
       return;
     }
     hasStartedRef.current = true;
-    startChat();
+    startChatRef.current();
   }, [state.phase]);
 
   useEffect(() => {
@@ -78,14 +94,6 @@ export default function ChatConversation({
     </>
   );
 
-  function startChat() {
-    if (chatConfig.aiHasFirstTurn) {
-      startChatWithAI();
-    } else {
-      startChatWithUser();
-    }
-  }
-
   function handleStartListening() {
     startListening();
   }
@@ -102,8 +110,9 @@ export default function ChatConversation({
     dispatch({ type: 'TRANSCRIPT_CREATED', payload: { transcript } });
   }
 
-  function handleError() {
+  function handleError(message: string) {
     // TODO decide how to handle non-api errors
+    throw new Error(message);
   }
 
   function handleCancelListening() {
