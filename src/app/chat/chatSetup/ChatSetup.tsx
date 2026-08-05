@@ -5,7 +5,8 @@ import { type ChatConfig, getChatConfig } from '@/lib/chatConfig';
 import { type Language } from '@/lib/language';
 import { type SupportedLanguageVoices } from '@/lib/language';
 import { freeformChatWithAIStart, freeformChatWithUserStart } from '@/lib/scenarios';
-import { speechRecognitionIsSupported } from '@/lib/speechRecognition';
+// import { speechRecognitionIsSupported } from '@/lib/speechRecognition';
+import { useSpeechRecognitionIsSupported } from '@/lib/speechRecognition';
 
 import LanguagePicker from './components/LanguagePicker';
 
@@ -31,6 +32,7 @@ export default function ChatSetup({
   supportedLanguageVoices,
 }: ChatSetupProps) {
   const [starter, setStarter] = useState<Starter>('ai');
+  const speechRecognitionIsSupportedClientSide = useSpeechRecognitionIsSupported();
 
   return (
     <div className={styles.setup}>
@@ -70,7 +72,7 @@ export default function ChatSetup({
           />
           <label htmlFor="chat-user-starts">I will start</label>
         </fieldset>
-        {!speechRecognitionIsSupported() && (
+        {!speechRecognitionIsSupportedClientSide && (
           <div>
             This app needs speech recognition; this browser does not support that.
             <br />
@@ -80,7 +82,7 @@ export default function ChatSetup({
         <div>
           <Button
             type="submit"
-            disabled={!speechSupportIsChecked || !speechRecognitionIsSupported()}
+            disabled={!speechSupportIsChecked || !speechRecognitionIsSupportedClientSide}
           >
             Start conversation
           </Button>
