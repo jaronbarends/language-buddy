@@ -1390,8 +1390,10 @@ also keeps "what counts as mid-reply" defined in one place.
 **Rationale:** Revert to the stable/well-documented major version. Checked first that nothing in
 the repo depended on 16-only surface: no `middleware.ts`/`proxy.ts` exists (the 16 rename is moot),
 `next.config.ts` only sets `allowedDevOrigins` (no Cache Components/`reactCompiler`/other 16-only
-experimental keys), and a grep of `src/` found no 16-era App Router APIs (`use cache`, `cacheLife`,
-`unstable_cache`, `next/after`) in use. Installed TypeScript (`5.9.3`) is well below the `<7.0`
+experimental keys), and a grep of `src/` found no use of `use cache`, `cacheLife`,
+`unstable_cache`, or `next/after` — App Router caching APIs whose availability varies across the
+14/15/16 line, so their absence sidesteps needing to check compatibility per version. Installed
+TypeScript (`5.9.3`) is well below the `<7.0`
 compatibility-patch threshold, so that was a non-issue too. Turbopack reverts to opt-in (v15
 default is webpack); no script changes needed since `dev`/`build` never passed `--turbopack`.
 **Status:** Done. Build (`npm run build`) and dev server (`npm run dev`) both verified working on
@@ -1407,8 +1409,11 @@ default is webpack); no script changes needed since `dev`/`build` never passed `
 uses the `FlatCompat` bridge from `@eslint/eslintrc` (`compat.extends("next/core-web-vitals",
 "next/typescript")`), matching Next's own documented v15 flat-config recipe.
 **Rationale:** No other way to consume v15's legacy-format shareable configs under ESLint 9's flat
-config without either hand-porting the rules or wrapping them. `@eslint/eslintrc` was already
-present transitively (a dependency of `eslint-config-next`), so no new dependency was needed.
+config without either hand-porting the rules or wrapping them. `@eslint/eslintrc` was initially left
+out of `package.json`, relying on it being hoisted transitively (a dependency of
+`eslint-config-next`) — but since `eslint.config.mjs` imports `FlatCompat` from it directly, that's
+an undeclared dependency on hoisting behavior, not guaranteed by npm's resolution rules. Added as an
+explicit `devDependency` and regenerated the lockfile.
 **Status:** Done. `npm run lint` runs clean (no crash) via the CLI.
 
 ### `@next/eslint-plugin-next` version conflict with `@jaronbarends/frontend-tooling-config`

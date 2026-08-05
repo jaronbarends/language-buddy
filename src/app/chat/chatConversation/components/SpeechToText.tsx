@@ -46,6 +46,7 @@ export default function SpeechToText({
     recognitionRef.current = initSpeechRecognition(languageTag);
     // deliberately leave deps array empty. If languageTag were to change,
     // we'd only need to reassign recognition's lang property, not recreate it.
+    // (there is no logical case to change language during chat)
     // handleResult/handleEnd (assigned inside initSpeechRecognition) close over
     // refs (always read via .current, so no staleness) and over onTranscriptCreated/
     // onListeningCancelled/onError, which themselves only forward to a stable dispatch.
