@@ -55,7 +55,7 @@ export default function ThreadView({
         }
       });
     }
-  }, [phase]);
+  }, [phase, threadItems, languageVoice, onAISpeechEnd]);
 
   useEffect(() => {
     if (shouldAutoScrollThread(phase)) {
@@ -64,7 +64,7 @@ export default function ThreadView({
         behavior: 'smooth',
       });
     }
-  }, [threadItems, showAIPendingBalloon]);
+  }, [phase, threadItems, showAIPendingBalloon]);
 
   useEffect(() => {
     if (!isWaitingForAI(phase)) {
