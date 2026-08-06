@@ -1,4 +1,4 @@
 body {
-  background-color: #f0f0f0;
+  background-color: var(--color-white);
   font-family: var(--font-sans), sans-serif;
 }

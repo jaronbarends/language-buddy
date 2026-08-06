@@ -5,5 +5,5 @@
   max-width: min(90vw, 60rem);
   padding-inline: var(--size-24);
   min-height: 100dvh;
-  background-color: #fff;
+  background-color: var(--color-bg-page);
 }

@@ -4,7 +4,7 @@ import { type RefObject, ReactNode } from 'react';
 
 import styles from './Button.module.css';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+type ButtonVariant = 'primary' | 'secondary';
 
 export interface ButtonProps {
   onClick?: () => void;
