@@ -39,7 +39,12 @@ browser has no `SpeechRecognition`/`webkitSpeechRecognition` constructor, via a 
 `useSpeechRecognitionIsSupported` hook (`src/lib/speechRecognition.ts`, SSR-safe via
 `useSyncExternalStore`). The old in-conversation `onError`/`handleError` path on `SpeechToText` (a
 `// TODO decide how to handle non-api errors` stub) is removed — unsupported browsers can no longer
-reach a live conversation, so that error can no longer occur there.
+reach a live conversation, so that error can no longer occur there. **Completed:** gating logic,
+the SSR/CSR-safe hook, and removal of the old in-conversation error path, merged to `main` via PR
+#13 (`25b6fd3`). **Remaining or broken work:** None. **Open questions or decisions:** None — the
+SSR/CSR mismatch risk was resolved by switching to `useSyncExternalStore` (see decisions.md,
+"SSR/CSR mismatch fix"). **Next step:** None specific to this item; see the project-level "Next
+step" list below.
 
 ---
 

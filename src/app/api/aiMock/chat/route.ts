@@ -20,8 +20,9 @@ const scenario: MockScenario = 'success';
 export async function POST(request: NextRequest) {
   await request.json();
   // const successResponseOutputText = `mock response.output_text (response to ${input})`;
-  const successResponseOutputText =
-    'Verdensfotballforbund FIFAs plan om å selge en eierandel i et nytt VM-selskap vil ikke bli gjennomført.';
+  // const successResponseOutputText =
+  // 'Verdensfotballforbund FIFAs plan om å selge en eierandel i et nytt VM-selskap vil ikke bli gjennomført.';
+  const successResponseOutputText = 'Wat vind jij eigenlijk leuk om te doen?';
 
   switch (scenario) {
     case MOCK_SCENARIOS.success:
