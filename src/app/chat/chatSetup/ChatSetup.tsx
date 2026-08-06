@@ -72,7 +72,7 @@ export default function ChatSetup({
           />
           <label htmlFor="chat-user-starts">I will start</label>
         </fieldset>
-        {!speechRecognitionIsSupportedClientSide && (
+        {speechSupportIsChecked && !speechRecognitionIsSupportedClientSide && (
           <div>
             This app needs speech recognition; this browser does not support that.
             <br />

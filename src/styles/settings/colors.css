@@ -59,6 +59,7 @@
 
   /* semantic colors - background */
 
+  --color-bg-default: var(--color-white);
   --color-bg-primary: var(--color-pink-500);
   --color-bg-primary-hover: var(--color-pink-400);
   --color-bg-primary-subtle: var(--color-pink-900);
@@ -73,7 +74,7 @@
   /* semantic colors - border */
 
   --color-border-primary: var(--color-pink-300);
-  --color-border-primary-active: var(--color-pink-500);
+  --color-border-primary-subtle: var(--color-pink-500);
   --color-border-secondary: var(-color-blue-500);
   --color-border-neutral: var(--color-gray-900);
   --color-border-neutral-active: var(--color-gray-700);
@@ -85,10 +86,6 @@
   --color-text-label: var(--color-text-neutral-subtle);
 
   /* button */
-  --color-bg-button-primary: var(--color-bg-primary);
-  --color-bg-button-secondary: var(--color-white);
-  --color-text-button-primary: var(--color-white);
-  --color-text-button-secondary: var(--color-text-primary-subtle);
 
   /* old vars */
 

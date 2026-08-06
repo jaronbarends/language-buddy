@@ -27,14 +27,14 @@ export default function Button({
 }: ButtonProps) {
   if (href) {
     return (
-      <Link className={clsx(styles.component, styles[variant])} href={href}>
+      <Link className={clsx(styles.button, styles[variant])} href={href}>
         {children}
       </Link>
     );
   }
   return (
     <button
-      className={clsx(styles.component, styles[variant])}
+      className={clsx(styles.button, styles[variant])}
       onClick={onClick}
       disabled={disabled}
       ref={ref}

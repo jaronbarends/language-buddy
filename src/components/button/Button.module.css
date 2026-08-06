@@ -1,48 +1,50 @@
-.component {
-  --color-background: var(--color-bg-button-primary);
-  --color-text: var(--color-text-on-dark);
-  --color-border: transparent;
-  --font-weight: var(--font-weight-bold);
+.button {
+  --border-bottom-width: 0.3125rem; /* 5px */
 
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: var(--size-16) var(--size-32);
+  border: var(--border-width) solid var(--border-color);
+  /* border-bottom-width: var(--border-bottom-width); */
+  box-shadow: 0 calc(var(--border-bottom-width) - var(--border-width)) var(--border-color);
   border-radius: var(--radius-button);
-  border: 1px solid var(--color-border);
-  background: var(--color-background);
-  color: var(--color-text);
+  font-family: var(--font-family-button);
   font-size: var(--font-size-16);
-  /* font-weight: var(--font-weight); */
+  font-weight: var(--font-weight-bold);
   cursor: pointer;
-  /* text-decoration: none; */
-  /* transition: opacity 0.3s; */
+  text-decoration: none;
 
-  &:hover:not(:disabled),
-  &:focus:not(:disabled) {
-    /* outline: 1px solid var(--color-white);
-    outline-offset: 2px; */
+  &:active {
+    box-shadow: none;
+    translate: 0 calc(var(--border-bottom-width) - var(--border-width));
   }
 
   &:disabled {
-    /* opacity: 0.5; */
     cursor: not-allowed;
   }
 }
 
 .primary {
-  /* --color-background: var(--color-bg-button-primary); */
+  --border-width: 0rem;
+  --border-color: var(--color-border-primary);
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-on-primary);
+
+  &:hover:not(:disabled),
+  &:focus-visible:not(:disabled) {
+    background-color: var(--color-bg-primary-hover);
+  }
 }
 
 .secondary {
-  --color-background: var(--color-bg-button-secondary);
-  --color-text: var(--color-text-button-secondary);
-  --font-weight: var(--font-weight-normal);
-}
+  --border-width: 0.125rem;
+  --border-color: var(--color-border-primary-subtle);
+  background-color: var(--color-bg-default);
+  color: var(--color-text-primary-subtle);
 
-/* .ghost {
-  --color-background: transparent;
-  --color-text: var(--color-primary);
-  --color-border: var(--color-primary);
-  --font-weight: var(--font-weight-normal);
-} */
+  &:hover:not(:disabled),
+  &:focus-visible:not(:disabled) {
+    background-color: var(--color-bg-primary-subtle-hover);
+  }
+}
