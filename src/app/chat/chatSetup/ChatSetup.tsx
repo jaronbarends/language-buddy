@@ -31,7 +31,7 @@ export default function ChatSetup({
   speechSupportIsChecked,
   supportedLanguageVoices,
 }: ChatSetupProps) {
-  const [starter, setStarter] = useState<Starter>('ai');
+  const [starter, setStarter] = useState<Starter>('user');
   const speechRecognitionIsSupportedClientSide = useSpeechRecognitionIsSupported();
 
   return (

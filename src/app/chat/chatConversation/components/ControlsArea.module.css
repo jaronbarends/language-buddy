@@ -6,6 +6,7 @@
   display: flex;
   gap: var(--size-16);
   justify-content: space-between;
+  align-items: flex-start;
 
   @media (max-width: 29.99rem) {
     flex-direction: column;

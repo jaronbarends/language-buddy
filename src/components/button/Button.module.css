@@ -1,23 +1,26 @@
 .button {
+  --border-width: 0.125rem;
   --border-bottom-width: 0.3125rem; /* 5px */
+  --bevel: 0.1875rem; /* 3px */
 
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: var(--size-16) var(--size-32);
-  border: var(--border-width) solid var(--border-color);
-  /* border-bottom-width: var(--border-bottom-width); */
-  box-shadow: 0 calc(var(--border-bottom-width) - var(--border-width)) var(--border-color);
+  border: var(--border-width) solid;
+  border-bottom-width: calc(var(--border-width) + var(--bevel));
   border-radius: var(--radius-button);
   font-family: var(--font-family-button);
   font-size: var(--font-size-16);
   font-weight: var(--font-weight-bold);
   cursor: pointer;
   text-decoration: none;
+  transition-property: border-width, translate;
+  transition-duration: var(--duration-instant);
 
   &:active {
-    box-shadow: none;
-    translate: 0 calc(var(--border-bottom-width) - var(--border-width));
+    border-bottom-width: var(--border-width);
+    translate: 0 var(--bevel);
   }
 
   &:disabled {
@@ -26,8 +29,7 @@
 }
 
 .primary {
-  --border-width: 0rem;
-  --border-color: var(--color-border-primary);
+  border-color: var(--color-border-primary);
   background-color: var(--color-bg-primary);
   color: var(--color-text-on-primary);
 
@@ -38,8 +40,7 @@
 }
 
 .secondary {
-  --border-width: 0.125rem;
-  --border-color: var(--color-border-primary-subtle);
+  border-color: var(--color-border-primary-subtle);
   background-color: var(--color-bg-default);
   color: var(--color-text-primary-subtle);
 
