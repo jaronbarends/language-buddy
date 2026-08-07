@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
     }
 
     const issuer = fileLoaderRule.issuer;
+    const resourceQuery = fileLoaderRule.resourceQuery as { not?: unknown[] } | undefined;
+    const existingResourceQueryNot = resourceQuery?.not ?? [];
 
     config.module.rules.push(
       {
@@ -20,7 +22,7 @@ const nextConfig: NextConfig = {
       {
         test: /\.svg$/i,
         ...(issuer !== undefined ? { issuer } : {}),
-        resourceQuery: { not: [...fileLoaderRule.resourceQuery.not, /url/] },
+        resourceQuery: { not: [...existingResourceQueryNot, /url/] },
         use: ['@svgr/webpack'],
       }
     );
