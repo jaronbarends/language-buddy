@@ -2,7 +2,7 @@ body {
   background-color: var(--color-white);
   font-family: var(--font-family-default);
   font-weight: var(--font-weight-default);
-  color: var(--color-text-body);
+  color: var(--color-text-default);
 }
 
 legend {
@@ -10,4 +10,17 @@ legend {
   font-size: var(--font-size-14);
   font-weight: var(--font-weight-semibold);
   text-transform: uppercase;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-family-heading);
+  font-weight: var(--font-weight-heading);
+  line-height: var(--line-height-heading);
+}
+
+h1 {
+  font-size: var(--font-size-22);
 }

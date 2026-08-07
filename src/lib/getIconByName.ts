@@ -15,7 +15,7 @@ const FLAG_ICONS = {
   'flag-nl': nl,
   'flag-no': no,
 };
-export type FlagIconName = keyof typeof FLAG_ICONS | undefined;
+export type FlagIconName = keyof typeof FLAG_ICONS;
 
 export const ICONS = {
   ...FLAG_ICONS,
@@ -26,7 +26,7 @@ function flagIconExists(iconName: string): iconName is FlagIconName {
   return iconName in FLAG_ICONS;
 }
 
-export function getFlagIconName(languageTag: string): FlagIconName {
+export function getFlagIconName(languageTag: string): FlagIconName | undefined {
   const countryCode = languageTag.split('-')[1]?.toLowerCase();
   if (!countryCode) {
     return;

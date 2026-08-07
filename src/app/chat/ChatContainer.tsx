@@ -32,16 +32,16 @@ export default function ChatContainer() {
     <>
       {containerState.status === 'setup' ?
         <ChatSetup
-          onStartSession={handleSessionStart}
-          onChangeLanguage={setLanguage}
           languages={supportedLanguages}
           selectedLanguage={language}
           speechSupportIsChecked={speechSupportIsChecked}
           supportedLanguageVoices={supportedLanguageVoices}
+          onStartSession={handleSessionStart}
+          onChangeLanguage={setLanguage}
         />
       : <ChatConversation
-          chatConfig={containerState.chatConfig}
           onEndSession={handleSessionEnd}
+          chatConfig={containerState.chatConfig}
           languageVoice={languageVoice}
         />
       }

@@ -6,27 +6,28 @@ export const supportedLanguages: Language[] = [
     languageTag: 'nl-NL',
   },
   {
-    name: 'Norwegian (Bokmål)',
+    name: 'Norwegian',
     languageTag: 'nb-NO',
+    addition: 'Bokmål',
   },
   // {
   //   name: 'Non-existing',
   //   languageTag: 'nx-NX',
   // },
   {
-    name: 'Spaans',
+    name: 'Spanish',
     languageTag: 'es-ES',
   },
   {
-    name: 'Frans',
+    name: 'French',
     languageTag: 'fr-FR',
   },
   {
-    name: 'Engels',
+    name: 'English',
     languageTag: 'en-GB',
   },
   {
-    name: 'Duits',
+    name: 'German',
     languageTag: 'de-DE',
   },
 ];

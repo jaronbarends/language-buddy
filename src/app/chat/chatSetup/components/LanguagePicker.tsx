@@ -26,7 +26,7 @@ export default function LanguagePicker({
           const languageHasVoice = (language: Language) => {
             return supportedLanguageVoices[language.languageTag] !== undefined;
           };
-          const flagIconName: FlagIconName = getFlagIconName(language.languageTag);
+          const flagIconName: FlagIconName | undefined = getFlagIconName(language.languageTag);
           return (
             <div key={idx} className={styles.languageOption}>
               <input
@@ -42,13 +42,18 @@ export default function LanguagePicker({
               />
               <label className={styles.label} htmlFor={id}>
                 {flagIconName && (
-                  <div className={styles.flagIcon}>
+                  <div className={styles.flagIcon} aria-hidden="true">
                     <Icon iconName={flagIconName} size={32} isFlagIcon />
                   </div>
                 )}
                 {language.name}
                 {!languageHasVoice(language) && (
-                  <span className={styles.hasNoVoiceWarning}>
+                  <span
+                    className={styles.hasNoVoiceWarning}
+                    role="img"
+                    aria-label={`Speech is unavailable for ${language.name}`}
+                    title={`Speech is unavailable for ${language.name}`}
+                  >
                     <Icon iconName="volumeMute" />
                   </span>
                 )}

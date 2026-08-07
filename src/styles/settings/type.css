@@ -30,7 +30,7 @@
   --font-weight-default: var(--font-weight-regular);
 
   --font-family-heading: var(--font-family-display);
-  --font-weight-heading: var(--font-weight-bold);
+  --font-weight-heading: var(--font-weight-semibold);
 
   --font-family-button: var(--font-family-display);
   --font-weight-button: var(--font-weight-bold);

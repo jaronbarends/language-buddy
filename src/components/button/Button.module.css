@@ -17,7 +17,8 @@
   transition-property: border-width, translate;
   transition-duration: var(--duration-instant);
 
-  &:active {
+  &:active,
+  &:disabled {
     border-bottom-width: var(--border-width);
     translate: 0 var(--bevel);
   }
@@ -36,6 +37,12 @@
   &:focus-visible:not(:disabled) {
     background-color: var(--color-bg-primary-hover);
   }
+
+  &:disabled {
+    background-color: var(--color-bg-neutral);
+    color: var(--color-text-neutral-subtle);
+    border-color: transparent;
+  }
 }
 
 .secondary {
@@ -46,5 +53,10 @@
   &:hover:not(:disabled),
   &:focus-visible:not(:disabled) {
     background-color: var(--color-bg-primary-subtle-hover);
+  }
+
+  &:disabled {
+    color: var(--color-text-neutral-subtle);
+    border-color: var(--color-border-neutral);
   }
 }

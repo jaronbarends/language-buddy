@@ -41,7 +41,7 @@ input:checked + .label {
   color: var(--color-text-primary);
 }
 
-input:active + .label {
+.label:active {
   border-bottom-width: var(--border-width);
   translate: 0 var(--bevel);
 }

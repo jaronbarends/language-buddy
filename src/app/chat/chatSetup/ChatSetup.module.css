@@ -1,5 +1,7 @@
-.setupForm {
-  display: flex;
-  flex-direction: column;
-  gap: var(--size-16);
+.pageHeader {
+  margin-bottom: var(--size-24);
+}
+
+.payoff {
+  color: var(--color-text-neutral-subtle);
 }

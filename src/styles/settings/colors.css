@@ -75,7 +75,7 @@
 
   --color-border-primary: var(--color-pink-300);
   --color-border-primary-subtle: var(--color-pink-500);
-  --color-border-secondary: var(-color-blue-500);
+  --color-border-secondary: var(--color-blue-500);
   --color-border-neutral: var(--color-gray-900);
   --color-border-neutral-active: var(--color-gray-700);
 
@@ -85,17 +85,4 @@
   --color-text-default: var(--color-text-neutral);
   --color-text-label: var(--color-text-neutral-subtle);
   --color-focus-outline: var(--color-text-default);
-
-  /* button */
-
-  /* old vars */
-
-  /* --color-blue: #4285f4;
-
-  --color-gray-100: #222;
-
-  --color-primary: var(--color-blue);
-
-  --color-text-primary: var(--color-gray-100);
-  --color-text-on-dark: var(--color-white); */
 }
