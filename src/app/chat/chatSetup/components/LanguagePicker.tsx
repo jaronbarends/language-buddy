@@ -1,3 +1,5 @@
+import Icon from '@/components/icon/Icon';
+import { getFlagIconName, type FlagIconName } from '@/lib/getIconByName';
 import { SupportedLanguageVoices, type Language } from '@/lib/language';
 
 import styles from './LanguagePicker.module.css';
@@ -24,6 +26,7 @@ export default function LanguagePicker({
           const languageHasVoice = (language: Language) => {
             return supportedLanguageVoices[language.languageTag] !== undefined;
           };
+          const flagIconName: FlagIconName = getFlagIconName(language.languageTag);
           return (
             <div key={idx} className={styles.languageOption}>
               <input
@@ -38,8 +41,17 @@ export default function LanguagePicker({
                 className="u-hidden-form-control"
               />
               <label className={styles.label} htmlFor={id}>
+                {flagIconName && (
+                  <div className={styles.flagIcon}>
+                    <Icon iconName={flagIconName} size={32} isFlagIcon />
+                  </div>
+                )}
                 {language.name}
-                {!languageHasVoice(language) && <span>🔇</span>}
+                {!languageHasVoice(language) && (
+                  <span className={styles.hasNoVoiceWarning}>
+                    <Icon iconName="volumeMute" />
+                  </span>
+                )}
               </label>
             </div>
           );

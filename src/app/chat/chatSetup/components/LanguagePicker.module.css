@@ -14,7 +14,9 @@
   --border-width: var(--border-width-2);
   --bevel: var(--bevel-small);
 
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: var(--label-gap);
   border: var(--border-width) solid var(--color-border-neutral);
   border-bottom-width: calc(var(--border-width) + var(--bevel));
   border-radius: var(--radius-12);
@@ -36,9 +38,19 @@ input:focus-visible + .label {
 input:checked + .label {
   border-color: var(--color-border-highlight);
   background-color: var(--color-bg-primary-subtle);
+  color: var(--color-text-primary);
 }
 
 input:active + .label {
   border-bottom-width: var(--border-width);
   translate: 0 var(--bevel);
+}
+
+.flagIcon {
+  display: grid;
+}
+
+.hasNoVoiceWarning {
+  display: grid;
+  opacity: 0.6;
 }

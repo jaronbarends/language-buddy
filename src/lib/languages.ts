@@ -13,20 +13,20 @@ export const supportedLanguages: Language[] = [
   //   name: 'Non-existing',
   //   languageTag: 'nx-NX',
   // },
-  // {
-  //   name: 'Spaans',
-  //   languageTag: 'es-ES',
-  // },
-  // {
-  //   name: 'Frans',
-  //   languageTag: 'fr-FR',
-  // },
-  // {
-  //   name: 'Engels',
-  //   languageTag: 'en-US',
-  // },
-  // {
-  //   name: 'Duits',
-  //   languageTag: 'de-DE',
-  // },
+  {
+    name: 'Spaans',
+    languageTag: 'es-ES',
+  },
+  {
+    name: 'Frans',
+    languageTag: 'fr-FR',
+  },
+  {
+    name: 'Engels',
+    languageTag: 'en-GB',
+  },
+  {
+    name: 'Duits',
+    languageTag: 'de-DE',
+  },
 ];
