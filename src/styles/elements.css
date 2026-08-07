@@ -2,4 +2,12 @@ body {
   background-color: var(--color-white);
   font-family: var(--font-family-default);
   font-weight: var(--font-weight-default);
+  color: var(--color-text-body);
+}
+
+legend {
+  color: var(--color-text-neutral-subtle);
+  font-size: var(--font-size-14);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
 }

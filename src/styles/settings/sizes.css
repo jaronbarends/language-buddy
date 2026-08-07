@@ -16,10 +16,15 @@
   /* primitive variables - radii */
   --radius-4: 0.25rem;
   --radius-8: 0.5rem;
+  --radius-12: 0.75rem;
   --radius-16: 1rem;
   --radius-pill: 999rem;
   --radius-circle: 50%;
 
+  /* semantic variables */
+
   /* component variables - radii */
   --radius-button: var(--radius-pill);
+
+  --label-gap: var(--size-8);
 }

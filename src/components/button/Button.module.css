@@ -1,7 +1,6 @@
 .button {
-  --border-width: 0.125rem;
-  --border-bottom-width: 0.3125rem; /* 5px */
-  --bevel: 0.1875rem; /* 3px */
+  --border-width: var(--border-width-2);
+  --bevel: var(--bevel-large);
 
   display: inline-flex;
   align-items: center;

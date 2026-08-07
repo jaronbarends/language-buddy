@@ -35,60 +35,55 @@ export default function ChatSetup({
   const speechRecognitionIsSupportedClientSide = useSpeechRecognitionIsSupported();
 
   return (
-    <div className={styles.setup}>
-      <form onSubmit={handleSubmit}>
-        <fieldset>
-          <legend>Choose your language</legend>
-          <LanguagePicker
-            languages={languages}
-            selectedLanguage={selectedLanguage}
-            onChangeLanguage={onChangeLanguage}
-            supportedLanguageVoices={supportedLanguageVoices}
-          />
-        </fieldset>
-        <fieldset>
-          <legend>Who should start the conversation?</legend>
-          <input
-            type="radio"
-            id="chat-ai-starts"
-            value="ai"
-            name="starter"
-            checked={starter === 'ai'}
-            onChange={(event) => {
-              setStarter(event.target.value as Starter);
-            }}
-          />
-          <label htmlFor="chat-ai-starts">AI should start</label>
+    <form onSubmit={handleSubmit} className={styles.setupForm}>
+      <LanguagePicker
+        languages={languages}
+        selectedLanguage={selectedLanguage}
+        onChangeLanguage={onChangeLanguage}
+        supportedLanguageVoices={supportedLanguageVoices}
+      />
+      <fieldset>
+        <legend>Who should start the conversation?</legend>
+        <input
+          type="radio"
+          id="chat-ai-starts"
+          value="ai"
+          name="starter"
+          checked={starter === 'ai'}
+          onChange={(event) => {
+            setStarter(event.target.value as Starter);
+          }}
+        />
+        <label htmlFor="chat-ai-starts">AI should start</label>
 
-          <input
-            type="radio"
-            id="chat-user-starts"
-            value="user"
-            name="starter"
-            checked={starter === 'user'}
-            onChange={(event) => {
-              setStarter(event.target.value as Starter);
-            }}
-          />
-          <label htmlFor="chat-user-starts">I will start</label>
-        </fieldset>
-        {speechSupportIsChecked && !speechRecognitionIsSupportedClientSide && (
-          <div>
-            This app needs speech recognition; this browser does not support that.
-            <br />
-            Use another browser (like Chrome, Edge or Safari)
-          </div>
-        )}
+        <input
+          type="radio"
+          id="chat-user-starts"
+          value="user"
+          name="starter"
+          checked={starter === 'user'}
+          onChange={(event) => {
+            setStarter(event.target.value as Starter);
+          }}
+        />
+        <label htmlFor="chat-user-starts">I will start</label>
+      </fieldset>
+      {speechSupportIsChecked && !speechRecognitionIsSupportedClientSide && (
         <div>
-          <Button
-            type="submit"
-            disabled={!speechSupportIsChecked || !speechRecognitionIsSupportedClientSide}
-          >
-            Start conversation
-          </Button>
+          This app needs speech recognition; this browser does not support that.
+          <br />
+          Use another browser (like Chrome, Edge or Safari)
         </div>
-      </form>
-    </div>
+      )}
+      <div>
+        <Button
+          type="submit"
+          disabled={!speechSupportIsChecked || !speechRecognitionIsSupportedClientSide}
+        >
+          Start conversation
+        </Button>
+      </div>
+    </form>
   );
 
   function handleSubmit(evt: React.SubmitEvent<HTMLFormElement>) {
