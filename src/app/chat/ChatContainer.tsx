@@ -13,7 +13,7 @@ import ChatSetup from './chatSetup/ChatSetup';
 type ContainerState = { status: 'setup' } | { status: 'conversation'; chatConfig: ChatConfig };
 
 export default function ChatContainer() {
-  const initialLanguage = supportedLanguages[0];
+  const initialLanguage = getInitialLanguage();
   const [containerState, setContainerState] = useState<ContainerState>({ status: 'setup' });
   const [language, setLanguage] = useState<Language>(initialLanguage);
   const [speechSupportIsChecked, setSpeechSupportIsChecked] = useState<boolean>(false);
@@ -76,6 +76,24 @@ export default function ChatContainer() {
   function handleSpeechInitFail() {
     setSpeechSupportIsChecked(true);
     setSpeechIsSupported(false);
+  }
+
+  function getInitialLanguage(): Language {
+    if (process.env.NEXT_PUBLIC_INITIAL_LANGUAGE_DUTCH === 'true') {
+      const dutchLanguage = supportedLanguages.find((language) => language.languageTag === 'nl-NL');
+      if (dutchLanguage) {
+        return dutchLanguage;
+      }
+    }
+
+    const initiallySelectedLanguage = supportedLanguages.find(
+      (language) => language.initiallySelected
+    );
+    if (initiallySelectedLanguage) {
+      return initiallySelectedLanguage;
+    }
+    // should never happen, just return the first
+    return supportedLanguages[0];
   }
 }
 

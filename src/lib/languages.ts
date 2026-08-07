@@ -2,6 +2,10 @@ import { type Language } from './language';
 
 export const supportedLanguages: Language[] = [
   {
+    name: 'French',
+    languageTag: 'fr-FR',
+  },
+  {
     name: 'Dutch',
     languageTag: 'nl-NL',
   },
@@ -9,6 +13,7 @@ export const supportedLanguages: Language[] = [
     name: 'Norwegian',
     languageTag: 'nb-NO',
     addition: 'Bokmål',
+    initiallySelected: true,
   },
   // {
   //   name: 'Non-existing',
@@ -17,10 +22,6 @@ export const supportedLanguages: Language[] = [
   {
     name: 'Spanish',
     languageTag: 'es-ES',
-  },
-  {
-    name: 'French',
-    languageTag: 'fr-FR',
   },
   {
     name: 'English',

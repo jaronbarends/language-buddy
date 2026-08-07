@@ -1,5 +1,12 @@
 .mockSTT {
+  position: fixed;
+  bottom: 200px;
+  left: 1rem;
   width: min(100%, 40rem);
   min-height: 4rem;
   border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: rgba(0 0 0 / 0.6);
+  color: white;
+  padding: 8px;
 }

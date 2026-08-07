@@ -17,11 +17,12 @@ export default function LanguagePicker({
   onChangeLanguage,
   supportedLanguageVoices,
 }: LanguagePickerProps) {
+  const sortedLanguages = [...languages].sort((a, b) => a.name.localeCompare(b.name));
   return (
     <fieldset>
       <legend className={styles.legend}>Choose your language</legend>
       <div className={styles.languageOptions}>
-        {languages.map((language, idx) => {
+        {sortedLanguages.map((language, idx) => {
           const id = `language-picker-${language.languageTag}`;
           const languageHasVoice = (language: Language) => {
             return supportedLanguageVoices[language.languageTag] !== undefined;

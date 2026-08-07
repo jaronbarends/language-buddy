@@ -2,6 +2,7 @@ export type Language = {
   name: string;
   languageTag: string; // BCP 47 language tag, e.g. "nb-NO" or "en"
   addition?: string;
+  initiallySelected?: boolean;
 };
 
 export type LanguageVoice = SpeechSynthesisVoice | undefined;

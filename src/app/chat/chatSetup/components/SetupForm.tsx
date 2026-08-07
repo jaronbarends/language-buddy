@@ -31,7 +31,7 @@ export default function SetupForm({
   speechSupportIsChecked,
   supportedLanguageVoices,
 }: SetupFormProps) {
-  const [starter, setStarter] = useState<Starter>('user');
+  const [starter, setStarter] = useState<Starter>('ai');
   const speechRecognitionIsSupportedClientSide = useSpeechRecognitionIsSupported();
 
   return (

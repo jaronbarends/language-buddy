@@ -1,18 +1,20 @@
 .message {
   margin-inline: 0 15%;
-  padding: var(--size-8) var(--size-16);
-  border-radius: var(--radius-8);
-  background: rgba(from var(--color-primary) r g b / 0.1);
+  padding: var(--size-12) var(--size-16);
+  border-radius: var(--radius-16);
+  background-color: var(--color-bg-default);
+  border: var(--border-width-default) solid var(--color-border-neutral);
 }
 
 .messageFromAi {
   display: flex;
-  border-top-left-radius: 0;
+  border-bottom-left-radius: var(--radius-4);
 }
 
 .messageFromUser {
   margin-inline: 15% 0;
-  border-top-right-radius: 0;
-  background: var(--color-primary);
-  color: var(--color-white);
+  border-bottom-right-radius: var(--radius-4);
+  background-color: var(--color-bg-secondary-subtle);
+  border-color: var(--color-border-secondary);
+  color: var(--color-text-secondary);
 }
