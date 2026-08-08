@@ -2,39 +2,59 @@
   container-type: inline-size;
 }
 
-.wrapperG {
-  display: grid;
-  /* grid-template-columns: repeat(auto-fit, minmax(min-content, 1fr)); */
-  /* grid-template-columns: repeat(auto-fit, minmax(max-content, 1fr)); */
-  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-  gap: var(--size-4);
-  border-radius: var(--radius-pill);
-  background-color: var(--color-bg-default);
-  border: var(--border-width-default) solid var(--color-border-neutral);
-  padding: var(--size-4);
+.legend {
+  margin-bottom: var(--label-gap);
 }
 
-.wrapperF {
-  display: flex;
-  flex-wrap: wrap;
-  border-radius: var(--radius-pill);
+.wrapper {
+  --label-height: var(--size-48);
+  --padding: var(--size-4);
+  --indicator-duration: var(--duration-near-instant);
+  --hover-duration: var(--duration-near-instant);
+  --indicator-delay: calc(var(--hover-duration) / 2);
+
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--size-4);
+  border-radius: calc(var(--label-height) / 2 + var(--padding));
   background-color: var(--color-bg-default);
   border: var(--border-width-default) solid var(--color-border-neutral);
   padding: var(--size-4);
+
+  &::after {
+    position: absolute;
+    z-index: 0;
+    content: '';
+    position-anchor: --selected-option;
+    left: anchor(left);
+    top: anchor(top);
+    width: anchor-size(--selected-option width);
+    block-size: anchor-size(--selected-option block);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-bg-secondary);
+    transition: left var(--indicator-duration) var(--indicator-delay) ease-in-out;
+  }
 }
 
 .label {
+  position: relative;
+  z-index: 1;
   flex: 1 1 auto;
   display: grid;
   justify-content: center;
+  align-items: center;
   border-radius: var(--radius-pill);
-  padding: var(--size-12);
+  height: var(--label-height);
   font-weight: var(--font-weight-semibold);
-  /* white-space: nowrap; */
-  background-color: grey;
+  transition: color, background-color;
+  transition-duration: var(--duration-near-instant);
+  transition:
+    color var(--duration-near-instant) var(--indicator-delay),
+    background-color var(--hover-duration) 0s;
 
   &:has(input:checked) {
-    background-color: var(--color-bg-secondary);
+    anchor-name: --selected-option;
     color: var(--color-text-on-secondary);
   }
 
@@ -42,5 +62,10 @@
     &:hover {
       background-color: var(--color-bg-secondary-subtle);
     }
+  }
+
+  &:has(:focus-visible) {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
   }
 }

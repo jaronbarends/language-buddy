@@ -5,8 +5,6 @@
 .languageOptions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-  /* display: flex;
-  flex-wrap: wrap; */
   gap: var(--label-gap);
   align-items: end;
   --color-border-highlight: var(--color-border-primary-subtle);
@@ -16,7 +14,6 @@
   --border-width: var(--border-width-2);
   --bevel: var(--bevel-small);
 
-  /* flex: 1 1 auto; */
   display: flex;
   align-items: center;
   gap: var(--label-gap);

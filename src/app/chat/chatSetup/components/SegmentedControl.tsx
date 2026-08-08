@@ -22,9 +22,9 @@ export default function SegmentedControl<T>({
 }: SegmentedControlProps<T>) {
   return (
     <fieldset className={styles.segmentedControl}>
-      <legend>{groupLabel}</legend>
+      <legend className={styles.legend}>{groupLabel}</legend>
       {/* <div className={styles.container}> */}
-      <div className={styles.wrapperG}>
+      <div className={styles.wrapper}>
         {options.map((option, idx) => {
           return (
             <label key={idx} className={styles.label}>
