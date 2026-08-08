@@ -53,12 +53,12 @@
     color var(--duration-near-instant) var(--indicator-delay),
     background-color var(--hover-duration) 0s;
 
-  &:has(input:checked) {
+  &:has(:checked) {
     anchor-name: --selected-option;
     color: var(--color-text-on-secondary);
   }
 
-  &:not(:has(input:checked)) {
+  &:not(:has(:checked)) {
     &:hover {
       background-color: var(--color-bg-secondary-subtle);
     }

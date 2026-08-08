@@ -23,15 +23,13 @@ export default function LanguagePicker({
       <legend className={styles.legend}>Choose your language</legend>
       <div className={styles.languageOptions}>
         {sortedLanguages.map((language, idx) => {
-          const id = `language-picker-${language.languageTag}`;
           const languageHasVoice = (language: Language) => {
             return supportedLanguageVoices[language.languageTag] !== undefined;
           };
           const flagIconName: FlagIconName | undefined = getFlagIconName(language.languageTag);
           return (
-            <div key={idx} className={styles.languageOption}>
+            <label key={idx} className={styles.label}>
               <input
-                id={id}
                 type="radio"
                 value={language.languageTag}
                 name="language"
@@ -41,25 +39,24 @@ export default function LanguagePicker({
                 }}
                 className="u-hidden-form-control"
               />
-              <label className={styles.label} htmlFor={id}>
-                {flagIconName && (
-                  <div className={styles.flagIcon} aria-hidden="true">
-                    <Icon iconName={flagIconName} size={32} isFlagIcon />
-                  </div>
-                )}
-                {language.name}
-                {!languageHasVoice(language) && (
-                  <span
-                    className={styles.hasNoVoiceWarning}
-                    role="img"
-                    aria-label={`Speech is unavailable for ${language.name}`}
-                    title={`Speech is unavailable for ${language.name}`}
-                  >
-                    <Icon iconName="volumeMute" />
-                  </span>
-                )}
-              </label>
-            </div>
+
+              {flagIconName && (
+                <div className={styles.flagIcon} aria-hidden="true">
+                  <Icon iconName={flagIconName} size={32} isFlagIcon />
+                </div>
+              )}
+              {language.name}
+              {!languageHasVoice(language) && (
+                <span
+                  className={styles.hasNoVoiceWarning}
+                  role="img"
+                  aria-label={`Speech is unavailable for ${language.name}`}
+                  title={`Speech is unavailable for ${language.name}`}
+                >
+                  <Icon iconName="volumeMute" />
+                </span>
+              )}
+            </label>
           );
         })}
       </div>
