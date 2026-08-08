@@ -61,10 +61,11 @@ export default function SetupForm({
           Use another browser (like Chrome, Edge or Safari)
         </div>
       )}
-      <div>
+      <div className={styles.actions}>
         <Button
           type="submit"
           disabled={!speechSupportIsChecked || !speechRecognitionIsSupportedClientSide}
+          fontSize="large"
         >
           Start conversation
         </Button>

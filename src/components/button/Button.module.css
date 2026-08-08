@@ -28,6 +28,10 @@
   }
 }
 
+.largeText {
+  font-size: var(--font-size-18);
+}
+
 .primary {
   border-color: var(--color-border-primary);
   background-color: var(--color-bg-primary);
