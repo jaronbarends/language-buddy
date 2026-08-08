@@ -26,16 +26,16 @@
 }
 
 .label:hover,
-input:focus-visible + .label {
+.label:has(:focus-visible) {
   border-color: var(--color-border-highlight);
 }
 
-input:focus-visible + .label {
+.label:has(:focus-visible) {
   outline: var(--focus-outline);
   outline-offset: var(--focus-outline-offset);
 }
 
-input:checked + .label {
+.label:has(:checked) {
   border-color: var(--color-border-highlight);
   background-color: var(--color-bg-primary-subtle);
   color: var(--color-text-primary);

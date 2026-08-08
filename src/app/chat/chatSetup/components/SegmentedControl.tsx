@@ -23,7 +23,6 @@ export default function SegmentedControl<T>({
   return (
     <fieldset className={styles.segmentedControl}>
       <legend className={styles.legend}>{groupLabel}</legend>
-      {/* <div className={styles.container}> */}
       <div className={styles.wrapper}>
         {options.map((option, idx) => {
           return (
@@ -43,7 +42,6 @@ export default function SegmentedControl<T>({
           );
         })}
       </div>
-      {/* </div> */}
     </fieldset>
   );
 }
