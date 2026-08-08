@@ -1,8 +1,9 @@
 .mockSTT {
+  --left: 1rem;
   position: fixed;
   bottom: 200px;
-  left: 1rem;
-  width: min(100%, 40rem);
+  left: var(--left);
+  width: min(calc(100% - var(--left)), 40rem);
   min-height: 4rem;
   border: 1px solid #ccc;
   border-radius: 8px;

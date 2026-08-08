@@ -69,7 +69,7 @@ export default function SetupForm({
         <label htmlFor="chat-user-starts">I will start</label>
       </fieldset>
       {speechSupportIsChecked && !speechRecognitionIsSupportedClientSide && (
-        <div>
+        <div role="alert">
           This app needs speech recognition; this browser does not support that.
           <br />
           Use another browser (like Chrome, Edge or Safari)
