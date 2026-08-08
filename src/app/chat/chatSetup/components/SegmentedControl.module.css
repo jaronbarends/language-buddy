@@ -47,8 +47,6 @@
   border-radius: var(--radius-pill);
   height: var(--label-height);
   font-weight: var(--font-weight-semibold);
-  transition: color, background-color;
-  transition-duration: var(--duration-near-instant);
   transition:
     color var(--duration-near-instant) var(--indicator-delay),
     background-color var(--hover-duration) 0s;
