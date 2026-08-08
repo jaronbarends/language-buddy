@@ -2,7 +2,7 @@
   display: grid;
   grid-template-rows: auto 1fr;
   margin-inline: auto;
-  max-width: min(90vw, 60rem);
+  max-width: min(90vw, 40rem);
   padding-inline: var(--size-24);
   min-height: 100dvh;
   background-color: var(--color-bg-page);

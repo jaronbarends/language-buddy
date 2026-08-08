@@ -5,10 +5,10 @@ import { type ChatConfig, getChatConfig } from '@/lib/chatConfig';
 import { type Language } from '@/lib/language';
 import { type SupportedLanguageVoices } from '@/lib/language';
 import { freeformChatWithAIStart, freeformChatWithUserStart } from '@/lib/scenarios';
-// import { speechRecognitionIsSupported } from '@/lib/speechRecognition';
 import { useSpeechRecognitionIsSupported } from '@/lib/speechRecognition';
 
 import LanguagePicker from './LanguagePicker';
+import SegmentedControl, { type SegmentedControlOption } from './SegmentedControl';
 
 import styles from './SetupForm.module.css';
 
@@ -34,6 +34,11 @@ export default function SetupForm({
   const [starter, setStarter] = useState<Starter>('ai');
   const speechRecognitionIsSupportedClientSide = useSpeechRecognitionIsSupported();
 
+  const starterOptions: SegmentedControlOption<Starter>[] = [
+    { label: 'AI should start', value: 'ai' },
+    { label: 'I will start', value: 'user' },
+  ];
+
   return (
     <form onSubmit={handleSubmit} className={styles.setupForm}>
       <LanguagePicker
@@ -42,32 +47,13 @@ export default function SetupForm({
         onChangeLanguage={onChangeLanguage}
         supportedLanguageVoices={supportedLanguageVoices}
       />
-      <fieldset>
-        <legend>Who should start the conversation?</legend>
-        <input
-          type="radio"
-          id="chat-ai-starts"
-          value="ai"
-          name="starter"
-          checked={starter === 'ai'}
-          onChange={(event) => {
-            setStarter(event.target.value as Starter);
-          }}
-        />
-        <label htmlFor="chat-ai-starts">AI should start</label>
-
-        <input
-          type="radio"
-          id="chat-user-starts"
-          value="user"
-          name="starter"
-          checked={starter === 'user'}
-          onChange={(event) => {
-            setStarter(event.target.value as Starter);
-          }}
-        />
-        <label htmlFor="chat-user-starts">I will start</label>
-      </fieldset>
+      <SegmentedControl
+        groupName="starter"
+        groupLabel="Who should start the conversation?"
+        options={starterOptions}
+        selectedValue={starter}
+        onSelect={setStarter}
+      />
       {speechSupportIsChecked && !speechRecognitionIsSupportedClientSide && (
         <div role="alert">
           This app needs speech recognition; this browser does not support that.
