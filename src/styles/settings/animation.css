@@ -1,3 +1,4 @@
 :root {
   --duration-instant: 0.1s;
+  --duration-near-instant: 0.2s;
 }
