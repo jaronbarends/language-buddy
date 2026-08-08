@@ -1,0 +1,15 @@
+:root {
+  /* primitive variables - borders */
+  --border-width-2: 0.125rem;
+
+  /* semantic variables */
+
+  --border-width-default: var(--border-width-2);
+  --focus-outline-width: var(--border-width-2);
+  --focus-outline-offset: var(--size-2);
+
+  --focus-outline: var(--focus-outline-width) solid var(--color-focus-outline);
+
+  --bevel-small: var(--size-2);
+  --bevel-large: var(--size-4);
+}

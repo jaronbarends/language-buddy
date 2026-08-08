@@ -29,6 +29,7 @@ export default function ThreadView({
 }: threadItemsProps) {
   const threadViewRef = useRef<HTMLDivElement>(null);
   const [showAIPendingBalloon, setShowAIPendingBalloon] = useState<boolean>(false);
+  const showFakeBalloons = false;
 
   useEffect(() => {
     if (!isAITurnSpeaking(phase)) {
@@ -94,6 +95,8 @@ export default function ThreadView({
             </SpeechBalloon>
           );
         })}
+
+        {showFakeBalloons && <FakeBalloons />}
         {showAIPendingBalloon && (
           <SpeechBalloon author="ai" tag="li">
             &hellip;
@@ -101,5 +104,34 @@ export default function ThreadView({
         )}
       </ol>
     </div>
+  );
+}
+
+function FakeBalloons() {
+  return (
+    <>
+      <SpeechBalloon author="ai" tag="li">
+        Lorem ipsum dolor, sit amet consectetur adipisicing elit. Totam assumenda ad quibusdam!
+        Voluptas repellendus animi fugit nobis, consequatur molestiae iusto reiciendis rem
+        laboriosam dolorum illo temporibus, eaque, quidem officia voluptate!
+      </SpeechBalloon>
+
+      <SpeechBalloon author="user" tag="li">
+        Lorem ipsum dolor, sit amet consectetur adipisicing elit. Totam assumenda ad quibusdam!
+        Voluptas repellendus animi fugit nobis, consequatur molestiae iusto reiciendis rem
+        laboriosam dolorum illo temporibus, eaque, quidem officia voluptate!
+      </SpeechBalloon>
+      <SpeechBalloon author="ai" tag="li">
+        Lorem ipsum dolor, sit amet consectetur adipisicing elit. Totam assumenda ad quibusdam!
+        Voluptas repellendus animi fugit nobis, consequatur molestiae iusto reiciendis rem
+        laboriosam dolorum illo temporibus, eaque, quidem officia voluptate!
+      </SpeechBalloon>
+
+      <SpeechBalloon author="user" tag="li">
+        Lorem ipsum dolor, sit amet consectetur adipisicing elit. Totam assumenda ad quibusdam!
+        Voluptas repellendus animi fugit nobis, consequatur molestiae iusto reiciendis rem
+        laboriosam dolorum illo temporibus, eaque, quidem officia voluptate!
+      </SpeechBalloon>
+    </>
   );
 }

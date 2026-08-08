@@ -1,0 +1,7 @@
+.pageHeader {
+  margin-bottom: var(--size-24);
+}
+
+.payoff {
+  color: var(--color-text-neutral-subtle);
+}

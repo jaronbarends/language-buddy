@@ -1,47 +1,62 @@
-.component {
-  --color-background: var(--color-primary);
-  --color-text: var(--color-text-on-dark);
-  --color-border: transparent;
-  --font-weight: var(--font-weight-bold);
+.button {
+  --border-width: var(--border-width-2);
+  --bevel: var(--bevel-large);
 
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: var(--size-8) var(--size-16);
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--color-border);
-  background: var(--color-background);
-  color: var(--color-text);
+  padding: var(--size-16) var(--size-32);
+  border: var(--border-width) solid;
+  border-bottom-width: calc(var(--border-width) + var(--bevel));
+  border-radius: var(--radius-button);
+  font-family: var(--font-family-button);
   font-size: var(--font-size-16);
-  font-weight: var(--font-weight);
+  font-weight: var(--font-weight-bold);
   cursor: pointer;
   text-decoration: none;
-  transition: opacity 0.3s;
+  transition-property: border-width, translate;
+  transition-duration: var(--duration-instant);
 
-  &:hover:not(:disabled),
-  &:focus:not(:disabled) {
-    outline: 1px solid var(--color-white);
-    outline-offset: 2px;
+  &:active,
+  &:disabled {
+    border-bottom-width: var(--border-width);
+    translate: 0 var(--bevel);
   }
 
   &:disabled {
-    opacity: 0.5;
     cursor: not-allowed;
   }
 }
 
 .primary {
-  --color-background: var(--color-primary);
+  border-color: var(--color-border-primary);
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-on-primary);
+
+  &:hover:not(:disabled),
+  &:focus-visible:not(:disabled) {
+    background-color: var(--color-bg-primary-hover);
+  }
+
+  &:disabled {
+    background-color: var(--color-bg-neutral);
+    color: var(--color-text-neutral-subtle);
+    border-color: transparent;
+  }
 }
 
 .secondary {
-  --color-background: var(--color-surface-200);
-  --font-weight: var(--font-weight-normal);
-}
+  border-color: var(--color-border-primary-subtle);
+  background-color: var(--color-bg-default);
+  color: var(--color-text-primary-subtle);
 
-.ghost {
-  --color-background: transparent;
-  --color-text: var(--color-primary);
-  --color-border: var(--color-primary);
-  --font-weight: var(--font-weight-normal);
+  &:hover:not(:disabled),
+  &:focus-visible:not(:disabled) {
+    background-color: var(--color-bg-primary-subtle-hover);
+  }
+
+  &:disabled {
+    color: var(--color-text-neutral-subtle);
+    border-color: var(--color-border-neutral);
+  }
 }

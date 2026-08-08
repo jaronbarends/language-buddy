@@ -1,0 +1,56 @@
+.legend {
+  margin-bottom: var(--label-gap);
+}
+
+.languageOptions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--label-gap);
+  align-items: end;
+  --color-border-highlight: var(--color-border-primary-subtle);
+}
+
+.label {
+  --border-width: var(--border-width-2);
+  --bevel: var(--bevel-small);
+
+  display: flex;
+  align-items: center;
+  gap: var(--label-gap);
+  border: var(--border-width) solid var(--color-border-neutral);
+  border-bottom-width: calc(var(--border-width) + var(--bevel));
+  border-radius: var(--radius-12);
+  padding: var(--size-12) var(--size-16);
+  background: var(--color-bg-default);
+  font-family: var(--font-family-display);
+}
+
+.label:hover,
+input:focus-visible + .label {
+  border-color: var(--color-border-highlight);
+}
+
+input:focus-visible + .label {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-outline-offset);
+}
+
+input:checked + .label {
+  border-color: var(--color-border-highlight);
+  background-color: var(--color-bg-primary-subtle);
+  color: var(--color-text-primary);
+}
+
+.label:active {
+  border-bottom-width: var(--border-width);
+  translate: 0 var(--bevel);
+}
+
+.flagIcon {
+  display: grid;
+}
+
+.hasNoVoiceWarning {
+  display: grid;
+  opacity: 0.6;
+}

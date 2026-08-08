@@ -8,6 +8,7 @@ import {
   isWaitingForAI,
   listeningShouldBeStopped,
   listeningShouldBeCancelled,
+  userIsInInputFlow,
   type ChatPhase,
 } from '@/app/chat/chatConversation/chatReducer';
 import { getCrossBrowserSpeechRecognition } from '@/lib/speechRecognition';
@@ -24,8 +25,6 @@ type SpeechToTextProps = {
   languageTag: string;
 };
 
-const shouldShowMockSTT = process.env.NEXT_PUBLIC_USE_MOCK_STT === 'true';
-
 export default function SpeechToText({
   phase,
   onTranscriptCreated,
@@ -40,6 +39,9 @@ export default function SpeechToText({
   const liveTranscriptRef = useRef<string>('');
   const [liveTranscript, setLiveTranscript] = useState<string>('');
   const mockRef = useRef<MockSTTHandle>(null);
+
+  const shouldShowMockSTT =
+    process.env.NEXT_PUBLIC_USE_MOCK_STT === 'true' && userIsInInputFlow(phase);
 
   useEffect(() => {
     recognitionRef.current = initSpeechRecognition(languageTag);

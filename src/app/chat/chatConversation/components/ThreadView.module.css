@@ -1,7 +1,15 @@
 .threadView {
   overflow-y: scroll;
   scrollbar-gutter: stable;
+  scrollbar-color: transparent transparent;
+  border: var(--border-width-default) solid var(--color-border-neutral);
+  border-left: none;
+  border-right: none;
   padding-block: var(--size-16);
+
+  &:hover {
+    scrollbar-color: var(--color-bg-neutral) transparent;
+  }
 }
 
 .threadItems {

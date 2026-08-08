@@ -43,12 +43,16 @@ export default function ControlsArea({
           {buttonProps.label}
         </Button>
         {shouldShowStopButton(phase) && (
-          <Button variant="ghost" onClick={onEndSession}>
+          <Button variant="secondary" onClick={onEndSession}>
             End session
           </Button>
         )}
         {shouldShowCancelButton(phase) && (
-          <Button variant="ghost" onClick={onCancelListening} disabled={!canRequestCancel(phase)}>
+          <Button
+            variant="secondary"
+            onClick={onCancelListening}
+            disabled={!canRequestCancel(phase)}
+          >
             Cancel
           </Button>
         )}
