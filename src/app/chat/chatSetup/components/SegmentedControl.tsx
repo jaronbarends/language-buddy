@@ -23,24 +23,27 @@ export default function SegmentedControl<T>({
   return (
     <fieldset className={styles.segmentedControl}>
       <legend>{groupLabel}</legend>
-      {options.map((option, idx) => {
-        const id = `segcontrol-${groupName}-${idx}`;
-        return (
-          <div key={idx}>
-            <input
-              type="radio"
-              id={id}
-              value={String(option.value)}
-              name={groupName}
-              checked={option.value === selectedValue}
-              onChange={(event) => {
-                onSelect(event.target.value as T);
-              }}
-            />
-            <label htmlFor={id}>{option.label}</label>
-          </div>
-        );
-      })}
+      {/* <div className={styles.container}> */}
+      <div className={styles.wrapperG}>
+        {options.map((option, idx) => {
+          return (
+            <label key={idx} className={styles.label}>
+              <input
+                type="radio"
+                value={String(option.value)}
+                name={groupName}
+                checked={option.value === selectedValue}
+                onChange={(event) => {
+                  onSelect(event.target.value as T);
+                }}
+                className="u-hidden-form-control"
+              />
+              {option.label}
+            </label>
+          );
+        })}
+      </div>
+      {/* </div> */}
     </fieldset>
   );
 }
