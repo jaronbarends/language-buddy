@@ -14,6 +14,7 @@ export interface ButtonProps {
   disabled?: boolean;
   ref?: RefObject<HTMLButtonElement | null>;
   type?: 'button' | 'submit' | 'reset';
+  fontSize?: 'medium' | 'large';
 }
 
 export default function Button({
@@ -24,6 +25,7 @@ export default function Button({
   disabled,
   ref,
   type = 'button',
+  fontSize = 'medium',
 }: ButtonProps) {
   if (href) {
     return (
@@ -34,7 +36,7 @@ export default function Button({
   }
   return (
     <button
-      className={clsx(styles.button, styles[variant])}
+      className={clsx(styles.button, styles[variant], styles[`${fontSize}Text`])}
       onClick={onClick}
       disabled={disabled}
       ref={ref}
