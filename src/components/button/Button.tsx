@@ -4,7 +4,7 @@ import { type RefObject, ReactNode } from 'react';
 
 import styles from './Button.module.css';
 
-type ButtonVariant = 'primary' | 'secondary';
+type ButtonVariant = 'primary' | 'secondary' | 'feedback';
 
 export interface ButtonProps {
   onClick?: () => void;
@@ -13,7 +13,7 @@ export interface ButtonProps {
   variant?: ButtonVariant;
   disabled?: boolean;
   ref?: RefObject<HTMLButtonElement | null>;
-  type?: 'button' | 'submit' | 'reset';
+  type?: 'button' | 'submit';
   fontSize?: 'medium' | 'large';
 }
 

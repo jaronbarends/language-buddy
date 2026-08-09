@@ -20,7 +20,7 @@ export default function LanguagePicker({
   const sortedLanguages = [...languages].sort((a, b) => a.name.localeCompare(b.name));
   return (
     <fieldset>
-      <legend className={styles.legend}>Choose your language</legend>
+      <legend className={styles.legend}>Choose your practice language</legend>
       <div className={styles.languageOptions}>
         {sortedLanguages.map((language, idx) => {
           const languageHasVoice = (language: Language) => {

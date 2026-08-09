@@ -5,6 +5,8 @@ import {
   canStopSession,
   shouldShowCancelButton,
   canRequestCancel,
+  isAITurnSpeaking,
+  isWaitingForAI,
   hasError,
   type ChatPhase,
 } from '@/app/chat/chatConversation/chatReducer';
@@ -25,6 +27,7 @@ type PrimaryButtonProps = {
   label: string;
   onClick: () => void;
   disabled?: boolean;
+  variant: 'primary' | 'feedback';
 };
 
 export default function ControlsArea({
@@ -34,13 +37,17 @@ export default function ControlsArea({
   onCancelListening,
   onEndSession,
 }: ControlsAreaProps) {
-  const buttonProps = getPrimaryButtonProps(phase);
+  const primaryButtonProps = getPrimaryButtonProps(phase);
 
   return (
     <div className={styles.controlsArea}>
       <div className={styles.actions}>
-        <Button variant="primary" onClick={buttonProps.onClick} disabled={buttonProps.disabled}>
-          {buttonProps.label}
+        <Button
+          variant={primaryButtonProps.variant}
+          onClick={primaryButtonProps.onClick}
+          disabled={primaryButtonProps.disabled}
+        >
+          {primaryButtonProps.label}
         </Button>
         {shouldShowStopButton(phase) && (
           <Button variant="secondary" onClick={onEndSession}>
@@ -68,29 +75,57 @@ export default function ControlsArea({
   function getPrimaryButtonProps(phase: ChatPhase): PrimaryButtonProps {
     if (canStartWithUser(phase)) {
       return {
+        variant: 'primary',
         label: 'Start speaking',
         onClick: onStartListening,
       };
     }
     if (canStartReply(phase)) {
       return {
-        label: 'Start reply',
+        variant: 'primary',
+        label: 'Reply',
         onClick: onStartListening,
       };
     }
     if (canRequestSend(phase)) {
       return {
+        variant: 'primary',
         label: 'Send',
         onClick: onSendRequested,
       };
     }
+    if (canRequestSend(phase)) {
+      return {
+        variant: 'primary',
+        label: 'Send',
+        onClick: onSendRequested,
+      };
+    }
+    if (isWaitingForAI(phase)) {
+      return {
+        variant: 'feedback',
+        label: 'AI is thinking...',
+        onClick: () => {},
+        disabled: true,
+      };
+    }
+    if (isAITurnSpeaking(phase)) {
+      return {
+        variant: 'primary',
+        label: 'Reply',
+        onClick: () => {},
+        disabled: true,
+      };
+    }
     if (hasError(phase)) {
       return {
+        variant: 'primary',
         label: 'End this session',
         onClick: onEndSession,
       };
     }
     return {
+      variant: 'feedback',
       label: 'Waiting...',
       onClick: () => {},
       disabled: true,

@@ -23,12 +23,12 @@ export const supportedLanguages: Language[] = [
     name: 'Spanish',
     languageTag: 'es-ES',
   },
-  {
-    name: 'English',
-    languageTag: 'en-GB',
-  },
-  {
-    name: 'German',
-    languageTag: 'de-DE',
-  },
+  // {
+  //   name: 'English',
+  //   languageTag: 'en-GB',
+  // },
+  // {
+  //   name: 'German',
+  //   languageTag: 'de-DE',
+  // },
 ];

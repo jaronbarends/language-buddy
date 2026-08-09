@@ -4,6 +4,8 @@
   border-radius: var(--radius-16);
   background-color: var(--color-bg-default);
   border: var(--border-width-default) solid var(--color-border-neutral);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
 }
 
 .messageFromAi {

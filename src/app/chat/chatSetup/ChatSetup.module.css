@@ -1,3 +1,7 @@
+.chatSetup {
+  padding-top: var(--size-24);
+}
+
 .pageHeader {
   margin-bottom: var(--size-24);
 }

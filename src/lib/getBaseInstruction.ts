@@ -1,6 +1,8 @@
 import type { Language } from '@/lib/language';
 
-const languageLevel = 'B2';
+// const languageLevel = 'A1/A2';
+const languageLevel = 'B1/B2';
+// const languageLevel = 'C1/C2';
 
 export type BaseInstruction = {
   prefix: string;

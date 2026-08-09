@@ -2,9 +2,7 @@
   overflow-y: scroll;
   scrollbar-gutter: stable;
   scrollbar-color: transparent transparent;
-  border: var(--border-width-default) solid var(--color-border-neutral);
-  border-left: none;
-  border-right: none;
+  border-bottom: var(--border-width-default) solid var(--color-border-neutral);
   padding-block: var(--size-16);
 
   &:hover {
