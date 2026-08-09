@@ -97,7 +97,7 @@ export default function ThreadView({
         {showFakeBalloons && <FakeBalloons />}
         {showAIPendingBalloon && (
           <SpeechBalloon author="ai" tag="li">
-            <Loader />
+            <Loader ariaLabel="Loading ai response" />
           </SpeechBalloon>
         )}
       </ol>

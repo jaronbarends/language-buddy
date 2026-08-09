@@ -7,7 +7,7 @@ import styles from './Feedback.module.css';
 
 export type FeedbackProps = {
   children: ReactNode;
-  type: 'error' | 'warning';
+  type: 'error'; /* add 'warning', 'info', 'success' when needed */
 };
 
 export default function Feedback({ type, children }: FeedbackProps) {

@@ -1,9 +1,4 @@
-html {
-  /* background: red; */
-}
-
 body {
-  background-color: var(--color-white);
   background-color: var(--color-bg-page);
   font-family: var(--font-family-default);
   font-weight: var(--font-weight-default);

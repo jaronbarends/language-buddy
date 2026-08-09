@@ -11,7 +11,7 @@
   }
 }
 
-@keyframes --fade {
+@keyframes fade {
   0%,
   50%,
   100% {
@@ -30,6 +30,6 @@
   height: var(--size);
   border-radius: var(--radius-circle);
   background-color: var(--color-gray-600);
-  animation: --fade 1.7s infinite;
+  animation: fade 1.7s infinite;
   animation-delay: calc(0.15s * sibling-index());
 }
