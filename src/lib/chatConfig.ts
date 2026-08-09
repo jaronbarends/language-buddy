@@ -1,12 +1,12 @@
 // src/lib/chatConfig.ts
 import { getBaseInstruction } from '@/lib/getBaseInstruction';
 import type { Language } from '@/lib/language';
-import type { Scenario } from '@/lib/scenarios';
+import type { Scenario, Starter } from '@/lib/scenarios';
 
 export type ChatConfig = {
   language: Language;
   systemInstruction: string;
-  aiHasFirstTurn: boolean;
+  starter: Starter;
 };
 
 export function getChatConfig(language: Language, scenario: Scenario): ChatConfig {
@@ -21,7 +21,7 @@ export function getChatConfig(language: Language, scenario: Scenario): ChatConfi
   return {
     language,
     systemInstruction,
-    aiHasFirstTurn: scenario.aiHasFirstTurn,
+    starter: scenario.starter,
   };
 }
 

@@ -5,6 +5,7 @@ import Button from '@/components/button/Button';
 import { type ChatConfig, getChatConfig } from '@/lib/chatConfig';
 import { type Language } from '@/lib/language';
 import { type SupportedLanguageVoices } from '@/lib/language';
+import { type Starter } from '@/lib/scenarios';
 import { freeformChatWithAIStart, freeformChatWithUserStart } from '@/lib/scenarios';
 import { useSpeechRecognitionIsSupported } from '@/lib/speechRecognition';
 
@@ -21,8 +22,6 @@ type SetupFormProps = {
   speechSupportIsChecked: boolean;
   supportedLanguageVoices: SupportedLanguageVoices;
 };
-
-type Starter = 'ai' | 'user';
 
 export default function SetupForm({
   languages,

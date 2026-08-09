@@ -691,7 +691,8 @@ follows the same reasoning as the mid-refactor circular-import fix: `Language` i
 concept, it's a more primitive one both `chatConfig.ts` and `getBaseInstruction.ts` need.
 **Status:** Done. `scenarios.ts` still holds placeholder content only — real scenario data/schema
 (situation + goal + constraints) remains undesigned, per the existing "core data structures
-deliberately deferred" decision (2026-07-22).
+deliberately deferred" decision (2026-07-22). **Update (2026-08-09):** `aiHasFirstTurn` is renamed
+to `starter` — see "`Starter` type moved to `scenarios.ts`" near the end of this log.
 
 ### STT integration design: stop/transcript split, display-only transcript before send
 
@@ -845,6 +846,8 @@ user picks, reusing existing types and logic as-is.
 **Known gap, not solved now:** once real scenarios exist, nothing distinguishes "this is a
 freeform-chat mode entry" from "this is a real scenario" at the type level — flagged as a probable
 future need (e.g. a `category` field), not designed against yet.
+**Update (2026-08-09):** `aiHasFirstTurn` is renamed to `starter` — see "`Starter` type moved to
+`scenarios.ts`" near the end of this log.
 
 ### New `languages.ts` config file, separate from the `language.ts` type
 
@@ -1694,3 +1697,26 @@ is closed.
 - **No dedicated `design.md`** — token values and component styling live in code
   (`src/styles/settings/`, `src/components/`), not in a separate design-decisions document. This log
   entry is the closest thing to one.
+
+---
+
+## `Starter` type moved to `scenarios.ts` (2026-08-09)
+
+### `aiHasFirstTurn` boolean replaced by `starter: Starter`, type moved from `SetupForm` to `scenarios.ts`
+
+**Date:** 2026-08-09
+**Decision:** `Scenario.aiHasFirstTurn: boolean` is replaced by `Scenario.starter: Starter`, where
+`type Starter = 'ai' | 'user'` is now defined and exported from `scenarios.ts`, not declared locally
+in `SetupForm.tsx`. `ChatConfig.aiHasFirstTurn` becomes `ChatConfig.starter: Starter`.
+`ChatConversation.tsx`'s check changes from `if (chatConfig.aiHasFirstTurn)` to
+`if (chatConfig.starter === 'ai')`. `SetupForm.tsx` now imports `Starter` from `scenarios.ts` instead
+of declaring its own copy.
+**Rationale:** Two variables had drifted onto the same datapoint — `SetupForm.tsx`'s local `Starter`
+type (used for its `SegmentedControl<Starter>` state) and `Scenario`/`ChatConfig`'s separate
+`aiHasFirstTurn` boolean. `Starter` was judged the better name (states the two options directly
+rather than encoding them as a boolean), and since "who starts" is a property of a `Scenario`, its
+type belongs in `scenarios.ts` rather than in the form component that merely lets the user pick one.
+**Status:** Done (commit `52e0677`). Supersedes the `aiHasFirstTurn` field name used in "Scenario/chat
+config extracted into src/lib" (2026-07-28) and "Freeform chat modeled as two explicit `Scenario`
+objects" (2026-07-30) above — those entries are left as originally written; current code uses
+`starter`/`Starter`.
