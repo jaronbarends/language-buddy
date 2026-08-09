@@ -59,6 +59,10 @@ deleted as no-longer-needed (see decisions.md). **Completed:** all of the above,
 accessibility pass beyond what individual new components picked up incidentally (see decisions.md,
 "Known gaps after this pass"). **Next step:** a dedicated accessibility pass (lang attribute,
 aria-live) remains backlog, not scheduled.
+**`Starter` type consolidated into `scenarios.ts` (2026-08-09, see decisions.md):** the duplicate
+`aiHasFirstTurn: boolean` (on `Scenario`/`ChatConfig`) and locally-declared `Starter` type (in
+`SetupForm.tsx`) tracked the same datapoint; `Scenario.starter: Starter` is now the single source,
+with `Starter` exported from `scenarios.ts`.
 
 ---
 
@@ -80,7 +84,10 @@ aria-live) remains backlog, not scheduled.
   - `languages.ts` (`src/lib/languages.ts`) — `supportedLanguages: Language[]`: Dutch (`nl-NL`),
     Norwegian Bokmål (`nb-NO`).
   - `freeformChatWithAIStart` / `freeformChatWithUserStart` (`src/lib/scenarios.ts`) — two
-    `Scenario` objects outside the `scenarios` array, differing only in `aiHasFirstTurn`.
+    `Scenario` objects outside the `scenarios` array, differing in `title`, `instruction` text, and
+    `starter`. `Starter` (`'ai' | 'user'`) is defined in `scenarios.ts` (renamed from
+    `aiHasFirstTurn: boolean`, 2026-08-09, formerly duplicated as a local type in `SetupForm.tsx` —
+    see decisions.md).
   - `ChatConversation.tsx` — renamed from `ChatClient.tsx`, moved to its own folder
     (`src/app/chat/chatConversation/`). Now receives `chatConfig` and `onEndSession` as props (no
     longer owns scenario selection). Start-of-chat is triggered by a mount `useEffect` (guarded by
@@ -215,7 +222,7 @@ aria-live) remains backlog, not scheduled.
   fallthrough also fires for any non-`'send'` `intent` on `stoppingListening` — currently only
   `'send'` is ever dispatched, but see decisions.md's "known gap" note on the dormant `'edit'`
   intent value and the backlog item it's tracked against.
-- **Working happy flow:** user-opens-first path (`aiHasFirstTurn = false`), full turn loop via
+- **Working happy flow:** user-opens-first path (`starter: 'user'`), full turn loop via
   real STT input and the mock AI API, confirmed running end-to-end.
 - Spike code for STT/TTS exists on branch `spike-speech-to-text` (spike-only, not production code).
 - **Visual/UI design pass implemented (2026-08-06–2026-08-09, see decisions.md):**

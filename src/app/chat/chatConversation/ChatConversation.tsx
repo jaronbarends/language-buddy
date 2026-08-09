@@ -39,7 +39,7 @@ export default function ChatConversation({
   // them changing mid-session shouldn't re-trigger chat start.
   useEffect(() => {
     startChatRef.current = () => {
-      if (chatConfig.aiHasFirstTurn) {
+      if (chatConfig.starter === 'ai') {
         startChatWithAI();
       } else {
         startChatWithUser();
