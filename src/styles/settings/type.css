@@ -22,8 +22,13 @@
   --font-family-display: var(--font-baloo), georgia, sans-serif;
   --font-family-body: var(--font-worksans), sans-serif;
 
+  --font-size-body-default: var(--font-size-18);
+
   --line-height-heading: 1.2;
-  --line-height-body: 1.6;
+  --line-height-body: 1.5;
+  --line-height-body-tight: 1.25;
+
+  --font-size-minor: var(--font-size-14);
 
   /* component variables */
   --font-family-default: var(--font-family-body);

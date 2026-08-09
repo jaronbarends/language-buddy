@@ -44,6 +44,8 @@
   ); /* hand-tuned to come closer to original design's oklch(0.97 0.012 250); was oklch(0.95 0.003 248) */
 
   --color-white: white;
+  --color-red: oklch(0.5 0.18 25);
+  --color-red-subtle: oklch(0.94 0.045 25);
 
   /* semantic colors */
 
@@ -56,6 +58,7 @@
   --color-text-on-secondary: var(--color-white);
   --color-text-neutral: var(--color-gray-100);
   --color-text-neutral-subtle: var(--color-gray-400);
+  --color-text-error: var(--color-red);
 
   /* semantic colors - background */
 
@@ -72,6 +75,8 @@
 
   --color-bg-neutral: var(--color-gray-900);
   --color-bg-neutral-subtle: var(--color-gray-950);
+
+  --color-bg-error: var(--color-red-subtle);
 
   /* semantic colors - border */
 

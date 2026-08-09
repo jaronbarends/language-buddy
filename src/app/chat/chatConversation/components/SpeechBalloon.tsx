@@ -11,10 +11,5 @@ export type SpeechBalloonProps = {
 
 export default function SpeechBalloon({ tag: Tag, author, children }: SpeechBalloonProps) {
   const authorClassName = author === 'ai' ? styles.messageFromAi : styles.messageFromUser;
-  return (
-    <Tag className={clsx(styles.message, authorClassName)}>
-      {' '}
-      <div className={styles.itemContent}>{children}</div>
-    </Tag>
-  );
+  return <Tag className={clsx(styles.message, authorClassName)}> {children}</Tag>;
 }

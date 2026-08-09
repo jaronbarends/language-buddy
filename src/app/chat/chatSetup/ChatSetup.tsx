@@ -1,8 +1,7 @@
+import PageHeading from '@/components/PageHeading';
 import { type ChatConfig } from '@/lib/chatConfig';
 import { type Language } from '@/lib/language';
 import { type SupportedLanguageVoices } from '@/lib/language';
-
-// import { speechRecognitionIsSupported } from '@/lib/speechRecognition';
 
 import SetupForm from './components/SetupForm';
 
@@ -28,8 +27,10 @@ export default function ChatSetup({
   return (
     <div className={styles.chatSetup}>
       <header className={styles.pageHeader}>
-        <h1>Language buddy</h1>
-        <p className={styles.payoff}>Practice speaking out loud</p>
+        <PageHeading>
+          <h1>Language buddy</h1>
+          <p className={styles.payoff}>Practice speaking out loud</p>
+        </PageHeading>
       </header>
       <SetupForm
         onStartSession={onStartSession}

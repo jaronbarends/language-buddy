@@ -9,6 +9,7 @@ type LanguagePickerProps = {
   selectedLanguage: Language;
   onChangeLanguage: (language: Language) => void;
   supportedLanguageVoices: SupportedLanguageVoices;
+  speechSupportIsChecked: boolean;
 };
 
 export default function LanguagePicker({
@@ -16,11 +17,12 @@ export default function LanguagePicker({
   selectedLanguage,
   onChangeLanguage,
   supportedLanguageVoices,
+  speechSupportIsChecked,
 }: LanguagePickerProps) {
   const sortedLanguages = [...languages].sort((a, b) => a.name.localeCompare(b.name));
   return (
     <fieldset>
-      <legend className={styles.legend}>Choose your language</legend>
+      <legend className={styles.legend}>Choose your practice language</legend>
       <div className={styles.languageOptions}>
         {sortedLanguages.map((language, idx) => {
           const languageHasVoice = (language: Language) => {
@@ -46,7 +48,7 @@ export default function LanguagePicker({
                 </div>
               )}
               {language.name}
-              {!languageHasVoice(language) && (
+              {speechSupportIsChecked && !languageHasVoice(language) && (
                 <span
                   className={styles.hasNoVoiceWarning}
                   role="img"

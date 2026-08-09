@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import Feedback from '@/components/Feedback';
 import Button from '@/components/button/Button';
 import { type ChatConfig, getChatConfig } from '@/lib/chatConfig';
 import { type Language } from '@/lib/language';
@@ -46,6 +47,7 @@ export default function SetupForm({
         selectedLanguage={selectedLanguage}
         onChangeLanguage={onChangeLanguage}
         supportedLanguageVoices={supportedLanguageVoices}
+        speechSupportIsChecked={speechSupportIsChecked}
       />
       <SegmentedControl
         groupName="starter"
@@ -55,11 +57,12 @@ export default function SetupForm({
         onSelect={setStarter}
       />
       {speechSupportIsChecked && !speechRecognitionIsSupportedClientSide && (
-        <div role="alert">
-          This app needs speech recognition; this browser does not support that.
-          <br />
-          Use another browser (like Chrome, Edge or Safari)
-        </div>
+        <Feedback type="error">
+          <div role="alert">
+            This app needs speech recognition; this browser does not support that. Use another
+            browser (like Chrome or Safari)
+          </div>
+        </Feedback>
       )}
       <div className={styles.actions}>
         <Button

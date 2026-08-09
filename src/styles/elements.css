@@ -1,13 +1,14 @@
 body {
-  background-color: var(--color-white);
+  background-color: var(--color-bg-page);
   font-family: var(--font-family-default);
   font-weight: var(--font-weight-default);
+  font-size: var(--font-size-body-default);
   color: var(--color-text-default);
 }
 
 legend {
   color: var(--color-text-neutral-subtle);
-  font-size: var(--font-size-14);
+  font-size: var(--font-size-minor);
   font-weight: var(--font-weight-semibold);
   text-transform: uppercase;
 }
@@ -23,4 +24,8 @@ h4 {
 
 h1 {
   font-size: var(--font-size-22);
+}
+
+main {
+  padding-bottom: var(--size-32);
 }

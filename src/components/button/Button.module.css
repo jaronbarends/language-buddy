@@ -10,7 +10,7 @@
   border-bottom-width: calc(var(--border-width) + var(--bevel));
   border-radius: var(--radius-button);
   font-family: var(--font-family-button);
-  font-size: var(--font-size-16);
+  font-size: var(--font-size-body-default);
   font-weight: var(--font-weight-bold);
   cursor: pointer;
   text-decoration: none;
@@ -29,7 +29,7 @@
 }
 
 .largeText {
-  font-size: var(--font-size-18);
+  font-size: var(--font-size-20);
 }
 
 .primary {
@@ -63,4 +63,9 @@
     color: var(--color-text-neutral-subtle);
     border-color: var(--color-border-neutral);
   }
+}
+
+.feedback {
+  background-color: transparent;
+  border-color: transparent;
 }
