@@ -7,7 +7,7 @@
   background-color: var(--color-bg-default);
   border: var(--border-width-default) solid var(--color-border-neutral);
   font-weight: var(--font-weight-medium);
-  line-height: 1.25;
+  line-height: var(--line-height-body-tight);
 }
 
 .messageFromAi {

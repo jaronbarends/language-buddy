@@ -1,4 +1,4 @@
-import { FaVolumeXmark } from 'react-icons/fa6';
+import { FaVolumeXmark, FaTriangleExclamation } from 'react-icons/fa6';
 
 import de from '@/assets/icons/flags/de.svg';
 import es from '@/assets/icons/flags/es.svg';
@@ -20,6 +20,7 @@ export type FlagIconName = keyof typeof FLAG_ICONS;
 export const ICONS = {
   ...FLAG_ICONS,
   volumeMute: FaVolumeXmark,
+  error: FaTriangleExclamation,
 } as const;
 
 function flagIconExists(iconName: string): iconName is FlagIconName {

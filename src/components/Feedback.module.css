@@ -1,0 +1,14 @@
+.feedback {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--size-16);
+  border-radius: var(--radius-8);
+  padding: var(--size-8) var(--size-16);
+  line-height: var(--line-height-body-tight);
+}
+
+.error {
+  color: var(--color-text-error);
+  background-color: var(--color-bg-error);
+}
