@@ -89,10 +89,7 @@ export default function ThreadView({
         {threadItems.map((item, idx) => {
           return (
             <SpeechBalloon key={idx} author={item.author} tag="li">
-              <div className={styles.itemContent}>{item.message}</div>
-              {/* {item.author === 'ai' && languageVoice && (
-                <div className={styles.buttonWrapper}>button</div>
-              )} */}
+              {item.message}
             </SpeechBalloon>
           );
         })}

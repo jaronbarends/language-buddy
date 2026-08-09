@@ -1,2 +1,55 @@
-.results {
+.speechResults {
+  padding-top: var(--size-8);
+}
+
+.balloonContent {
+  display: grid;
+  grid-template-areas: 'indicator transcript';
+  grid-template-columns: auto 1fr;
+  gap: var(--size-8);
+}
+
+@keyframes pulse {
+  0% {
+    scale: 1;
+    opacity: 0.8;
+  }
+  100% {
+    scale: 2.2;
+    opacity: 0;
+  }
+}
+
+.listeningIndicator {
+  --size: var(--size-12);
+
+  position: relative;
+  grid-area: indicator;
+  margin-top: 0.3em;
+  width: var(--size);
+  height: var(--size);
+  border-radius: var(--radius-circle);
+  background-color: var(--color-bg-primary);
+
+  &::after {
+    position: absolute;
+    inset: 0;
+    display: block;
+    content: '';
+    border-radius: var(--radius-circle);
+    background-color: inherit;
+    animation: pulse 1.6s infinite;
+  }
+}
+
+.listeningIndicatorIdle {
+  opacity: 0.25;
+  background-color: var(--color-border-secondary);
+
+  &::after {
+    animation: none;
+  }
+}
+.transcript {
+  grid-area: transcript;
 }

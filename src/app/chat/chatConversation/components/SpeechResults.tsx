@@ -1,4 +1,6 @@
-import { isListening, shouldShowRecognitionPreview } from '../chatReducer';
+import { clsx } from 'clsx';
+
+import { isListening, userIsInInputFlow, shouldShowRecognitionPreview } from '../chatReducer';
 import { type ChatPhase } from '../chatReducer';
 import SpeechBalloon from './SpeechBalloon';
 
@@ -18,11 +20,27 @@ export default function SpeechResults({ liveTranscript, phase }: SpeechResultsPr
     : liveTranscript === '' ? <span>Listening&hellip;</span>
     : <span>&hellip;</span>;
   return (
-    <SpeechBalloon author="user" tag="div">
-      <div className={styles.results} role="status" aria-live="polite" aria-atomic="true">
-        {liveTranscript}
-        {suffix}
-      </div>
-    </SpeechBalloon>
+    <div className={styles.speechResults}>
+      <SpeechBalloon author="user" tag="div">
+        <div className={styles.balloonContent}>
+          {userIsInInputFlow(phase) && <ListeningIndicator phase={phase} />}
+          <div className={styles.transcript} role="status" aria-live="polite" aria-atomic="true">
+            {liveTranscript}
+            {suffix}
+          </div>
+        </div>
+      </SpeechBalloon>
+    </div>
+  );
+}
+
+function ListeningIndicator({ phase }: { phase: ChatPhase }) {
+  return (
+    <div
+      className={clsx(
+        styles.listeningIndicator,
+        !isListening(phase) && styles.listeningIndicatorIdle
+      )}
+    ></div>
   );
 }

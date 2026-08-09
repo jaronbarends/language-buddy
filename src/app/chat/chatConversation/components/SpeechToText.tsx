@@ -1,4 +1,3 @@
-// import 'dotenv/config';
 import { useEffect, useRef, useState } from 'react';
 
 import {
@@ -15,8 +14,6 @@ import { getCrossBrowserSpeechRecognition } from '@/lib/speechRecognition';
 
 import MockSTT, { type MockSTTHandle } from './MockSTT';
 import SpeechResults from './SpeechResults';
-
-import styles from './SpeechToText.module.css';
 
 type SpeechToTextProps = {
   phase: ChatPhase;
@@ -85,10 +82,10 @@ export default function SpeechToText({
   }, [phase]);
 
   return (
-    <div className={styles.speechToText}>
+    <>
       <SpeechResults liveTranscript={liveTranscript} phase={phase} />
       {shouldShowMockSTT && <MockSTT ref={mockRef} phase={phase} />}
-    </div>
+    </>
   );
 
   function initSpeechRecognition(languageTag: string): SpeechRecognition | undefined {
