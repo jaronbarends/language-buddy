@@ -46,6 +46,7 @@ export default function SetupForm({
         selectedLanguage={selectedLanguage}
         onChangeLanguage={onChangeLanguage}
         supportedLanguageVoices={supportedLanguageVoices}
+        speechSupportIsChecked={speechSupportIsChecked}
       />
       <SegmentedControl
         groupName="starter"
