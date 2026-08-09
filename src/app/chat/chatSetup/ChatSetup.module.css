@@ -3,9 +3,13 @@
 }
 
 .pageHeader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-16);
   margin-bottom: var(--size-24);
 }
 
 .payoff {
   color: var(--color-text-neutral-subtle);
+  font-size: var(--font-size-minor);
 }

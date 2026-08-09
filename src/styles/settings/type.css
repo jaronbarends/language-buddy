@@ -28,6 +28,8 @@
   --line-height-body: 1.5;
   --line-height-body-tight: 1.25;
 
+  --font-size-minor: var(--font-size-14);
+
   /* component variables */
   --font-family-default: var(--font-family-body);
   --font-weight-default: var(--font-weight-regular);
