@@ -7,6 +7,7 @@ import {
   type ThreadItem,
   type ChatPhase,
 } from '@/app/chat/chatConversation/chatReducer';
+import Loader from '@/components/Loader';
 import { type LanguageVoice } from '@/lib/language';
 import { cancelSpeech, speakMessage } from '@/lib/textToSpeech';
 
@@ -99,7 +100,7 @@ export default function ThreadView({
         {showFakeBalloons && <FakeBalloons />}
         {showAIPendingBalloon && (
           <SpeechBalloon author="ai" tag="li">
-            &hellip;
+            <Loader />
           </SpeechBalloon>
         )}
       </ol>

@@ -1,5 +1,7 @@
 .message {
-  margin-inline: 0 15%;
+  margin-inline: 0 auto;
+  width: fit-content;
+  max-width: 85%;
   padding: var(--size-12) var(--size-16);
   border-radius: var(--radius-16);
   background-color: var(--color-bg-default);
@@ -14,7 +16,7 @@
 }
 
 .messageFromUser {
-  margin-inline: 15% 0;
+  margin-inline: auto 0;
   border-bottom-right-radius: var(--radius-4);
   background-color: var(--color-bg-secondary-subtle);
   border-color: var(--color-border-secondary);
