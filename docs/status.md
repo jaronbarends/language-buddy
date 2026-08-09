@@ -1,6 +1,6 @@
 # Project status
 
-**Last updated:** 2026-08-05
+**Last updated:** 2026-08-09
 **Current phase:** Early build. Concept locked (scenario-library-based conversational sparring
 partner, Norwegian, multi-turn sessions + async structured evaluation). MVP scoping in progress;
 Spikes 1–4 all complete. AI provider decided (Gemini). State machine now runs the full happy path
@@ -45,6 +45,20 @@ the SSR/CSR-safe hook, and removal of the old in-conversation error path, merged
 SSR/CSR mismatch risk was resolved by switching to `useSyncExternalStore` (see decisions.md,
 "SSR/CSR mismatch fix"). **Next step:** None specific to this item; see the project-level "Next
 step" list below.
+**Visual/UI design pass implemented (2026-08-06–2026-08-09, see decisions.md):** design tokens
+(OKLCH color scale, spacing/radii, two self-hosted variable fonts, borders/focus-outline, animation
+durations) landed first, then a small shared component set (`Button`, `Loader`, `Feedback`, `Icon`,
+`PageHeading`, `Logo`), then restyling of the setup screen (`SegmentedControl` extracted, flag icons
++ no-voice warning icon on `LanguagePicker`, `ChatSetup` split into layout chrome + a new
+`SetupForm`) and the conversation loop (chat-style balloons sized to fit-content, `Loader` replacing
+the static AI-pending placeholder). Landed via `visual-design` (PR #14, `497f7da`) plus same-week
+follow-on branches, all merged to `main`. **`ErrorArea` now uses `Feedback` too (2026-08-09)** — the
+conversation-loop error message is no longer a plain unstyled `<div>`; `ErrorArea.module.css` was
+deleted as no-longer-needed (see decisions.md). **Completed:** all of the above, including
+`ErrorArea`. **Remaining or broken work:** no
+accessibility pass beyond what individual new components picked up incidentally (see decisions.md,
+"Known gaps after this pass"). **Next step:** a dedicated accessibility pass (lang attribute,
+aria-live) remains backlog, not scheduled.
 
 ---
 
@@ -114,9 +128,10 @@ step" list below.
   `listening`/`stoppingListening`/`cancellingListening`/`sendingUserReply` input-flow window (see
   decisions.md, "Reply-phase UX redesign implemented"). "Cancel" is shown via
   `shouldShowCancelButton` across that same input-flow window and dispatches `CANCEL_LISTENING`.
-- `ErrorArea.tsx` — renders the raw error message from the `error` phase; unstyled, no
-  per-error-type differentiation. Generic error recovery (end-session-only, no Retry) is wired up
-  via the `onEndSession` prop call described above, not a reducer action.
+- `ErrorArea.tsx` — renders the error message from the `error` phase via the `Feedback` component
+  (2026-08-09, see decisions.md); no per-error-type differentiation. Generic error recovery
+  (end-session-only, no Retry) is wired up via the `onEndSession` prop call described above, not a
+  reducer action.
 - `ThreadView.tsx` — renders `threadItems` from state, styled by author (`ai`/`user`); also owns
   the TTS playback trigger (see "Real TTS wired up" below) via a `useEffect` keyed on
   `phase.status === 'aiTurnSpeaking'`.
@@ -203,8 +218,37 @@ step" list below.
 - **Working happy flow:** user-opens-first path (`aiHasFirstTurn = false`), full turn loop via
   real STT input and the mock AI API, confirmed running end-to-end.
 - Spike code for STT/TTS exists on branch `spike-speech-to-text` (spike-only, not production code).
-- **No visual/UI design work done yet** — current components are functional/unstyled. Timing for
-  the design pass is now decided (see below); the design content itself is not.
+- **Visual/UI design pass implemented (2026-08-06–2026-08-09, see decisions.md):**
+  - **Design tokens** in `src/styles/settings/`: `colors.css` (three 11-step OKLCH primitive ramps —
+    pink/blue/gray — feeding semantic `--color-text-*`/`--color-bg-*`/`--color-border-*` tokens, then
+    a further component-role tier), `sizes.css` (spacing + radius scales), `fonts.css`/`type.css`
+    (two self-hosted variable fonts — Baloo 2 for display/heading/button, Work Sans for body/label —
+    plus semantic font-family/weight/line-height tokens), `borders.css` (border-width, a
+    `--focus-outline` shorthand, bevel tokens), `animation.css` (two duration tokens). Follows the
+    project's closed-token-scale rule (CLAUDE.md); component CSS reads semantic/component tokens, not
+    raw values.
+  - **New shared components** in `src/components/`: `Button` (`primary`/`secondary`/`feedback`
+    variants, renders a `Link` when given `href`), `Loader` (three-dot indicator, `role="status"`,
+    required `ariaLabel`), `Feedback` (typed inline banner + `Icon`, only `type="error"` wired so
+    far), `Icon`/`getIconByName` (name-keyed registry mixing `react-icons/fa6` glyphs and six inline-
+    SVG flag icons via `@svgr/webpack`, plus `getFlagIconName(languageTag)`), `PageHeading`/`Logo`.
+  - **Setup screen restyled:** the inline starter radio pair is now a generic, reusable
+    `SegmentedControl<T>` (`src/app/chat/chatSetup/components/SegmentedControl.tsx`) with an animated
+    selection indicator. `LanguagePicker` now shows a flag icon per language and a `volumeMute`
+    warning icon next to any language with no detected TTS voice (resolves the "voice-availability
+    detection exists but nothing reacts to it" backlog item — see backlog.md). `ChatSetup.tsx` is
+    split into layout chrome (renders `PageHeading` only) + a new `SetupForm.tsx`
+    (`src/app/chat/chatSetup/components/SetupForm.tsx`) that owns the actual form, `starter` state,
+    and the speech-recognition-unsupported `Feedback` message.
+  - **Conversation loop restyled:** chat balloons (`SpeechBalloon`) sized to fit-content; the
+    `waitingForAI` pending balloon now renders `Loader` instead of static placeholder content.
+  - **`languages.ts` gets an `initiallySelected` field** (Norwegian is now the explicit default,
+    replacing the implicit "`supportedLanguages[0]`" convention) plus a dev-only
+    `NEXT_PUBLIC_INITIAL_LANGUAGE_DUTCH` override.
+  - **`ErrorArea` now uses `Feedback` too (2026-08-09)** — see decisions.md. `ErrorArea.module.css`
+    was deleted as no-longer-needed.
+  - **Not done by this pass:** no dedicated accessibility pass — see decisions.md, "Known gaps after
+    this pass," and backlog.md's `lang` attribute / `aria-live` items, both still open.
 - **`DevHelper` gated behind `NEXT_PUBLIC_SHOW_DEV_HELPER` (2026-08-02):**
   `ChatConversation.tsx` only renders `DevHelper` when that env var is set, instead of always
   rendering it.
@@ -315,8 +359,16 @@ step" list below.
   detected voice engine (Google/Apple/Microsoft) using an empirically calibrated lookup table,
   not a per-platform heuristic — the initial `isIOS()`-based flat multiplier was superseded the
   same week once it proved too imprecise. Voice-availability detection per supported language
-  exists; the UI fallback for "no voice installed" and a user-facing speech-rate control remain
-  open (see below and backlog.md).
+  exists; a user-facing speech-rate control remains open (see below and backlog.md). **UI fallback
+  for "no voice installed" implemented 2026-08-07** — `LanguagePicker` now shows a `volumeMute`
+  warning icon next to any language with no detected voice (see "What exists" above).
+- **Visual/UI design pass implemented (2026-08-06–2026-08-09)** — design tokens (colors, spacing,
+  fonts, borders, animation durations), a shared component set (`Button`, `Loader`, `Feedback`,
+  `Icon`, `PageHeading`, `Logo`), and restyling of the setup screen and conversation loop. Resolves
+  the "timing decided, content open" status this had carried since 2026-07-27 (see decisions.md,
+  "Visual/UI design phase sequenced after core loop" and the new "Visual/UI design pass" section).
+  `ErrorArea` now uses `Feedback` too (2026-08-09, see decisions.md). A dedicated accessibility pass
+  is not part of this pass — still open (see "What's open" below).
 
 ## What's open
 
@@ -334,22 +386,22 @@ step" list below.
   open (see decisions.md). The "AI always speaks last" rule (2026-07-26) that depended on it is
   currently unenforced as a result — a session can end via "End session" after any turn, including
   mid-AI-turn, same as before.
-- Error UI polish only — `ErrorArea`'s message display exists but is unstyled; no Retry
-  action planned for v0 (see decisions.md, 2026-07-27). End-session-from-error is
-  implemented and functional (direct `onEndSession` call — see decisions.md); only the
-  visual styling is outstanding, folded into the general visual/UI design pass below.
+- ~~Error UI polish~~ — `ErrorArea` now renders through `Feedback` (2026-08-09, see decisions.md);
+  no longer open. No Retry action planned for v0, no per-error-type differentiation — that _policy_
+  is unchanged (see decisions.md, 2026-07-27), only the visual styling gap is resolved.
 - `listeningTimedOut` — superseded 2026-08-04, not merely unwired: no app-enforced timeout is
   planned, since `recognitionShouldBeActiveRef` keeps recognition open indefinitely by design and
   `SpeechRecognition` doesn't time out on its own (see decisions.md). If a real need resurfaces,
   it should be scoped fresh against the `Send`/`Cancel` flow, not resumed from the original design.
-- **Visual/UI design content** — tokens, layout, component styling, accessibility approach. Timing
-  is decided (after the core loop, before evaluation); the actual design.md content doesn't exist
-  yet.
+- ~~Visual/UI design content~~ — implemented 2026-08-06–2026-08-09, including `ErrorArea` (see
+  "What exists" above and decisions.md, "Visual/UI design pass"); no longer open. The remaining
+  accessibility-pass piece is tracked as its own open item below, not under this heading anymore.
 - **Predefined-scenario-picks-its-own-starter (freeform-chat "mode 2")** remains out of scope —
   deliberately deferred alongside the setup-screen decision, tracked in backlog.md.
-- **TTS UI fallback for unsupported languages** — `speechIsSupported`/per-language voice
-  detection exists in `ChatContainer`, but nothing in the UI reacts to it yet (no icon/text-only
-  fallback on the language picker, per the relevant backlog item).
+- **Accessibility pass** — beyond what individual components picked up incidentally during the
+  visual design pass (`Loader`'s `role="status"`, the no-voice icon's `role="img"`/`aria-label`, the
+  pre-existing live-transcript `aria-live`), no dedicated pass has been done. `lang` attribute on
+  speech output elements and broader `aria-live` coverage remain open backlog items.
 - **User-facing speech-rate control** — rate correction so far only normalizes _across voice
   engines_ to a consistent baseline speed; there's no slower/faster control exposed to the user
   (separate backlog item).
@@ -443,9 +495,9 @@ Two calibration-only files still remain under `spikes/language-speech-rates/`
      `stopListening` uses `stop()`) but not yet verified against the iOS Safari
      `onresult`-after-`stop()` quirk found during initial STT integration — still an open
      verification item, just no longer blocking implementation.
-10. **Visual/UI design pass** on the now-functionally-complete conversation loop: define tokens,
-    layout, and accessibility approach; restyle `ThreadView`/`ControlsArea`/STT-and-error UI against
-    it (see decisions.md, 2026-07-27).
+10. ~~Visual/UI design pass~~ — done, 2026-08-06–2026-08-09: tokens, shared component set, setup-
+    screen, conversation-loop, and `ErrorArea` restyling (see decisions.md, "Visual/UI design
+    pass"). Not covered: a dedicated accessibility pass — remains open, not blocking evaluation.
 11. Define core data structures (session state shape, transcript shape) consistent with the state
     model — transcript must exclude the hidden opening instruction.
 12. Add evaluation as a second slice once the full v0 conversation loop (steps 4–10) is solid and

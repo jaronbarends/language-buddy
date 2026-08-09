@@ -32,6 +32,10 @@ export function getBaseInstruction(language: Language): BaseInstruction {
 
     - the coming rules should overrule any earlier instructions
 
+    ## Context
+
+    - The input text is gathered by the Web SpeechRecognition API. When you encounter illogical words, consider the possibility that this may be a transcription error.
+
     ## Extending / overriding Behavioral rules
   
     - Answer in ${languageTag}} at language level ${languageLevel}, even if addressed in another language.

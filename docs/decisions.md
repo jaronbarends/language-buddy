@@ -1537,3 +1537,160 @@ cleanly and the real client value takes over on mount.
 **Status:** Done. Implemented identically on two branches independently (commits `9141751`/`bbded6f`
 and `c43dbc3`/`cab5c63`), merged together in `442b350` with no conflicts since both diffs were
 identical.
+
+---
+
+## Visual/UI design pass (2026-08-06–2026-08-09)
+
+Implements the pass sequenced-but-undesigned in the 2026-07-27 "Visual/UI design phase sequenced
+after core loop" decision above. Landed as branch `visual-design` (PR #14, merged `497f7da`,
+2026-08-08), followed by same-day/next-day follow-on branches/commits (`add-segmented-control`,
+`language-picker-input-in-label`, `button-layout`, `add-loader`) merged straight to `main` through
+2026-08-09. Covers design tokens, a small shared component set, and restyling of the setup screen
+and conversation loop built earlier. Does not cover evaluation UI (doesn't exist yet) or a full
+accessibility pass (see "Known gaps" at the end of this section).
+
+### Design tokens: OKLCH color scale + spacing/type/border/animation primitives
+
+**Date:** 2026-08-06
+**Decision:** New `src/styles/settings/` token files (`colors.css`, `sizes.css`, `fonts.css`,
+`type.css`, `borders.css`, `animation.css`), imported via `settings.css`:
+
+- **Colors** (`colors.css`): three 11-step primitive OKLCH ramps (`--color-pink-50..950`,
+  `--color-blue-50..950`, `--color-gray-50..950`), plus `--color-white`/`--color-red`/
+  `--color-red-subtle`. Semantic tokens (`--color-text-*`, `--color-bg-*`, `--color-border-*`) map
+  onto specific ramp steps; a further "component colors" tier (`--color-bg-page`,
+  `--color-text-default`, `--color-text-label`, `--color-focus-outline`) maps semantic tokens onto
+  concrete component roles. Two ramp steps (`--color-pink-900`, `--color-gray-900`/`-950`) carry
+  inline comments recording hand-tuning against an original design reference — the generated OKLCH
+  formula didn't match by eye, so specific values were nudged and the original formula-generated
+  value kept in the comment.
+- **Sizing** (`sizes.css`): a spacing scale (`--size-2` … `--size-64`, rem-based) and a radius scale
+  (`--radius-4` … `--radius-16`, plus `--radius-pill`/`--radius-circle`), with one component-level
+  token (`--radius-button: var(--radius-pill)`).
+- **Fonts** (`fonts.css`/`type.css`): two self-hosted variable fonts — Baloo 2 (display/heading/
+  button face) and Work Sans (body/label face) — loaded via `@font-face` from `public/fonts/`, each
+  declared at multiple `font-weight` values pointing at the same variable-font file (browsers select
+  the right weight from the single file per the declared range). `type.css` layers primitive font
+  tokens into semantic ones (`--font-family-heading`/`--font-family-button`/`--font-family-label`,
+  `--font-weight-heading`/`--font-weight-button`, `--line-height-heading`/`--line-height-body`).
+- **Borders** (`borders.css`): a single border-width primitive, a focus-outline shorthand token
+  (`--focus-outline`, combining width/style/`--color-focus-outline`), and two "bevel" tokens
+  (`--bevel-small`/`--bevel-large`) used for button/control edge styling.
+- **Animation** (`animation.css`): two duration tokens (`--duration-instant: 0.1s`,
+  `--duration-near-instant: 0.2s`) — no easing-curve tokens yet.
+
+**Rationale:** Follows the project's "CSS tokens form a closed scale" rule (CLAUDE.md) — primitive
+ramps feed semantic tokens feed component tokens, so component CSS never hardcodes a raw color/size
+value. OKLCH specifically wasn't spike-tested or compared against alternatives here; picked as the
+primitive color space without a documented alternatives comparison in this log.
+**Status:** Done. This is the first `design.md`-equivalent content the project has — the "timing
+decided, content open" status this decision log carried since 2026-07-27 is now resolved. There is
+still no separate `design.md` file; token values live directly in `src/styles/settings/`.
+
+### New shared component set: `Button`, `Loader`, `Feedback`, `Icon`, `PageHeading`, `Logo`
+
+**Date:** 2026-08-06–2026-08-09
+**Decision:** Small `src/components/` library, styled against the tokens above:
+
+- **`Button`** (`src/components/button/Button.tsx`) — `variant: 'primary' | 'secondary' |
+  'feedback'`, optional `fontSize: 'medium' | 'large'`. Renders a Next.js `Link` when given an
+  `href`, a native `<button>` otherwise (same class list either way) — one component covers both
+  link-styled-as-button and real-button cases rather than two separate components.
+- **`Loader`** (`src/components/Loader.tsx`) — three-dot loading indicator, `role="status"` +
+  required `ariaLabel` prop (no default text, forcing each call site to state what's loading).
+- **`Feedback`** (`src/components/Feedback.tsx`) — typed inline banner with an `Icon`; `type` is
+  currently typed as the literal `'error'` only, with `'warning' | 'info' | 'success'` left as a
+  code comment for when they're needed, rather than speculatively building all four now.
+- **`Icon`**/`getIconByName` (`src/components/icon/Icon.tsx`, `src/lib/getIconByName.ts`) — a
+  name-keyed icon registry (`ICONS`) mixing two sources: `react-icons/fa6` glyphs (`volumeMute`,
+  `error`) and six inline-SVG flag icons imported as React components via `@svgr/webpack` (added to
+  `next.config.ts`'s webpack rules, guarded per commit `1f57908` against a `resourceQuery.not`
+  access issue). `getFlagIconName(languageTag)` derives a flag from a BCP-47 tag's region subtag
+  (`nb-NO` → `flag-no`), returning `undefined` for languages with no matching flag asset rather than
+  guessing one.
+- **`PageHeading`**/**`Logo`** (`src/components/PageHeading.tsx`, `src/components/Logo.tsx`) — a
+  thin layout wrapper (logo + heading content) used once so far, on `ChatSetup`.
+
+**Status:** Done. `Feedback` was initially used in one place (`SetupForm`'s
+speech-recognition-unsupported message); `ErrorArea.tsx` (the conversation-loop error message) also
+uses it as of 2026-08-09 (see "`ErrorArea` restyled with `Feedback`" below) — the "Error UI polish
+only" open item from 2026-07-27 is now resolved.
+
+### Setup screen restyled: `SegmentedControl` extracted, `LanguagePicker` gets flags + no-voice icon, `ChatSetup` split into layout + `SetupForm`
+
+**Date:** 2026-08-07–2026-08-08
+**Decision:**
+
+- The inline AI/user starter radio pair (built into `ChatSetup.tsx` per the 2026-07-30 setup-screen
+  decision) is extracted into a new generic `SegmentedControl<T>` component
+  (`src/app/chat/chatSetup/components/SegmentedControl.tsx`) — a labeled `fieldset` of radios styled
+  as a segmented control, with a CSS-driven selection-indicator animation
+  (`--duration-near-instant`). Generic over the option value type, not starter-specific, so it isn't
+  coupled to `'ai' | 'user'`.
+- `LanguagePicker` now renders a per-language flag icon (via `getFlagIconName`) and, once
+  `speechSupportIsChecked` is true, a `volumeMute` warning icon next to any language with no
+  detected TTS voice (`supportedLanguageVoices[languageTag] === undefined`). This resolves the
+  backlog item "voice-availability detection exists but nothing in the UI reacts to it yet" — see
+  backlog.md. The radio `<input>` itself moved inside the `<label>` (previously a sibling) so the
+  whole label area, not just the input, is the click/tap target.
+- `ChatSetup.tsx` is split: it now only renders `PageHeading` (title + payoff line) and delegates the
+  actual form to a new `SetupForm.tsx` (`src/app/chat/chatSetup/components/SetupForm.tsx`), which
+  owns the `starter` state, both `LanguagePicker`/`SegmentedControl` instances, the
+  speech-recognition-unsupported `Feedback` message, and the submit handler that builds `ChatConfig`
+  and calls `onStartSession`. `ChatSetup` itself no longer holds any form logic — layout chrome
+  (heading) separated from the form it heads.
+
+**Rationale:** Not stated explicitly in commit messages beyond "extract"/"add" — read from the diffs
+themselves. The `SegmentedControl` extraction and the `ChatSetup`/`SetupForm` split both follow the
+project's existing pattern of pulling reusable/complex JSX into its own component (per CLAUDE.md's
+"extract subcomponents when JSX is complex, reused, or has its own behavior").
+**Status:** Done.
+
+### `languages.ts`: `initiallySelected` field replaces positional default; dev-only Dutch override
+
+**Date:** 2026-08-07
+**Decision:** `Language` gains an optional `initiallySelected?: boolean` field. `languages.ts` now
+marks Norwegian (`nb-NO`) as `initiallySelected: true` (previously the default was implicitly
+"whichever is `supportedLanguages[0]`" — see 2026-07-30 setup-screen decision). `ChatContainer`'s
+`getInitialLanguage()` looks up the flagged language, falling back to `supportedLanguages[0]` "should
+never happen" if none is flagged. A `NEXT_PUBLIC_INITIAL_LANGUAGE_DUTCH` env var, checked first, can
+override this to Dutch for dev convenience.
+**Rationale:** Not stated in commit messages — read from the diff. Makes the default language an
+explicit, named property instead of an accident of array order, which would otherwise silently break
+if `languages.ts`'s entries were ever reordered (e.g. the alphabetical sort already applied for
+display in `LanguagePicker`).
+**Status:** Done.
+
+### AI-pending indicator switched from a static balloon to `Loader`
+
+**Date:** 2026-08-09
+**Decision:** The `waitingForAI` pending balloon in `ThreadView.tsx` (added 2026-08-02, see "AI-
+pending speech balloon" above) now renders `<Loader ariaLabel="Loading ai response" />` inside the
+`SpeechBalloon` instead of static placeholder content. Chat balloons generally (`SpeechBalloon`) are
+now sized to `fit-content` rather than a fixed/stretched width.
+**Status:** Done.
+
+### `ErrorArea` restyled with `Feedback`
+
+**Date:** 2026-08-09
+**Decision:** `ErrorArea.tsx` now renders `<Feedback type="error">{phase.error.error}</Feedback>`
+instead of a plain `<div className={styles.component}>`. `ErrorArea.module.css` (which only held an
+empty `.component {}` rule) is deleted.
+**Rationale:** Closes the gap flagged right after the rest of the visual/UI design pass landed —
+`Feedback` existed and was wired into `SetupForm` but not into the conversation-loop error state.
+**Status:** Done. Resolves the "Error UI polish only" open item from 2026-07-27 — no Retry action
+and no per-error-type differentiation are still the standing v0 policy, only the visual styling gap
+is closed.
+
+### Known gaps after this pass
+
+- **No accessibility pass beyond what individual components picked up incidentally** —
+  `SpeechResults`' live transcript already had `aria-live="polite"`/`aria-atomic="true"` before this
+  pass; `Loader` and the language no-voice icon add `role="status"`/`role="img"` + `aria-label`
+  on introduction. The backlog items "add lang attribute to speech output elements" and "add
+  aria-live to output elements" (beyond the one already covered) are not addressed by this pass —
+  still open, see backlog.md.
+- **No dedicated `design.md`** — token values and component styling live in code
+  (`src/styles/settings/`, `src/components/`), not in a separate design-decisions document. This log
+  entry is the closest thing to one.

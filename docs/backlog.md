@@ -69,9 +69,11 @@ rather than dropping it.
 - once real scenarios exist in the `scenarios` array alongside the two freeform-chat `Scenario`
   objects, nothing distinguishes "this is a freeform-chat mode" from "this is a real scenario" at the
   type level — a `category`-type field may be needed (see decisions.md, 2026-07-30)
-- voice-availability detection now exists (`ChatContainer`'s `supportedLanguageVoices`/
-  `speechIsSupported`, 2026-07-31, see decisions.md) but nothing in the UI reacts to it yet — still
-  need: if no voice is found, only use written text and show an icon on language selection
+- ~~voice-availability detection now exists ... but nothing in the UI reacts to it yet~~ —
+  **resolved 2026-08-07**: `LanguagePicker` shows a `volumeMute` warning icon next to any language
+  with no detected voice (see decisions.md, "Visual/UI design pass"). The "only use written text"
+  half was already covered separately — `ThreadView` already skips speaking and calls
+  `onAISpeechEnd()` directly when `languageVoice` is falsy.
 - cleanup from the TTS build (2026-08-01, see decisions.md): `AIThreadItemContent.tsx` is orphaned
   (no longer imported since the speak trigger moved to `ThreadView`'s phase-driven effect);
   `textToSpeechTest.ts`/`speechRateAnalysis.ts` are dev-only rate-calibration scratch code, not

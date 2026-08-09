@@ -1,5 +1,14 @@
-.component {
-  display: grid;
-  grid-template-rows: 1fr repeat(4, auto);
+.chatConversation {
+  display: flex;
+  flex-direction: column;
   height: calc(100dvh - var(--header-height));
+  gap: var(--size-16);
+
+  & > :first-child {
+    flex: 1 1 auto;
+  }
+
+  & > :nth-child(n + 2) {
+    flex: 0 0 auto;
+  }
 }

@@ -64,7 +64,7 @@ export default function ChatConversation({
 
   return (
     <>
-      <div className={styles.component}>
+      <div className={styles.chatConversation}>
         <ThreadView
           phase={state.phase}
           threadItems={state.threadItems}
