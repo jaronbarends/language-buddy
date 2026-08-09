@@ -2,8 +2,13 @@ import { useState } from 'react';
 
 import Feedback from '@/components/Feedback';
 import Button from '@/components/button/Button';
-import { type ChatConfig, getChatConfig } from '@/lib/chatConfig';
-import { type Language } from '@/lib/language';
+import { type ChatConfig, getChatConfig, defaultStarter } from '@/lib/chatConfig';
+import {
+  languageLevels,
+  type Language,
+  type LanguageLevelName,
+  type LanguageLevel,
+} from '@/lib/language';
 import { type SupportedLanguageVoices } from '@/lib/language';
 import { type Starter } from '@/lib/scenarios';
 import { freeformChatWithAIStart, freeformChatWithUserStart } from '@/lib/scenarios';
@@ -17,7 +22,9 @@ import styles from './SetupForm.module.css';
 type SetupFormProps = {
   languages: Language[];
   selectedLanguage: Language;
+  selectedLevel: LanguageLevel;
   onChangeLanguage: (language: Language) => void;
+  onChangeLevel: (levelName: LanguageLevelName) => void;
   onStartSession: (chatConfig: ChatConfig) => void;
   speechSupportIsChecked: boolean;
   supportedLanguageVoices: SupportedLanguageVoices;
@@ -26,13 +33,20 @@ type SetupFormProps = {
 export default function SetupForm({
   languages,
   selectedLanguage,
+  selectedLevel,
   onStartSession,
   onChangeLanguage,
+  onChangeLevel,
   speechSupportIsChecked,
   supportedLanguageVoices,
 }: SetupFormProps) {
-  const [starter, setStarter] = useState<Starter>('ai');
+  const [starter, setStarter] = useState<Starter>(defaultStarter);
   const speechRecognitionIsSupportedClientSide = useSpeechRecognitionIsSupported();
+
+  const levelOptions: SegmentedControlOption<LanguageLevelName>[] = languageLevels.map((level) => ({
+    label: level.name,
+    value: level.name,
+  }));
 
   const starterOptions: SegmentedControlOption<Starter>[] = [
     { label: 'AI should start', value: 'ai' },
@@ -47,6 +61,13 @@ export default function SetupForm({
         onChangeLanguage={onChangeLanguage}
         supportedLanguageVoices={supportedLanguageVoices}
         speechSupportIsChecked={speechSupportIsChecked}
+      />
+      <SegmentedControl
+        groupName="level"
+        groupLabel="What level?"
+        options={levelOptions}
+        selectedValue={selectedLevel.name}
+        onSelect={onChangeLevel}
       />
       <SegmentedControl
         groupName="starter"
@@ -79,7 +100,7 @@ export default function SetupForm({
     evt.preventDefault();
 
     const scenario = starter === 'ai' ? freeformChatWithAIStart : freeformChatWithUserStart;
-    const chatConfig = getChatConfig(selectedLanguage, scenario);
+    const chatConfig = getChatConfig(selectedLanguage, selectedLevel, scenario);
 
     onStartSession(chatConfig);
   }
