@@ -1,16 +1,13 @@
-import type { Language } from '@/lib/language';
-
-// const languageLevel = 'A1/A2';
-const languageLevel = 'B1/B2';
-// const languageLevel = 'C1/C2';
+import type { Language, LanguageLevel } from '@/lib/language';
 
 export type BaseInstruction = {
   prefix: string;
   suffix: string;
 };
 
-export function getBaseInstruction(language: Language): BaseInstruction {
+export function getBaseInstruction(language: Language, level: LanguageLevel): BaseInstruction {
   const languageTag = language.languageTag;
+  const cefrLevel = level.cefrLevel;
   const prefix = `
     ## Role/persona
   
@@ -38,7 +35,7 @@ export function getBaseInstruction(language: Language): BaseInstruction {
 
     ## Extending / overriding Behavioral rules
   
-    - Answer in ${languageTag}} at language level ${languageLevel}, even if addressed in another language.
+    - Answer in ${languageTag} at language level ${cefrLevel}, even if addressed in another language.
     - Stay consistent with what you said earlier.
     - Don't break character or refer to yourself as AI.
 

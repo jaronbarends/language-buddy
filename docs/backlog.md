@@ -35,6 +35,13 @@ decisions.md, "Error recovery implemented"). No Retry action, no fatal/retryable
 differentiation. Deferred rather than built against a guess of which errors are actually
 transient.
 
+### Expert (C1/C2) language level
+
+**Postponed:** 2026-08-10 — see decisions.md ("Language level picker added").
+The language level picker ships with only Beginner (A1/A2) and Intermediate (B1/B2). A third
+`Expert`/C1/C2 entry was drafted (type union + `languageLevels` array) but pulled back out before
+committing — deliberately postponed pending its own manual verification pass, not forgotten.
+
 ### Predefined-scenario-picks-its-own-starter setup mode ("mode 2")
 
 **Postponed:** 2026-07-30 — see decisions.md.
@@ -53,7 +60,9 @@ rather than dropping it.
 - **listening-timeout value under reconsideration (2026-08-02)** — see decisions.md, "Reply-phase
   UX flagged for redesign." May be dropped entirely rather than built.
 - open app with vocab suggestion of the day
-- be able to choose language level
+- ~~be able to choose language level~~ — **resolved 2026-08-10**: Beginner/Intermediate picker
+  added in `SetupForm`, CEFR level threaded into the AI system instruction (see decisions.md,
+  "Language level picker added").
 - let app assert language level
 - safari takes some time to start listening the first time after it requests permission. Can we ask for permission beforehand?
 - troubleshooting

@@ -2,8 +2,12 @@
 import { useState, useEffect } from 'react';
 
 import { type ChatConfig } from '@/lib/chatConfig';
-import { type Language, type LanguageVoice } from '@/lib/language';
-import { type SupportedLanguageVoices } from '@/lib/language';
+import { LanguageLevelName, type Language, type LanguageVoice } from '@/lib/language';
+import {
+  type SupportedLanguageVoices,
+  type LanguageLevel,
+  getLanguageLevelByName,
+} from '@/lib/language';
 import { supportedLanguages } from '@/lib/languages';
 import { initSpeech } from '@/lib/textToSpeech';
 
@@ -13,14 +17,16 @@ import ChatSetup from './chatSetup/ChatSetup';
 type ContainerState = { status: 'setup' } | { status: 'conversation'; chatConfig: ChatConfig };
 
 export default function ChatContainer() {
-  const initialLanguage = getInitialLanguage();
   const [containerState, setContainerState] = useState<ContainerState>({ status: 'setup' });
+  const initialLanguage = getInitialLanguage();
   const [language, setLanguage] = useState<Language>(initialLanguage);
   const [speechSupportIsChecked, setSpeechSupportIsChecked] = useState<boolean>(false);
   const [speechIsSupported, setSpeechIsSupported] = useState<boolean>(false);
   const [supportedLanguageVoices, setSupportedLanguageVoices] = useState<SupportedLanguageVoices>(
     {}
   );
+  const initialLevel: LanguageLevel = getLanguageLevelByName('Intermediate');
+  const [level, setLevel] = useState<LanguageLevel>(initialLevel);
 
   useEffect(() => {
     initSpeech(handleSpeechInitSuccess, handleSpeechInitFail);
@@ -34,10 +40,12 @@ export default function ChatContainer() {
         <ChatSetup
           languages={supportedLanguages}
           selectedLanguage={language}
+          selectedLevel={level}
           speechSupportIsChecked={speechSupportIsChecked}
           supportedLanguageVoices={supportedLanguageVoices}
           onStartSession={handleSessionStart}
           onChangeLanguage={setLanguage}
+          onChangeLevel={handleChangeLevel}
         />
       : <ChatConversation
           onEndSession={handleSessionEnd}
@@ -94,6 +102,11 @@ export default function ChatContainer() {
     }
     // should never happen, just return the first
     return supportedLanguages[0];
+  }
+
+  function handleChangeLevel(name: LanguageLevelName) {
+    const level = getLanguageLevelByName(name);
+    setLevel(level);
   }
 }
 

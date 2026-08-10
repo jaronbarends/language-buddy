@@ -1,6 +1,6 @@
 // src/lib/chatConfig.ts
 import { getBaseInstruction } from '@/lib/getBaseInstruction';
-import type { Language } from '@/lib/language';
+import type { Language, LanguageLevel } from '@/lib/language';
 import type { Scenario, Starter } from '@/lib/scenarios';
 
 export type ChatConfig = {
@@ -9,13 +9,19 @@ export type ChatConfig = {
   starter: Starter;
 };
 
-export function getChatConfig(language: Language, scenario: Scenario): ChatConfig {
+export const defaultStarter: Starter = 'ai';
+
+export function getChatConfig(
+  language: Language,
+  languageLevel: LanguageLevel,
+  scenario: Scenario
+): ChatConfig {
   if (!isValidLanguageTag(language.languageTag)) {
     throw new Error(
       `Language tag ${language.languageTag} is not valid. Should look like 'en' or 'en-US'`
     );
   }
-  const baseInstruction = getBaseInstruction(language);
+  const baseInstruction = getBaseInstruction(language, languageLevel);
   const systemInstruction = `${baseInstruction.prefix} ${scenario.instruction} ${baseInstruction.suffix}`;
 
   return {

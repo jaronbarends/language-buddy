@@ -1,8 +1,9 @@
 .chatConversation {
   display: flex;
   flex-direction: column;
-  height: calc(100dvh - var(--header-height));
   gap: var(--size-16);
+  padding-bottom: var(--size-16);
+  height: calc(100dvh - var(--header-height));
 
   & > :first-child {
     flex: 1 1 auto;
