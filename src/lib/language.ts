@@ -14,12 +14,13 @@ export type LanguageLevel = {
   cefrLevel: string;
 };
 
-export const languageLevels: LanguageLevel[] = [
+export const languageLevels = [
   { name: 'Beginner', cefrLevel: 'A1/A2' },
   { name: 'Intermediate', cefrLevel: 'B1/B2' },
-];
+] as const satisfies readonly LanguageLevel[];
 
 export function getLanguageLevelByName(name: LanguageLevelName): LanguageLevel {
   const level = languageLevels.find((l) => l.name === name);
+  // fallback; should never happen
   return level || languageLevels[0];
 }

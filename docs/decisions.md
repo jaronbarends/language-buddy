@@ -1720,3 +1720,66 @@ type belongs in `scenarios.ts` rather than in the form component that merely let
 config extracted into src/lib" (2026-07-28) and "Freeform chat modeled as two explicit `Scenario`
 objects" (2026-07-30) above — those entries are left as originally written; current code uses
 `starter`/`Starter`.
+
+---
+
+## Language level picker added (2026-08-10)
+
+### User picks Beginner/Intermediate; CEFR level threaded into the system instruction
+
+**Date:** 2026-08-10
+**Decision:** New `LanguageLevelName`/`LanguageLevel`/`languageLevels`/`getLanguageLevelByName` in
+`src/lib/language.ts` (commit `533dd5a`). `languageLevels` holds two entries: Beginner (CEFR
+`A1/A2`) and Intermediate (CEFR `B1/B2`). `getBaseInstruction(language, level)` and
+`getChatConfig(language, scenario, languageLevel)` both now take a `LanguageLevel`, and
+`level.cefrLevel` is written directly into the AI's system instruction ("Answer in
+`${languageTag}` at language level `${cefrLevel}`"). `ChatContainer` owns `level` state, defaulting
+to Intermediate via `getLanguageLevelByName('Intermediate')`, and passes `selectedLevel`/
+`onChangeLevel` down through `ChatSetup` → `SetupForm`, which renders the options as a
+`SegmentedControl` built from `languageLevels.map(...)`.
+**Rationale:** Not previously scoped as a scheduled backlog item — it existed only as two loose
+"ideas to be decided upon" (`be able to choose language level`, `let app assert language level`)
+and was picked up and built directly, outside the usual backlog.md → status.md → decisions.md
+sequencing. Goal is letting conversations run at different proficiency levels rather than always
+targeting the one CEFR band the original hardcoded instruction assumed.
+**Manual verification, not automated:** CEFR level was manually tested and confirmed to change
+model behavior meaningfully between Beginner and Intermediate. No automated evaluation exists yet
+to catch a regression here (consistent with the project's known-weak-spot framing for LLM-based
+behavior — see CLAUDE.md).
+**Scope decision — Expert (C1/C2) postponed, not shipped:** A third level, `Expert`/C1/C2, was
+drafted locally (added to the type union and the `languageLevels` array, which would have made it
+immediately selectable in the UI since `SetupForm` maps over the full array) but pulled back out
+before committing. Decided to ship with only Beginner/Intermediate for now and postpone the C1/C2
+question, rather than exposing a picker option that hasn't had its own manual verification pass.
+`languageLevels` stays a closed two-entry array until that decision is revisited.
+**Consequence for backlog.md:** "be able to choose language level" is resolved by this entry.
+"let app assert language level" is a different, still-open feature (the app inferring/adjusting
+level itself, rather than the user picking it) — unaffected by this entry.
+**Status:** Done — `languageLevels`/picker/system-instruction wiring implemented and committed
+(`533dd5a`). Expert/C1/C2 explicitly deferred, not scaffolded in code.
+
+### Data/type co-location rule: closed-union data stays with its type; open-ended lists get their own file
+
+**Date:** 2026-08-10
+**Decision:** `LanguageLevel`/`LanguageLevelName`/`languageLevels`/`getLanguageLevelByName` live
+together in `language.ts` (added in PR #20), rather than splitting the data into a separate
+`languageLevels.ts` the way `languages.ts` was split from `language.ts` on 2026-07-30.
+**Rationale:** The 2026-07-30 split of `languages.ts` from `language.ts` was based on "the list is
+config-like data, not a type definition" — but that reasoning applies specifically to open-ended
+data: `Language` is an object shape with no closed set of valid values, so `supportedLanguages` can
+grow independently of the type and belongs in its own file. `LanguageLevelName`, by contrast, is a
+closed string-literal union defined in `language.ts` itself, and `languageLevels` is that union's
+complete enumeration as runtime data — the array can't drift from the type without one telling you
+the other broke. General rule going forward: if a file defines a closed string-literal union and an
+array is that union's complete enumeration as data, keep them in the same file. If a file only
+defines an open object shape, the list of instances is a separate, extensible concern and belongs in
+its own file, mirroring the `languages.ts`/`language.ts` split.
+**Known caveat:** this treats `LanguageLevelName` as closed for good. If levels become
+user-configurable, or a third tier (e.g. A1, C1/C2) is added post-MVP such that the set no longer
+feels fixed, revisit — `languageLevels` should move out to its own file at that point, same as
+`languages.ts` did. (See the "Expert (C1/C2) postponed" scope decision in the entry above — that
+tier is exactly the case that would trigger this revisit.)
+**Manual verification note:** CEFR level was manually tested and confirmed to change model behavior
+meaningfully between Beginner and Intermediate — no automated evaluation exists yet to catch
+regressions here.
+**Status:** Done — reflects current file layout as of PR #20; no code change made by this entry.

@@ -1,6 +1,6 @@
 # Project status
 
-**Last updated:** 2026-08-09
+**Last updated:** 2026-08-10
 **Current phase:** Early build. Concept locked (scenario-library-based conversational sparring
 partner, Norwegian, multi-turn sessions + async structured evaluation). MVP scoping in progress;
 Spikes 1–4 all complete. AI provider decided (Gemini). State machine now runs the full happy path
@@ -63,6 +63,12 @@ aria-live) remains backlog, not scheduled.
 `aiHasFirstTurn: boolean` (on `Scenario`/`ChatConfig`) and locally-declared `Starter` type (in
 `SetupForm.tsx`) tracked the same datapoint; `Scenario.starter: Starter` is now the single source,
 with `Starter` exported from `scenarios.ts`.
+**Language level picker added (2026-08-10, see decisions.md):** not a previously-scoped backlog
+item — built directly from two loose backlog ideas. Users pick Beginner (CEFR A1/A2) or
+Intermediate (CEFR B1/B2) in the setup screen (`SetupForm`'s new `SegmentedControl`, defaulting to
+Intermediate); the selected level's `cefrLevel` is threaded through `getChatConfig`/
+`getBaseInstruction` into the AI's system instruction. A third level (Expert/C1/C2) was drafted
+then pulled back out before committing — deliberately postponed, not shipped.
 
 ---
 
@@ -260,9 +266,16 @@ with `Starter` exported from `scenarios.ts`.
   `ChatConversation.tsx` only renders `DevHelper` when that env var is set, instead of always
   rendering it.
 - `ChatConversation.tsx` receives a `chatConfig` prop (`ChatConfig`, from `src/lib/chatConfig.ts`)
-  built via `getChatConfig(language, scenario)` — built in `ChatSetup.tsx` now, not `page.tsx` (see
-  "Setup screen" bullet above; still only the two freeform-chat scenarios, not the scenario
-  library, per decisions.md, 2026-07-28/07-30).
+  built via `getChatConfig(language, scenario, languageLevel)` — built in `ChatSetup.tsx` now, not
+  `page.tsx` (see "Setup screen" bullet above; still only the two freeform-chat scenarios, not the
+  scenario library, per decisions.md, 2026-07-28/07-30).
+- **Language level picker (2026-08-10, see decisions.md):** `language.ts` exports
+  `LanguageLevelName`/`LanguageLevel`/`languageLevels`/`getLanguageLevelByName`. `languageLevels`
+  holds two entries — Beginner (`A1/A2`), Intermediate (`B1/B2`); Expert (`C1/C2`) was drafted then
+  deliberately left out. `ChatContainer` owns `level` state (default: Intermediate), passed as
+  `selectedLevel`/`onChangeLevel` through `ChatSetup` → `SetupForm`, rendered as a
+  `SegmentedControl`. `level.cefrLevel` flows into `getChatConfig` → `getBaseInstruction`, which
+  writes it directly into the AI's system instruction.
 
 ## What's decided
 
@@ -376,6 +389,11 @@ with `Starter` exported from `scenarios.ts`.
   "Visual/UI design phase sequenced after core loop" and the new "Visual/UI design pass" section).
   `ErrorArea` now uses `Feedback` too (2026-08-09, see decisions.md). A dedicated accessibility pass
   is not part of this pass — still open (see "What's open" below).
+- **Language level: user can pick Beginner or Intermediate (2026-08-10, implemented)** — not a
+  scoped backlog item, built directly (see decisions.md). CEFR level is threaded into the AI's
+  system instruction; manually confirmed to change model behavior meaningfully between the two
+  levels, no automated check exists yet. Expert (C1/C2) deliberately postponed, not scaffolded in
+  code (see decisions.md).
 
 ## What's open
 
