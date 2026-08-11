@@ -28,7 +28,7 @@ export default function ChatContainer() {
   );
   const initialLevel: LanguageLevel = getLanguageLevelByName('Intermediate');
   const [level, setLevel] = useState<LanguageLevel>(initialLevel);
-  const initialScenario = getInitialFreeformScenario();
+  const initialScenario = getInitialScenario();
   const [scenario, setScenario] = useState<Scenario>(initialScenario);
 
   useEffect(() => {
@@ -111,7 +111,7 @@ export default function ChatContainer() {
     return supportedLanguages[0];
   }
 
-  function getInitialFreeformScenario(): Scenario {
+  function getInitialScenario(): Scenario {
     const initiallySelectedScenario = freeformScenarios.find(
       (scenario) => scenario.initiallySelected
     );

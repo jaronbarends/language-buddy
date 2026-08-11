@@ -76,9 +76,7 @@ export default function SetupForm({
         groupName="starter"
         groupLabel="Who should start the conversation?"
         options={starterOptions}
-        // selectedValue={starter}
         selectedValue={selectedScenario.starter}
-        // onSelect={setStarter}
         onSelect={handleSelectFreeformScenario}
       />
       {speechSupportIsChecked && !speechRecognitionIsSupportedClientSide && (

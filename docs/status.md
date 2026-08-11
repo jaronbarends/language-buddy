@@ -69,6 +69,20 @@ Intermediate (CEFR B1/B2) in the setup screen (`SetupForm`'s new `SegmentedContr
 Intermediate); the selected level's `cefrLevel` is threaded through `getChatConfig`/
 `getBaseInstruction` into the AI's system instruction. A third level (Expert/C1/C2) was drafted
 then pulled back out before committing — deliberately postponed, not shipped.
+**Freeform scenarios generalized into an array; scenario-driven opening hint added (2026-08-11, see
+decisions.md):** `scenarios.ts` now exports `freeformScenarios: Scenario[]` (the two freeform
+scenario objects, now private consts) instead of exporting `freeformChatWithAIStart`/
+`freeformChatWithUserStart` individually. `Scenario` gains `initiallySelected?: boolean` (set on the
+AI-starts variant) and `openingHint?: string` (set only on the user-starts variant — "Ask a
+question or name a topic you want to discuss"). `ChatContainer` now owns `scenario` state, seeded
+via a new `getInitialScenario()` that finds the `initiallySelected` entry in `freeformScenarios`;
+`ChatSetup`/`SetupForm` receive it as `freeformScenarios`/`selectedScenario`/`onChangeScenario`
+props instead of `SetupForm` holding its own local `starter` state. `openingHint`, when set on the
+selected scenario, is threaded through `ChatContainer` → `ChatConversation` → `ThreadView` and
+rendered as a new `Feedback type="info"` banner at the top of the thread when present. The
+prop/state name is deliberately `selectedScenario`, not `selectedFreeformScenario` — anticipated to
+hold either a freeform or a future closed scenario once closed scenarios exist, which will need a
+different selection mechanism (see backlog.md, "Predefined-scenario-picks-its-own-starter").
 
 ---
 
@@ -89,11 +103,15 @@ then pulled back out before committing — deliberately postponed, not shipped.
     per `Language` in `languages`, calls `onChangeLanguage` on change.
   - `languages.ts` (`src/lib/languages.ts`) — `supportedLanguages: Language[]`: Dutch (`nl-NL`),
     Norwegian Bokmål (`nb-NO`).
-  - `freeformChatWithAIStart` / `freeformChatWithUserStart` (`src/lib/scenarios.ts`) — two
-    `Scenario` objects outside the `scenarios` array, differing in `title`, `instruction` text, and
-    `starter`. `Starter` (`'ai' | 'user'`) is defined in `scenarios.ts` (renamed from
-    `aiHasFirstTurn: boolean`, 2026-08-09, formerly duplicated as a local type in `SetupForm.tsx` —
-    see decisions.md).
+  - `freeformScenarios` (`src/lib/scenarios.ts`) — a `Scenario[]` holding two private-const
+    `Scenario` objects (`freeformChatWithAIStart`/`freeformChatWithUserStart`, no longer
+    individually exported as of 2026-08-11, see decisions.md) outside the `scenarios` array,
+    differing in `title`, `instruction` text, `starter`, and (AI-starts variant only)
+    `initiallySelected`/(user-starts variant only) `openingHint`. `Starter` (`'ai' | 'user'`) is
+    defined in `scenarios.ts` and imported by `SetupForm.tsx` (renamed from `aiHasFirstTurn:
+    boolean`, 2026-08-09 — see decisions.md). `ChatContainer` owns the selected scenario as
+    `scenario` state (prop name `selectedScenario` downstream), not `SetupForm` — see "Freeform
+    scenarios generalized into an array" above.
   - `ChatConversation.tsx` — renamed from `ChatClient.tsx`, moved to its own folder
     (`src/app/chat/chatConversation/`). Now receives `chatConfig` and `onEndSession` as props (no
     longer owns scenario selection). Start-of-chat is triggered by a mount `useEffect` (guarded by
@@ -361,8 +379,12 @@ then pulled back out before committing — deliberately postponed, not shipped.
   `ChatConversation`. v0 builds only the "freeform chat" case (see decisions.md and "Setup screen"
   bullet above).
 - **Freeform chat = two explicit `Scenario` objects, not in the `scenarios` array (2026-07-30,
-  implemented)** — user-starts/AI-starts variants, imported directly by `ChatSetup`, reusing the
-  existing `Scenario` type and instruction text unchanged (see decisions.md).
+  implemented)** — user-starts/AI-starts variants, reusing the existing `Scenario` type and
+  instruction text unchanged (see decisions.md). **Update (2026-08-11):** the two objects are now
+  private consts exported together as `freeformScenarios: Scenario[]`, and `ChatContainer` (not
+  `ChatSetup`/`SetupForm`) owns which one is selected, as `selectedScenario` — naming chosen to
+  anticipate closed scenarios reusing the same state slot later (see decisions.md, "Freeform
+  scenarios generalized into an array").
 - **New `languages.ts` config file, separate from `language.ts`'s `Language` type (2026-07-30,
   implemented)** (see decisions.md).
 - **`chatReducer` scope narrowed to conversation-only states; `END_SESSION` removed (2026-07-30,
