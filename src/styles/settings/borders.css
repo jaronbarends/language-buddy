@@ -4,7 +4,7 @@
 
   /* semantic variables */
 
-  --border-width-default: var(--border-width-2);
+  --border-default: var(--border-width-2) solid;
   --focus-outline-width: var(--border-width-2);
   --focus-outline-offset: var(--size-2);
 

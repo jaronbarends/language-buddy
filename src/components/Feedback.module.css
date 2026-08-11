@@ -4,11 +4,17 @@
   align-items: center;
   gap: var(--size-16);
   border-radius: var(--radius-8);
-  padding: var(--size-8) var(--size-16);
+  border: var(--border-default) currentcolor;
+  padding: var(--size-16);
   line-height: var(--line-height-body-tight);
 }
 
 .error {
   color: var(--color-text-error);
   background-color: var(--color-bg-error);
+}
+
+.info {
+  color: var(--color-text-info);
+  background-color: var(--color-bg-info);
 }

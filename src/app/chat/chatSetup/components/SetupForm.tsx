@@ -1,8 +1,6 @@
-import { useState } from 'react';
-
 import Feedback from '@/components/Feedback';
 import Button from '@/components/button/Button';
-import { type ChatConfig, getChatConfig, defaultStarter } from '@/lib/chatConfig';
+import { type ChatConfig, getChatConfig } from '@/lib/chatConfig';
 import {
   languageLevels,
   type Language,
@@ -11,7 +9,7 @@ import {
 } from '@/lib/language';
 import { type SupportedLanguageVoices } from '@/lib/language';
 import { type Starter } from '@/lib/scenarios';
-import { freeformChatWithAIStart, freeformChatWithUserStart } from '@/lib/scenarios';
+import { type Scenario } from '@/lib/scenarios';
 import { useSpeechRecognitionIsSupported } from '@/lib/speechRecognition';
 
 import LanguagePicker from './LanguagePicker';
@@ -22,25 +20,30 @@ import styles from './SetupForm.module.css';
 type SetupFormProps = {
   languages: Language[];
   selectedLanguage: Language;
-  selectedLevel: LanguageLevel;
   onChangeLanguage: (language: Language) => void;
+  selectedLevel: LanguageLevel;
   onChangeLevel: (levelName: LanguageLevelName) => void;
-  onStartSession: (chatConfig: ChatConfig) => void;
+  freeformScenarios: Scenario[];
+  selectedScenario: Scenario;
+  onChangeScenario: (scenario: Scenario) => void;
   speechSupportIsChecked: boolean;
   supportedLanguageVoices: SupportedLanguageVoices;
+  onStartSession: (chatConfig: ChatConfig) => void;
 };
 
 export default function SetupForm({
   languages,
   selectedLanguage,
   selectedLevel,
+  freeformScenarios,
+  selectedScenario,
   onStartSession,
   onChangeLanguage,
   onChangeLevel,
+  onChangeScenario,
   speechSupportIsChecked,
   supportedLanguageVoices,
 }: SetupFormProps) {
-  const [starter, setStarter] = useState<Starter>(defaultStarter);
   const speechRecognitionIsSupportedClientSide = useSpeechRecognitionIsSupported();
 
   const levelOptions: SegmentedControlOption<LanguageLevelName>[] = languageLevels.map((level) => ({
@@ -73,8 +76,8 @@ export default function SetupForm({
         groupName="starter"
         groupLabel="Who should start the conversation?"
         options={starterOptions}
-        selectedValue={starter}
-        onSelect={setStarter}
+        selectedValue={selectedScenario.starter}
+        onSelect={handleSelectFreeformScenario}
       />
       {speechSupportIsChecked && !speechRecognitionIsSupportedClientSide && (
         <Feedback type="error">
@@ -96,11 +99,20 @@ export default function SetupForm({
     </form>
   );
 
+  function handleSelectFreeformScenario(starter: Starter) {
+    const scenario = freeformScenarios.find((s) => s.starter === starter);
+    if (scenario) {
+      onChangeScenario(scenario);
+    } else {
+      //falback; should never happen
+      onChangeScenario(freeformScenarios[0]);
+    }
+  }
+
   function handleSubmit(evt: React.SubmitEvent<HTMLFormElement>) {
     evt.preventDefault();
 
-    const scenario = starter === 'ai' ? freeformChatWithAIStart : freeformChatWithUserStart;
-    const chatConfig = getChatConfig(selectedLanguage, selectedLevel, scenario);
+    const chatConfig = getChatConfig(selectedLanguage, selectedLevel, selectedScenario);
 
     onStartSession(chatConfig);
   }

@@ -1783,3 +1783,67 @@ tier is exactly the case that would trigger this revisit.)
 meaningfully between Beginner and Intermediate — no automated evaluation exists yet to catch
 regressions here.
 **Status:** Done — reflects current file layout as of PR #20; no code change made by this entry.
+
+---
+
+## Freeform scenarios generalized into an array; scenario-driven opening hint (2026-08-11)
+
+### `Feedback` component gains an `info` type
+
+**Date:** 2026-08-11
+**Decision:** `Feedback`'s `type` prop widens from the single hardcoded `'error'` to
+`FeedbackType = 'error' | 'info'`, with a `feedbackIconNames: Record<FeedbackType, IconName>` map
+picking the icon per type (`info` → new `FaCircleInfo`, registered in `getIconByName.ts`). New
+tokens `--color-text-info`/`--color-bg-info` (the latter aliasing `--color-bg-default`,
+`--color-text-info` aliasing a new `--color-text-secondary-subtle`) back the `info` variant's
+styling in `Feedback.module.css`.
+**Rationale:** First concrete need for a non-error banner: the new per-scenario opening hint (see
+below). `'warning'`/`'success'` remain un-added, per the type's original comment, until an actual
+use case exists.
+**Status:** Done.
+
+### `Scenario.openingHint`: shown in `ThreadView` when the selected scenario has one
+
+**Date:** 2026-08-11
+**Decision:** New optional `Scenario.openingHint?: string`. `ChatContainer` reads
+`scenario.openingHint` off the currently selected scenario and threads it down as a prop
+(`ChatContainer` → `ChatConversation` → `ThreadView`); `ThreadView` renders it as an
+`<Feedback type="info">` banner at the top of the thread only when present
+(`{openingHint && <Feedback ...>}`). Only `freeformChatWithUserStart` sets one ("Ask a question or
+name a topic you want to discuss") — `freeformChatWithAIStart` has none, since the AI opens and no
+hint is needed.
+**Rationale:** Tells the user what's expected of them when they're the one who has to open the
+conversation, without forcing every scenario to have one — scenarios where the AI opens, or where
+the situation itself makes the first move obvious, can simply omit it.
+**Status:** Done.
+
+### Freeform scenarios exported as `freeformScenarios: Scenario[]`; `ChatContainer` owns `selectedScenario`
+
+**Date:** 2026-08-11
+**Decision:** `freeformChatWithAIStart`/`freeformChatWithUserStart` (see "Freeform chat modeled as
+two explicit `Scenario` objects," 2026-07-30) are no longer individually exported — they become
+private consts in `scenarios.ts`, and a new `freeformScenarios: Scenario[] = [freeformChatWithAIStart,
+freeformChatWithUserStart]` is exported instead. `Scenario` also gains `initiallySelected?: boolean`
+(set on the AI-starts variant). `ChatContainer` now owns `scenario` state, seeded by a new
+`getInitialScenario()` that finds the `freeformScenarios` entry with `initiallySelected: true`
+(falling back to `freeformScenarios[0]` — "should never happen" per its comment). `ChatSetup`/
+`SetupForm` receive `freeformScenarios`/`selectedScenario`/`onChangeScenario` as props; `SetupForm`
+no longer holds its own local `starter` state (the `useState<Starter>` + `defaultStarter` import are
+removed) — the AI/user `SegmentedControl` now reads `selectedScenario.starter` directly, and its
+`onSelect` (`handleSelectFreeformScenario`) looks up the matching scenario in `freeformScenarios` by
+`starter` and calls `onChangeScenario`. `getChatConfig` is called with `selectedScenario` on submit,
+same as before.
+**Rationale:** Lifting scenario selection out of `SetupForm`'s local state and into `ChatContainer`
+(alongside `language`/`level`, which already lived there) makes scenario state consistent with the
+other setup fields, and having a real array (rather than two named consts referenced directly) means
+`getInitialScenario()`/`handleSelectFreeformScenario` can be written generically instead of as an
+`if (starter === 'ai') ... else ...` branch.
+**Naming is deliberate — `selectedScenario`, not `selectedFreeformScenario`:** anticipates that once
+closed scenarios exist (see "Predefined-scenario-picks-its-own-starter setup mode," backlog.md,
+postponed 2026-07-30), `ChatContainer`'s selected-scenario state may hold either a freeform or a
+closed `Scenario`, picked through different UI (closed scenarios pick their own starter, so
+wouldn't go through the `starter`-based `SegmentedControl` lookup `SetupForm` uses today). The prop
+is named for what it will need to mean later, not just what it means today. This does not itself
+implement closed-scenario selection — no discriminant exists yet between freeform and closed
+`Scenario` objects at the type level (same known gap noted in the 2026-07-30 entry).
+**Status:** Done.

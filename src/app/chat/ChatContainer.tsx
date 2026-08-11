@@ -9,6 +9,7 @@ import {
   getLanguageLevelByName,
 } from '@/lib/language';
 import { supportedLanguages } from '@/lib/languages';
+import { freeformScenarios, type Scenario } from '@/lib/scenarios';
 import { initSpeech } from '@/lib/textToSpeech';
 
 import ChatConversation from './chatConversation/ChatConversation';
@@ -27,6 +28,8 @@ export default function ChatContainer() {
   );
   const initialLevel: LanguageLevel = getLanguageLevelByName('Intermediate');
   const [level, setLevel] = useState<LanguageLevel>(initialLevel);
+  const initialScenario = getInitialScenario();
+  const [scenario, setScenario] = useState<Scenario>(initialScenario);
 
   useEffect(() => {
     initSpeech(handleSpeechInitSuccess, handleSpeechInitFail);
@@ -40,17 +43,21 @@ export default function ChatContainer() {
         <ChatSetup
           languages={supportedLanguages}
           selectedLanguage={language}
+          onChangeLanguage={setLanguage}
           selectedLevel={level}
+          onChangeLevel={handleChangeLevel}
+          freeformScenarios={freeformScenarios}
+          selectedScenario={scenario}
+          onChangeScenario={setScenario}
           speechSupportIsChecked={speechSupportIsChecked}
           supportedLanguageVoices={supportedLanguageVoices}
           onStartSession={handleSessionStart}
-          onChangeLanguage={setLanguage}
-          onChangeLevel={handleChangeLevel}
         />
       : <ChatConversation
-          onEndSession={handleSessionEnd}
           chatConfig={containerState.chatConfig}
           languageVoice={languageVoice}
+          openingHint={scenario.openingHint}
+          onEndSession={handleSessionEnd}
         />
       }
     </>
@@ -102,6 +109,17 @@ export default function ChatContainer() {
     }
     // should never happen, just return the first
     return supportedLanguages[0];
+  }
+
+  function getInitialScenario(): Scenario {
+    const initiallySelectedScenario = freeformScenarios.find(
+      (scenario) => scenario.initiallySelected
+    );
+    if (initiallySelectedScenario) {
+      return initiallySelectedScenario;
+    }
+    // should never happen, just return the first
+    return freeformScenarios[0];
   }
 
   function handleChangeLevel(name: LanguageLevelName) {

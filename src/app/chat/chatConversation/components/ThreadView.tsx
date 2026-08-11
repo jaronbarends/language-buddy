@@ -7,6 +7,7 @@ import {
   type ThreadItem,
   type ChatPhase,
 } from '@/app/chat/chatConversation/chatReducer';
+import Feedback from '@/components/Feedback';
 import Loader from '@/components/Loader';
 import { type LanguageVoice } from '@/lib/language';
 import { cancelSpeech, speakMessage } from '@/lib/textToSpeech';
@@ -19,6 +20,7 @@ type threadItemsProps = {
   phase: ChatPhase;
   threadItems: ThreadItem[];
   languageVoice: LanguageVoice;
+  openingHint: string | undefined;
   onAISpeechEnd: () => void;
 };
 
@@ -26,6 +28,7 @@ export default function ThreadView({
   phase,
   threadItems,
   languageVoice,
+  openingHint,
   onAISpeechEnd,
 }: threadItemsProps) {
   const threadViewRef = useRef<HTMLDivElement>(null);
@@ -85,6 +88,7 @@ export default function ThreadView({
 
   return (
     <div className={styles.threadView} ref={threadViewRef}>
+      {openingHint && <Feedback type="info">{openingHint}</Feedback>}
       <ol className={styles.threadItems}>
         {threadItems.map((item, idx) => {
           return (

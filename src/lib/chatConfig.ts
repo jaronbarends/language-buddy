@@ -1,4 +1,3 @@
-// src/lib/chatConfig.ts
 import { getBaseInstruction } from '@/lib/getBaseInstruction';
 import type { Language, LanguageLevel } from '@/lib/language';
 import type { Scenario, Starter } from '@/lib/scenarios';
@@ -8,8 +7,6 @@ export type ChatConfig = {
   systemInstruction: string;
   starter: Starter;
 };
-
-export const defaultStarter: Starter = 'ai';
 
 export function getChatConfig(
   language: Language,

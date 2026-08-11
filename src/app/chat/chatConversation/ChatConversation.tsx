@@ -17,12 +17,14 @@ import styles from './ChatConversation.module.css';
 type ChatConversationProps = {
   chatConfig: ChatConfig;
   languageVoice: LanguageVoice;
+  openingHint: string | undefined;
   onEndSession: () => void;
 };
 
 export default function ChatConversation({
   chatConfig,
   languageVoice,
+  openingHint,
   onEndSession,
 }: ChatConversationProps) {
   const [previousInteractionId, setPreviousInteractionId] = useState<string | undefined>();
@@ -69,6 +71,7 @@ export default function ChatConversation({
           phase={state.phase}
           threadItems={state.threadItems}
           languageVoice={languageVoice}
+          openingHint={openingHint}
           onAISpeechEnd={handleAISpeechEnd}
         />
         <ErrorArea phase={state.phase} />
