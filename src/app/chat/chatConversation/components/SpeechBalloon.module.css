@@ -5,7 +5,7 @@
   padding: var(--size-12) var(--size-16);
   border-radius: var(--radius-16);
   background-color: var(--color-bg-default);
-  border: var(--border-width-default) solid var(--color-border-neutral);
+  border: var(--border-default) var(--color-border-neutral);
   font-weight: var(--font-weight-medium);
   line-height: var(--line-height-body-tight);
 }

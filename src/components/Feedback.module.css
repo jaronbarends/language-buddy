@@ -4,7 +4,8 @@
   align-items: center;
   gap: var(--size-16);
   border-radius: var(--radius-8);
-  padding: var(--size-8) var(--size-16);
+  border: var(--border-default) currentColor;
+  padding: var(--size-16);
   line-height: var(--line-height-body-tight);
 }
 

@@ -4,6 +4,8 @@ export type Scenario = {
   title: string;
   instruction: string;
   starter: Starter;
+  initiallySelected?: boolean;
+  openingHint?: string;
 };
 
 export const freeformChatWithAIStart: Scenario = {
@@ -11,13 +13,17 @@ export const freeformChatWithAIStart: Scenario = {
   instruction:
     'You are having a friendly conversation with a stranger. If you are the one starting the conversation, pick a topic suitable for a conversation that goes further than small talk.', // scenario content here
   starter: 'ai',
+  initiallySelected: true,
 };
 
 export const freeformChatWithUserStart: Scenario = {
   title: 'Freeform chat; user begins',
   instruction: 'You are having a friendly conversation with an acquaintance or a stranger.', // scenario content here
+  openingHint: 'Ask a question or name a topic you want to discuss',
   starter: 'user',
 };
+
+export const freeformScenarios: Scenario[] = [freeformChatWithAIStart, freeformChatWithUserStart];
 
 // TODO: replace with real scenario content (e.g. docs/scenarios/hiker.md)
 // once the scenario data shape itself is decided.

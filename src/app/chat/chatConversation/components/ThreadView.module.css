@@ -1,8 +1,11 @@
 .threadView {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-16);
   overflow-y: scroll;
   scrollbar-gutter: stable;
   scrollbar-color: transparent transparent;
-  border-bottom: var(--border-width-default) solid var(--color-border-neutral);
+  border-bottom: var(--border-default) var(--color-border-neutral);
   padding-block: var(--size-16);
 
   &:hover {

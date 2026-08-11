@@ -20,6 +20,7 @@ type threadItemsProps = {
   phase: ChatPhase;
   threadItems: ThreadItem[];
   languageVoice: LanguageVoice;
+  openingHint: string | undefined;
   onAISpeechEnd: () => void;
 };
 
@@ -27,6 +28,7 @@ export default function ThreadView({
   phase,
   threadItems,
   languageVoice,
+  openingHint,
   onAISpeechEnd,
 }: threadItemsProps) {
   const threadViewRef = useRef<HTMLDivElement>(null);
@@ -86,10 +88,7 @@ export default function ThreadView({
 
   return (
     <div className={styles.threadView} ref={threadViewRef}>
-      <Feedback type="info">
-        Ask a question or name a topic you want to discuss (e.g.{' '}
-        <em>Jeg vil snakke med deg om &hellip;</em>)
-      </Feedback>
+      {openingHint && <Feedback type="info">{openingHint}</Feedback>}
       <ol className={styles.threadItems}>
         {threadItems.map((item, idx) => {
           return (
