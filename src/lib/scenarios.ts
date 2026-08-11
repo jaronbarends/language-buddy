@@ -8,20 +8,20 @@ export type Scenario = {
   openingHint?: string;
 };
 
-const freeformChatWithAIStart: Scenario = {
+const freeformChatWithAIStart = {
   title: 'Freeform chat; ai begins',
   instruction:
     'You are having a friendly conversation with a stranger. If you are the one starting the conversation, pick a topic suitable for a conversation that goes further than small talk.', // scenario content here
   starter: 'ai',
   initiallySelected: true,
-};
+} as const satisfies Scenario;
 
-const freeformChatWithUserStart: Scenario = {
+const freeformChatWithUserStart = {
   title: 'Freeform chat; user begins',
   instruction: 'You are having a friendly conversation with an acquaintance or a stranger.', // scenario content here
   openingHint: 'Ask a question or name a topic you want to discuss',
   starter: 'user',
-};
+} as const satisfies Scenario;
 
 export const freeformScenarios: Scenario[] = [freeformChatWithAIStart, freeformChatWithUserStart];
 

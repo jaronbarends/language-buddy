@@ -14,10 +14,10 @@ export type FeedbackProps = {
   type: FeedbackType;
 };
 
-const feedbackIconNames: Record<FeedbackType, IconName> = {
+const feedbackIconNames = {
   error: 'error',
   info: 'info',
-};
+} as const satisfies Record<FeedbackType, IconName>;
 
 export default function Feedback({ type, children }: FeedbackProps) {
   const iconName = feedbackIconNames[type];
