@@ -7,12 +7,20 @@ when work starts.
 
 ## High priority
 
+- Add evaluation
+
 ### Mock LLM responses during dev
 
 **Added:** 2026-07-20
 **Resolved:** 2026-07-24 — see decisions.md. Small real-API spike first (Route Handler mechanics,
 response/error shapes), then mock built against that shape behind a shared interface, state machine
 wired to the mock for all UI dev.
+
+## Medium priority
+
+- add lang attribute to speech output elements
+- add Edit option
+- add icons to buttons
 
 ---
 
@@ -65,7 +73,7 @@ rather than dropping it.
   "Language level picker added").
 - let app assert language level
 - safari takes some time to start listening the first time after it requests permission. Can we ask for permission beforehand?
-- troubleshooting
+- troubleshooting section
   - error "Speech recognition service permission check has failed" op iOs: Settings → Privacy & Security → Speech Recognition — is Safari toggled on there?
   - if no speech voice found, add instructions how to add it
 - add a user-facing setting for speech rate (current rate correction, 2026-08-01, only normalizes
@@ -74,7 +82,6 @@ rather than dropping it.
 - use generation_config.thinking_level: "low" for genAI (https://ai.google.dev/gemini-api/docs/text-generation) in regular chat; omit it in evaluation
 - add cancel option to listening phase; call recognition.abort()
 - add lang attribute to speech output elements
-- add aria-live to output elements
 - once real scenarios exist in the `scenarios` array alongside the two freeform-chat `Scenario`
   objects, nothing distinguishes "this is a freeform-chat mode" from "this is a real scenario" at the
   type level — a `category`-type field may be needed (see decisions.md, 2026-07-30)
@@ -83,9 +90,8 @@ rather than dropping it.
   with no detected voice (see decisions.md, "Visual/UI design pass"). The "only use written text"
   half was already covered separately — `ThreadView` already skips speaking and calls
   `onAISpeechEnd()` directly when `languageVoice` is falsy.
-- cleanup from the TTS build (2026-08-01, see decisions.md): `AIThreadItemContent.tsx` is orphaned
   (no longer imported since the speak trigger moved to `ThreadView`'s phase-driven effect);
-  `textToSpeechTest.ts`/`speechRateAnalysis.ts` are dev-only rate-calibration scratch code, not
+- `textToSpeechTest.ts`/`speechRateAnalysis.ts` are dev-only rate-calibration scratch code, not
   imported by any production path — decide whether to delete, or keep/relocate as documentation of
   how `speechRatePairings` was derived
 - reveal ai text while being spoken. we can only approximate this. Divide text into words, then based on speech rate estimate total speaking time, use interval for showing words. create extra ChatAction ABORT_SPEECH and status abortingSpeech. that should reveal all text and dispatch AI_FINISHED_SPEAKING. ABORT_SPEECH can also be used in cleanup of useEffect that starts speech, and when we have no languageVoice. Maybe we need to add next chatAction to ABORT_SPEECH's payload to determine if it should go to user's turn, or end conversation.
