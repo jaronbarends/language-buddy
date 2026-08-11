@@ -14,11 +14,12 @@ export const supportedLanguages: Language[] = [
     languageTag: 'nb-NO',
     addition: 'Bokmål',
     initiallySelected: true,
+    openingHint: 'Jeg vil snakke med deg om …',
   },
-  // {
-  //   name: 'Non-existing',
-  //   languageTag: 'nx-NX',
-  // },
+  {
+    name: 'Non-existing',
+    languageTag: 'nx-NX',
+  },
   {
     name: 'Spanish',
     languageTag: 'es-ES',

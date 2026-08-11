@@ -55,10 +55,12 @@
   --color-text-primary-subtle: var(--color-pink-300);
   --color-text-on-primary: var(--color-white);
   --color-text-secondary: var(--color-blue-100);
+  --color-text-secondary-subtle: var(--color-blue-300);
   --color-text-on-secondary: var(--color-white);
   --color-text-neutral: var(--color-gray-100);
   --color-text-neutral-subtle: var(--color-gray-400);
   --color-text-error: var(--color-red);
+  --color-text-info: var(--color-text-secondary-subtle);
 
   /* semantic colors - background */
 
@@ -77,6 +79,7 @@
   --color-bg-neutral-subtle: var(--color-gray-950);
 
   --color-bg-error: var(--color-red-subtle);
+  --color-bg-info: var(--color-bg-default);
 
   /* semantic colors - border */
 

@@ -7,6 +7,7 @@ import {
   type ThreadItem,
   type ChatPhase,
 } from '@/app/chat/chatConversation/chatReducer';
+import Feedback from '@/components/Feedback';
 import Loader from '@/components/Loader';
 import { type LanguageVoice } from '@/lib/language';
 import { cancelSpeech, speakMessage } from '@/lib/textToSpeech';
@@ -85,6 +86,10 @@ export default function ThreadView({
 
   return (
     <div className={styles.threadView} ref={threadViewRef}>
+      <Feedback type="info">
+        Ask a question or name a topic you want to discuss (e.g.{' '}
+        <em>Jeg vil snakke med deg om &hellip;</em>)
+      </Feedback>
       <ol className={styles.threadItems}>
         {threadItems.map((item, idx) => {
           return (
