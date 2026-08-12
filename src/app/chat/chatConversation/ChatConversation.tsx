@@ -5,7 +5,14 @@ import { AIError, sendChatMessage, type AIChatResult } from '@/lib/aiService';
 import { type ChatConfig } from '@/lib/chatConfig';
 import { type LanguageVoice } from '@/lib/language';
 
-import { shouldSendReply, chatReducer, chatStartIsPending, type ChatState } from './chatReducer';
+import {
+  shouldSendReply,
+  chatReducer,
+  chatStartIsPending,
+  requestsShouldBeAborted,
+  sessionShouldEnd,
+  type ChatState,
+} from './chatReducer';
 import ControlsArea from './components/ControlsArea';
 import DevHelper from './components/DevHelper';
 import ErrorArea from './components/ErrorArea';
@@ -64,6 +71,19 @@ export default function ChatConversation({
     }
   });
 
+  useEffect(() => {
+    if (requestsShouldBeAborted(state.phase)) {
+      requestIdRef.current++;
+      abortControllerRef.current?.abort();
+    }
+  }, [state.phase]);
+
+  useEffect(() => {
+    if (sessionShouldEnd(state.phase)) {
+      onEndSession();
+    }
+  });
+
   return (
     <>
       <div className={styles.chatConversation}>
@@ -86,7 +106,8 @@ export default function ChatConversation({
           onSendRequested={handleSendRequested}
           onCancelListening={handleCancelListening}
           onSendUserMessage={handleSendUserMessage}
-          onEndSession={onEndSession}
+          onStopChat={handleStopChat}
+          onEndSessionRequested={handleEndSessionRequest}
           phase={state.phase}
         />
       </div>
@@ -148,6 +169,14 @@ export default function ChatConversation({
 
   function handleAISpeechEnd() {
     dispatch({ type: 'AI_FINISHED_SPEAKING' });
+  }
+
+  function handleStopChat() {
+    dispatch({ type: 'STOP_CHAT' });
+  }
+
+  function handleEndSessionRequest() {
+    dispatch({ type: 'END_SESSION' });
   }
 
   async function sendMessageToAI(input: string): Promise<void> {

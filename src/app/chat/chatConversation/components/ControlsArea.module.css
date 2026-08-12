@@ -2,6 +2,17 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--size-16);
+  grid-template-areas: 'primary secondary';
+
+  &:has(:nth-child(3)) {
+    grid-template-areas:
+      'primary   primary'
+      'secondary tertiary';
+  }
+
+  & :first-child {
+    grid-area: primary;
+  }
 
   @media (max-width: 29.99rem) {
     grid-template-columns: auto;

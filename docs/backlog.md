@@ -7,7 +7,10 @@ when work starts.
 
 ## High priority
 
-- Add evaluation
+- Add evaluation. **Integration point identified 2026-08-12:** the reintroduced `chatStopped` phase
+  (see status.md, "Stop chat brought back," and decisions.md) is meant to offer a "request
+  evaluation" option alongside "End this session" once evaluation exists — not designed yet, just
+  the landing spot for it.
 
 ### Mock LLM responses during dev
 

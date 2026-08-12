@@ -93,7 +93,7 @@ export default function SetupForm({
           disabled={!speechSupportIsChecked || !speechRecognitionIsSupportedClientSide}
           fontSize="large"
         >
-          Start conversation
+          Start chat
         </Button>
       </div>
     </form>

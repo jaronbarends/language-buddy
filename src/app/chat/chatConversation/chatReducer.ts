@@ -22,6 +22,8 @@ export type ChatPhase =
   | { status: 'stoppingListening'; intent: StopIntent }
   | { status: 'cancellingListening' }
   | { status: 'sendingUserReply'; transcript: string }
+  | { status: 'chatStopped' }
+  | { status: 'sessionEnded' }
   | { status: 'error'; error: AIError };
 
 export type ChatAction =
@@ -36,6 +38,8 @@ export type ChatAction =
   | { type: 'TRANSCRIPT_CREATED'; payload: { transcript: string } }
   | { type: 'TRANSCRIPT_EMPTY' }
   | { type: 'USER_MESSAGE_SENT'; payload: { message: string } }
+  | { type: 'STOP_CHAT' }
+  | { type: 'END_SESSION' }
   | { type: 'ERROR'; payload: { error: AIError } };
 
 // initial state should be { status: 'chatStartPending' }
@@ -44,6 +48,29 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
     return {
       threadItems: state.threadItems,
       phase: { status: 'error', error: action.payload.error },
+    };
+  }
+
+  if (
+    action.type === 'STOP_CHAT' &&
+    state.phase.status !== 'chatStartPending' &&
+    state.phase.status !== 'chatStopped' &&
+    state.phase.status !== 'sessionEnded'
+  ) {
+    return {
+      threadItems: state.threadItems,
+      phase: { status: 'chatStopped' },
+    };
+  }
+
+  if (
+    action.type === 'END_SESSION' &&
+    state.phase.status !== 'chatStartPending' &&
+    state.phase.status !== 'sessionEnded'
+  ) {
+    return {
+      threadItems: state.threadItems,
+      phase: { status: 'sessionEnded' },
     };
   }
 
@@ -168,6 +195,14 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         default:
           return state;
       }
+    case 'chatStopped':
+      // regular cases are handled before the main switch
+      // if we come here, nothing needs to happen
+      return state;
+    case 'sessionEnded':
+      // regular cases are handled before the main switch
+      // if we come here, nothing needs to happen
+      return state;
     case 'error':
       switch (action.type) {
         default:
@@ -229,8 +264,30 @@ export function listeningShouldBeCancelled(phase: ChatPhase): boolean {
   return phase.status === 'cancellingListening';
 }
 
+export function canStopChat(phase: ChatPhase): boolean {
+  return (
+    !userIsInInputFlow(phase) &&
+    phase.status !== 'chatStartPending' &&
+    phase.status !== 'chatStopped' &&
+    phase.status !== 'sessionEnded' &&
+    !hasError(phase)
+  );
+}
+
+export function chatHasStopped(phase: ChatPhase): boolean {
+  return phase.status === 'chatStopped';
+}
+
 export function canStopSession(phase: ChatPhase): boolean {
-  return !userIsInInputFlow(phase);
+  return (
+    !userIsInInputFlow(phase) &&
+    phase.status !== 'chatStartPending' &&
+    phase.status !== 'sessionEnded'
+  );
+}
+
+export function sessionShouldEnd(phase: ChatPhase): boolean {
+  return phase.status === 'sessionEnded';
 }
 
 export function shouldAutoScrollThread(phase: ChatPhase): boolean {
@@ -258,4 +315,8 @@ export function shouldShowCancelButton(phase: ChatPhase): boolean {
 
 export function canRequestCancel(phase: ChatPhase): boolean {
   return phase.status === 'listening';
+}
+
+export function requestsShouldBeAborted(phase: ChatPhase): boolean {
+  return phase.status === 'chatStopped' || phase.status === 'sessionEnded';
 }
