@@ -265,7 +265,7 @@ export function listeningShouldBeCancelled(phase: ChatPhase): boolean {
 }
 
 export function canStopChat(phase: ChatPhase): boolean {
-  return !userIsInInputFlow(phase) && phase.status !== 'chatStopped';
+  return !userIsInInputFlow(phase) && phase.status !== 'chatStopped' && !hasError(phase);
 }
 
 export function chatHasStopped(phase: ChatPhase): boolean {
@@ -300,10 +300,6 @@ export function userIsInInputFlow(phase: ChatPhase): boolean {
 }
 
 export function shouldShowCancelButton(phase: ChatPhase): boolean {
-  return userIsInInputFlow(phase);
-}
-
-export function shouldShowStopChatButton(phase: ChatPhase): boolean {
   return userIsInInputFlow(phase);
 }
 

@@ -1,6 +1,6 @@
 # Project status
 
-**Last updated:** 2026-08-10
+**Last updated:** 2026-08-12
 **Current phase:** Early build. Concept locked (scenario-library-based conversational sparring
 partner, Norwegian, multi-turn sessions + async structured evaluation). MVP scoping in progress;
 Spikes 1–4 all complete. AI provider decided (Gemini). State machine now runs the full happy path
@@ -83,6 +83,28 @@ rendered as a new `Feedback type="info"` banner at the top of the thread when pr
 prop/state name is deliberately `selectedScenario`, not `selectedFreeformScenario` — anticipated to
 hold either a freeform or a future closed scenario once closed scenarios exist, which will need a
 different selection mechanism (see backlog.md, "Predefined-scenario-picks-its-own-starter").
+**"Stop chat" brought back; ending a session is a dispatched action again (2026-08-12, see
+decisions.md):** `chatReducer.ts` gains two phases (`chatStopped`, `sessionEnded`) and two actions
+(`STOP_CHAT`, `END_SESSION`) — reversing the 2026-08-04 removal of `STOP_CHAT`/`chatEnded`, under new
+names and a changed two-step shape (stop, then a separate end-session step). `ControlsArea` now shows
+a "Stop chat" secondary button (`canStopChat`) alongside the existing "End session" secondary button
+(`shouldShowEndSessionButton`, renamed from `shouldShowStopButton`) wherever neither is excluded — a
+new 3-area CSS grid in `ControlsArea.module.css` lays out both when they're both visible. Once
+stopped, both secondary buttons disappear and the primary button becomes "End this session"
+(dispatches `END_SESSION`). Ending a session (from `chatStopped`, from the normal flow, and from
+`error`) is no longer a direct `onEndSession()` prop call from `ControlsArea` — it dispatches
+`END_SESSION`, and a new `ChatConversation` effect keyed on `phase.status === 'sessionEnded'` calls
+the real `onEndSession` prop as a side effect. A second new effect, keyed on `chatStopped`/
+`sessionEnded` (`requestsShouldBeAborted`), aborts any in-flight AI request via the existing
+`abortControllerRef`/`requestIdRef` stale-response guard. **Two issues caught and fixed before this
+was documented as finished, not shipped as originally written** (see decisions.md): `canStopChat`
+initially didn't exclude the `error` phase, so "Stop chat" would have rendered next to "End this
+session" during an error and silently discarded `phase.error` if clicked — fixed by excluding
+`hasError(phase)`. A `shouldShowStopChatButton` helper was added but never wired to anything —
+removed as dead code. `SetupForm`'s submit button is relabeled "Start chat" (was "Start
+conversation"), matching the new "Stop chat" naming. **Not yet built:** the `chatStopped` phase
+currently offers only "End this session" — a future iteration is meant to offer requesting an
+evaluation from there instead (see backlog.md).
 
 ---
 
@@ -132,18 +154,21 @@ different selection mechanism (see backlog.md, "Predefined-scenario-picks-its-ow
   error shape.
 - Mock chat API route (`src/app/api/aiMock/chat`), toggled via `NEXT_PUBLIC_USE_MOCK_AI`, built
   against the same `AIChatResult`/`sendChatMessage` signature as the real `/api/ai/chat` route.
-- `chatReducer.ts` — 10-state discriminated union (`chatStartPending`, `waitingForAI`,
+- `chatReducer.ts` — 12-state discriminated union (`chatStartPending`, `waitingForAI`,
   `aiTurnSpeaking`, `readyForUserStart`, `readyForUserReply`, `listening`, `stoppingListening`,
-  `cancellingListening`, `sendingUserReply`, `error`) — current names, post the 2026-08-04
-  reply-phase redesign (see decisions.md, "Reply-phase UX redesign implemented"). `listeningStopped`/
-  `readyForSendingUserReply`/`listeningTimedOut`/`chatEnded` from earlier are all gone: the first two
-  were renamed to `stoppingListening`/`sendingUserReply`, `listeningTimedOut` was superseded outright
-  (no app-enforced timeout planned), and `chatEnded` was dropped along with the `STOP_CHAT` action —
-  ending a session is now always a direct `onEndSession` prop call, not a reducer transition (see
-  decisions.md). Reducer covers the full happy-flow transitions (`chatStartPending` →
+  `cancellingListening`, `sendingUserReply`, `chatStopped`, `sessionEnded`, `error`). `listeningStopped`/
+  `readyForSendingUserReply`/`listeningTimedOut` from earlier are gone (renamed/superseded, unchanged
+  since 2026-08-04). **`chatStopped`/`sessionEnded` reintroduced 2026-08-12** (see decisions.md,
+  "Stop chat brought back") — this reverses the 2026-08-04 removal of `STOP_CHAT`/`chatEnded`: a
+  `STOP_CHAT` action (any phase except `chatStartPending`/`chatStopped`/`sessionEnded` → `chatStopped`)
+  and an `END_SESSION` action (any phase except `chatStartPending`/`sessionEnded` → `sessionEnded`,
+  reachable directly, not only via `chatStopped`) are both back, checked at the top of the reducer
+  before the phase-specific switch, same pattern as the original 2026-07-27 `STOP_CHAT` guard. Ending
+  a session is once again a dispatched action rather than a direct `onEndSession()` prop call — see
+  below. Reducer covers the full happy-flow transitions (`chatStartPending` →
   `readyForUserStart`/`waitingForAI` → `aiTurnSpeaking` → `readyForUserReply` → `listening` →
-  `waitingForAI` → ...), looping indefinitely until `onEndSession` is called from outside the
-  reducer.
+  `waitingForAI` → ...), looping until `STOP_CHAT`/`END_SESSION` is dispatched from outside that
+  happy-flow switch.
 - `ChatConversation.tsx` (Client Component, see "Setup screen" bullet above) owns the `useReducer`
   and drives the loop end-to-end: sends the transcript from real STT (`SpeechToText.tsx`, see
   below) to `sendChatMessage`, dispatches on success/failure, and passes `languageVoice` plus an
@@ -152,13 +177,19 @@ different selection mechanism (see backlog.md, "Predefined-scenario-picks-its-ow
   tracked in component state and threaded through each call, per Spike 3's finding that context
   (but not `systemInstruction`) carries over via `previous_interaction_id`.
 - `ControlsArea.tsx` — derives primary-button label/handler from phase via `canStartWithUser` /
-  `canStartReply` / `canRequestSend` / `hasError` helpers in `chatReducer.ts`. During `listening`,
-  the primary button is "Send" (`canRequestSend`, dispatches `STOP_LISTENING; { intent: 'send' }`).
-  "End session" is shown via `canStopSession` (`!userIsInInputFlow(phase)`) and always calls
-  `onEndSession` directly — no reducer action, no intermediate phase, from every phase except the
-  `listening`/`stoppingListening`/`cancellingListening`/`sendingUserReply` input-flow window (see
-  decisions.md, "Reply-phase UX redesign implemented"). "Cancel" is shown via
-  `shouldShowCancelButton` across that same input-flow window and dispatches `CANCEL_LISTENING`.
+  `canStartReply` / `canRequestSend` / `chatHasStopped` / `hasError` helpers in `chatReducer.ts`.
+  During `listening`, the primary button is "Send" (`canRequestSend`, dispatches
+  `STOP_LISTENING; { intent: 'send' }`). "Cancel" is shown via `shouldShowCancelButton` across the
+  `listening`/`stoppingListening`/`cancellingListening`/`sendingUserReply` input-flow window and
+  dispatches `CANCEL_LISTENING`. **Two secondary buttons as of 2026-08-12 (see decisions.md, "Stop
+  chat brought back"):** "Stop chat" (`canStopChat` — not in the input-flow window, not already
+  `chatStopped`, not `error`) dispatches `STOP_CHAT`; "End session" (`shouldShowEndSessionButton`,
+  renamed from `shouldShowStopButton` — not in the input-flow window, not already `chatStopped`, not
+  `error`) dispatches `END_SESSION` via a new `onEndSessionRequested` prop, no longer a direct
+  `onEndSession` call. Both can show at once (a new 3-area CSS grid in `ControlsArea.module.css`
+  handles primary + two secondary buttons together). Once `chatStopped`, both secondary buttons
+  disappear and the primary button becomes "End this session" (dispatches `END_SESSION`) — same label
+  and action the `error`-phase primary button already used.
 - `ErrorArea.tsx` — renders the error message from the `error` phase via the `Feedback` component
   (2026-08-09, see decisions.md); no per-error-type differentiation. Generic error recovery
   (end-session-only, no Retry) is wired up via the `onEndSession` prop call described above, not a
@@ -416,6 +447,16 @@ different selection mechanism (see backlog.md, "Predefined-scenario-picks-its-ow
   system instruction; manually confirmed to change model behavior meaningfully between the two
   levels, no automated check exists yet. Expert (C1/C2) deliberately postponed, not scaffolded in
   code (see decisions.md).
+- **"Stop chat" brought back; ending a session is a dispatched `END_SESSION` action again
+  (2026-08-12, implemented)** — reverses the 2026-08-04 decision to drop `STOP_CHAT`/`chatEnded`
+  entirely and the 2026-07-30 decision that ending a session is a direct `onEndSession()` prop call
+  (see decisions.md, "Stop chat brought back... " and "Ending a session is a dispatched `END_SESSION`
+  action again"). New `chatStopped` phase offers only "End this session" for now — requesting an
+  evaluation from there is planned for a future iteration, not built yet (see backlog.md). Pending AI
+  requests are now aborted when the chat is stopped or the session ends (`requestsShouldBeAborted`,
+  reusing the existing `abortControllerRef`/`requestIdRef` stale-response guard). A `hasError`
+  exclusion bug in `canStopChat` and an unused `shouldShowStopChatButton` helper were both caught and
+  fixed during this session, before being documented (see decisions.md).
 
 ## What's open
 
@@ -461,6 +502,10 @@ different selection mechanism (see backlog.md, "Predefined-scenario-picks-its-ow
   empty-transcript branch and discards the transcript. Inert today (nothing dispatches
   `intent: 'edit'` yet) but needs an explicit branch once Edit is built (see decisions.md,
   "Reply-phase UX redesign implemented", and the STT-edit item in backlog.md).
+- **Request-evaluation option from `chatStopped`** — the reintroduced "Stop chat" flow (2026-08-12,
+  see decisions.md) currently only offers "End this session" once stopped. A planned next iteration
+  is to also offer requesting an evaluation of the chat from that phase, once evaluation itself
+  exists — not designed or scheduled yet.
 
 ## Infra note (2026-08-04–08-05, Next.js 16 → 15 downgrade — merged)
 
@@ -532,7 +577,9 @@ Two calibration-only files still remain under `spikes/language-speech-rates/`
      (via a shared `userIsInInputFlow` helper), not `listening` alone as originally scoped.
    - `STOP_CHAT` action and terminal `chatEnded` phase removed entirely (not just narrowed) —
      ending a session is now always a direct `onEndSession` call. No cleanup behavior was actually
-     lost by this (see decisions.md for why).
+     lost by this (see decisions.md for why). **Superseded 2026-08-12 — see step 14 below:**
+     `STOP_CHAT` and a `chatStopped` phase are both back, and ending a session dispatches
+     `END_SESSION` again rather than calling `onEndSession` directly.
    - **Not in this round:** Edit (reopened for reconsideration, not designed — see decisions.md and
      backlog.md; the dormant `intent: 'edit'` fallthrough bug is tracked there), evaluation,
      auto-start-listening after the AI's turn (not started).
@@ -551,3 +598,9 @@ Two calibration-only files still remain under `spikes/language-speech-rates/`
     styled.
 13. Revisit scenario count for v1, predefined-scenario-starter mode, and turn counter / max-turns,
     once v0 exists.
+14. ~~Bring back "Stop chat"; make ending a session a dispatched action again~~ — done, 2026-08-12
+    (see decisions.md, "Stop chat brought back; session-ending moves to a dispatched `END_SESSION`
+    action"): `chatStopped`/`sessionEnded` phases, `STOP_CHAT`/`END_SESSION` actions, a second
+    secondary button in `ControlsArea` (with a 3-area CSS grid to fit it), pending-request abort on
+    stop/end, and the "Start chat" button relabel. Not built yet: offering to request an evaluation
+    from `chatStopped` instead of only "End this session" (see "What's open").

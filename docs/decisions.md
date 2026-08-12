@@ -1847,3 +1847,121 @@ is named for what it will need to mean later, not just what it means today. This
 implement closed-scenario selection — no discriminant exists yet between freeform and closed
 `Scenario` objects at the type level (same known gap noted in the 2026-07-30 entry).
 **Status:** Done.
+
+---
+
+## Stop chat brought back; session-ending moves to a dispatched `END_SESSION` action (2026-08-12)
+
+### `STOP_CHAT` action and a `chatStopped` phase reintroduced, as a two-step stop → end flow
+
+**Date:** 2026-08-12
+**Decision:** `chatReducer.ts` gets two new phases and two new actions:
+
+- `chatStopped` — entered from any phase except `chatStartPending`/`chatStopped`/`sessionEnded`
+  itself when `STOP_CHAT` is dispatched. Checked at the top of the reducer, before the
+  phase-specific switch (same pattern as the original 2026-07-27 `STOP_CHAT` guard).
+- `sessionEnded` — entered from any phase except `chatStartPending`/`sessionEnded` itself when
+  `END_SESSION` is dispatched, including directly from `chatStopped` (there's no requirement to
+  pass through `chatStopped` first — `END_SESSION` short-circuits from anywhere `STOP_CHAT` could
+  have fired too).
+
+In `ControlsArea`, a new "Stop chat" secondary button (`canStopChat`) sits alongside the existing
+"End session" secondary button (`shouldShowEndSessionButton`, renamed from `shouldShowStopButton`)
+whenever neither is excluded — both buttons only differ in what they exclude: `canStopChat` also
+requires `!chatHasStopped(phase)`; `shouldShowEndSessionButton` also requires `!hasError(phase)`
+(unchanged from before this change). `ControlsArea.module.css` gains a 3-area grid
+(`primary`/`secondary`/`tertiary`) via `&:has(:nth-child(3))` to lay out the primary action button
+plus both secondary buttons when they're both visible at once, instead of only ever supporting one
+secondary button. Once `chatStopped`, both secondary buttons disappear and the primary button
+becomes "End this session" (`onEndSessionRequested`, dispatching `END_SESSION`).
+
+**Rationale:** Reintroduces the ability to stop a chat while not mid-input (`userIsInInputFlow`
+window excluded, same as the old `STOP_CHAT` gate) as a distinct, reversible-feeling step ahead of
+actually ending the session — "Stop chat" pauses the conversation and narrows the UI down to a
+single "End this session" action, rather than ending the session immediately the way the old
+`STOP_CHAT` → `chatEnded` flow did. For now `chatStopped` only offers ending the session; the plan
+is for a future iteration to offer requesting an evaluation from `chatStopped` instead (see
+backlog.md).
+
+**Supersedes:** the 2026-08-04 "reply-phase UX redesign" decision to remove `STOP_CHAT` and the
+terminal `chatEnded` phase entirely (see "Reply-phase UX redesign implemented," below) — that
+removal is reversed by this entry, under new phase names (`chatStopped` instead of the old
+`chatEnded`) and a changed two-step shape (stop, then a separate end-session step, instead of one
+terminal phase reached directly). status.md's framing of the 2026-08-04 removal ("no cleanup
+behavior was actually lost by this") no longer describes current behavior — a `STOP_CHAT`-shaped
+action is back, doing more (an intermediate `chatStopped` phase) than the original did.
+
+**Bug fixed during this change, not shipped as originally written:** the first version of
+`canStopChat` didn't exclude `hasError(phase)`, so "Stop chat" would have rendered alongside the
+primary "End this session" button during an `error` phase too, contradicting
+`shouldShowEndSessionButton`'s adjacent code comment ("if phase is error, we could technically stop
+the chat, but then we still need to end the session. So we'll just set primary button to End
+session") — the comment's stated intent was never applied to the new button. Clicking "Stop chat"
+during an `error` phase would also have silently discarded `phase.error` (overwriting it with
+`chatStopped`), losing the error message with no way back to it. Caught and fixed before this was
+documented as intended behavior: `canStopChat` now also requires `!hasError(phase)`.
+**Status:** Done.
+
+### Ending a session is a dispatched `END_SESSION` action again, not a direct `onEndSession()` call from `ControlsArea`
+
+**Date:** 2026-08-12
+**Decision:** `ControlsArea` no longer calls `onEndSession` (the prop from `ChatContainer`)
+directly. It calls a new `onEndSessionRequested` prop instead, which `ChatConversation` wires to
+`handleEndSessionRequest` (`dispatch({ type: 'END_SESSION' })`). A new `useEffect` in
+`ChatConversation`, keyed on `sessionShouldEnd(state.phase)` (i.e. `phase.status === 'sessionEnded'`),
+calls the real `onEndSession()` prop as a side effect of that phase being reached — from every path
+that used to call `onEndSession` directly (the normal "End session" button and the `error`-phase
+"End this session" button both now route through `END_SESSION` first).
+
+**Distinct from the pre-2026-07-30 `END_SESSION` action:** that earlier action (see "Error recovery
+implemented: dedicated `END_SESSION` action," 2026-07-27) reset the reducer's own state straight
+back to `readyForNewChat`/`chatStartPending` in place, without unmounting `ChatConversation`. This
+new `END_SESSION` does not reset in place — it transitions to a terminal `sessionEnded` phase whose
+effect calls the `onEndSession` prop, which is still owned by `ChatContainer` and still switches the
+container back to rendering `ChatSetup`, unmounting `ChatConversation` entirely (the same outcome
+the direct call already produced since 2026-07-30). Only the *mechanism* for reaching that outcome
+changed — a dispatched action + effect, instead of a direct prop call from a click handler — not
+what happens once it fires.
+
+**Supersedes:** the 2026-07-30 "Setup screen extraction" decision's statement that "ending a
+session... is now a direct `onEndSession` prop call from `ChatConversation` to `ChatContainer`, not
+a dispatched action" (see "New `ChatContainer`/`ChatSetup` components" and "`chatReducer` scope
+narrowed... `END_SESSION` removed," both 2026-07-30) — that mechanism is reversed by this entry.
+**Rationale:** Session-ending now needs to participate in reducer state (so `requestsShouldBeAborted`
+— see below — can key off it) rather than being a side-channel prop call the reducer has no
+visibility into.
+**Status:** Done.
+
+### Pending AI requests are aborted when the chat is stopped or the session ends
+
+**Date:** 2026-08-12
+**Decision:** New `useEffect` in `ChatConversation`, keyed on `requestsShouldBeAborted(state.phase)`
+(true for both `chatStopped` and `sessionEnded`): increments `requestIdRef.current` and calls
+`abortControllerRef.current?.abort()`. `sendMessageToAI`'s existing stale-response guard
+(`requestIsStale`, comparing a captured `requestId` against `requestIdRef.current`) already existed
+for race-safety around fast phase changes; this reuses that same ref rather than adding a second
+mechanism, and the `AbortError` catch branch already present in `sendMessageToAI` (`return` without
+dispatching) already handled cancelled fetches silently — no new error-handling branch was needed,
+only a new trigger for calling `.abort()` itself.
+**Rationale:** Without this, stopping the chat or ending the session mid-request left the in-flight
+`sendChatMessage` call running to completion in the background, wasting a request against the
+$5/month budget and risking a late `AI_RESPONSE_RECEIVED`/`ERROR` dispatch landing after the user
+had already moved on.
+**Status:** Done.
+
+### Dead code removed: unused `shouldShowStopChatButton`
+
+**Date:** 2026-08-12
+**Decision:** A `shouldShowStopChatButton` helper was added to `chatReducer.ts` alongside `canStopChat`
+during this change but never imported anywhere — `ControlsArea` uses `canStopChat` (different
+logic: also excludes `chatStopped` and, after the fix above, `error`). Removed as unused rather than
+kept or documented as a known gap.
+**Status:** Done.
+
+### "Start conversation" button relabeled to "Start chat"
+
+**Date:** 2026-08-12
+**Decision:** `SetupForm`'s submit button text changes from "Start conversation" to "Start chat".
+**Rationale:** Matches the "Stop chat"/`ChatConversation` naming introduced by this same change —
+not itself a functional change.
+**Status:** Done.
