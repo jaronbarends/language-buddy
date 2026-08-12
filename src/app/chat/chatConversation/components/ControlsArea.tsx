@@ -2,6 +2,8 @@ import {
   canStartWithUser,
   canStartReply,
   canRequestSend,
+  canStopChat,
+  chatHasStopped,
   canStopSession,
   shouldShowCancelButton,
   canRequestCancel,
@@ -18,8 +20,9 @@ type ControlsAreaProps = {
   phase: ChatPhase;
   onStartListening: () => void;
   onSendUserMessage: () => void;
-  onEndSession: () => void;
+  onStopChat: () => void;
   onSendRequested: () => void;
+  onEndSessionRequested: () => void;
   onCancelListening: () => void;
 };
 
@@ -35,7 +38,8 @@ export default function ControlsArea({
   onStartListening,
   onSendRequested,
   onCancelListening,
-  onEndSession,
+  onStopChat,
+  onEndSessionRequested,
 }: ControlsAreaProps) {
   const primaryButtonProps = getPrimaryButtonProps(phase);
 
@@ -49,8 +53,13 @@ export default function ControlsArea({
         >
           {primaryButtonProps.label}
         </Button>
-        {shouldShowStopButton(phase) && (
-          <Button variant="secondary" onClick={onEndSession}>
+        {canStopChat(phase) && (
+          <Button variant="secondary" onClick={onStopChat}>
+            Stop chat
+          </Button>
+        )}
+        {shouldShowEndSessionButton(phase) && (
+          <Button variant="secondary" onClick={onEndSessionRequested}>
             End session
           </Button>
         )}
@@ -67,9 +76,9 @@ export default function ControlsArea({
     </div>
   );
 
-  function shouldShowStopButton(phase: ChatPhase) {
+  function shouldShowEndSessionButton(phase: ChatPhase) {
     // if phase is error, we could technically stop the chat, but then we still need to end the session. So we'll just set primary button to End session.
-    return canStopSession(phase) && !hasError(phase);
+    return canStopSession(phase) && !chatHasStopped(phase) && !hasError(phase);
   }
 
   function getPrimaryButtonProps(phase: ChatPhase): PrimaryButtonProps {
@@ -117,11 +126,18 @@ export default function ControlsArea({
         disabled: true,
       };
     }
+    if (chatHasStopped(phase)) {
+      return {
+        variant: 'primary',
+        label: 'End this session',
+        onClick: onEndSessionRequested,
+      };
+    }
     if (hasError(phase)) {
       return {
         variant: 'primary',
         label: 'End this session',
-        onClick: onEndSession,
+        onClick: onEndSessionRequested,
       };
     }
     return {
