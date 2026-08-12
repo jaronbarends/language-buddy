@@ -2,7 +2,6 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--size-16);
-
   grid-template-areas: 'primary secondary';
 
   &:has(:nth-child(3)) {

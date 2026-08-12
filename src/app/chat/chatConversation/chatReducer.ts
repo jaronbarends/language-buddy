@@ -265,7 +265,13 @@ export function listeningShouldBeCancelled(phase: ChatPhase): boolean {
 }
 
 export function canStopChat(phase: ChatPhase): boolean {
-  return !userIsInInputFlow(phase) && phase.status !== 'chatStopped' && !hasError(phase);
+  return (
+    !userIsInInputFlow(phase) &&
+    phase.status !== 'chatStartPending' &&
+    phase.status !== 'chatStopped' &&
+    phase.status !== 'sessionEnded' &&
+    !hasError(phase)
+  );
 }
 
 export function chatHasStopped(phase: ChatPhase): boolean {
@@ -273,7 +279,11 @@ export function chatHasStopped(phase: ChatPhase): boolean {
 }
 
 export function canStopSession(phase: ChatPhase): boolean {
-  return !userIsInInputFlow(phase);
+  return (
+    !userIsInInputFlow(phase) &&
+    phase.status !== 'chatStartPending' &&
+    phase.status !== 'sessionEnded'
+  );
 }
 
 export function sessionShouldEnd(phase: ChatPhase): boolean {
