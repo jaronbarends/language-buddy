@@ -4,7 +4,9 @@ import {
   canRequestSend,
   canStopChat,
   chatHasStopped,
-  canStopSession,
+  canRequestEvaluation,
+  evaluationIsShown,
+  shouldShowEndSessionSecondaryButton,
   shouldShowCancelButton,
   canRequestCancel,
   isAITurnSpeaking,
@@ -19,9 +21,10 @@ import styles from './ControlsArea.module.css';
 type ControlsAreaProps = {
   phase: ChatPhase;
   onStartListening: () => void;
-  onSendUserMessage: () => void;
+  // onSendUserMessage: () => void;
   onStopChat: () => void;
   onSendRequested: () => void;
+  onEvaluationRequested: () => void;
   onEndSessionRequested: () => void;
   onCancelListening: () => void;
 };
@@ -39,6 +42,7 @@ export default function ControlsArea({
   onSendRequested,
   onCancelListening,
   onStopChat,
+  onEvaluationRequested,
   onEndSessionRequested,
 }: ControlsAreaProps) {
   const primaryButtonProps = getPrimaryButtonProps(phase);
@@ -58,7 +62,12 @@ export default function ControlsArea({
             Stop chat
           </Button>
         )}
-        {shouldShowEndSessionButton(phase) && (
+        {canRequestEvaluation(phase) && (
+          <Button variant="secondary" onClick={onEvaluationRequested}>
+            Evaluate chat
+          </Button>
+        )}
+        {shouldShowEndSessionSecondaryButton(phase) && (
           <Button variant="secondary" onClick={onEndSessionRequested}>
             End session
           </Button>
@@ -75,11 +84,6 @@ export default function ControlsArea({
       </div>
     </div>
   );
-
-  function shouldShowEndSessionButton(phase: ChatPhase) {
-    // if phase is error, we could technically stop the chat, but then we still need to end the session. So we'll just set primary button to End session.
-    return canStopSession(phase) && !chatHasStopped(phase) && !hasError(phase);
-  }
 
   function getPrimaryButtonProps(phase: ChatPhase): PrimaryButtonProps {
     if (canStartWithUser(phase)) {
@@ -127,6 +131,13 @@ export default function ControlsArea({
       };
     }
     if (chatHasStopped(phase)) {
+      return {
+        variant: 'primary',
+        label: 'End this session',
+        onClick: onEndSessionRequested,
+      };
+    }
+    if (evaluationIsShown(phase)) {
       return {
         variant: 'primary',
         label: 'End this session',

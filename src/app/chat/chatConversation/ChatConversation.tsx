@@ -11,6 +11,7 @@ import {
   chatStartIsPending,
   requestsShouldBeAborted,
   sessionShouldEnd,
+  shouldRequestEvaluation,
   type ChatState,
 } from './chatReducer';
 import ControlsArea from './components/ControlsArea';
@@ -67,7 +68,13 @@ export default function ChatConversation({
 
   useEffect(() => {
     if (shouldSendReply(state.phase)) {
-      handleSendUserMessage();
+      sendUserMessage();
+    }
+  });
+
+  useEffect(() => {
+    if (shouldRequestEvaluation(state.phase)) {
+      sendEvaluationRequest();
     }
   });
 
@@ -105,8 +112,9 @@ export default function ChatConversation({
           onStartListening={handleStartListening}
           onSendRequested={handleSendRequested}
           onCancelListening={handleCancelListening}
-          onSendUserMessage={handleSendUserMessage}
+          // onSendUserMessage={sendUserMessage}
           onStopChat={handleStopChat}
+          onEvaluationRequested={handleEvaluationRequest}
           onEndSessionRequested={handleEndSessionRequest}
           phase={state.phase}
         />
@@ -156,7 +164,7 @@ export default function ChatConversation({
     dispatch({ type: 'START_LISTENING' });
   }
 
-  async function handleSendUserMessage() {
+  async function sendUserMessage() {
     if (!shouldSendReply(state.phase)) {
       return;
     }
@@ -167,12 +175,27 @@ export default function ChatConversation({
     await sendMessageToAI(input);
   }
 
+  async function sendEvaluationRequest() {
+    if (!shouldRequestEvaluation(state.phase)) {
+      return;
+    }
+
+    console.log('send evaluation request to ai');
+    dispatch({ type: 'EVALUATION_REQUEST_SENT' });
+
+    await sendEvaluationRequestToAI();
+  }
+
   function handleAISpeechEnd() {
     dispatch({ type: 'AI_FINISHED_SPEAKING' });
   }
 
   function handleStopChat() {
     dispatch({ type: 'STOP_CHAT' });
+  }
+
+  function handleEvaluationRequest() {
+    dispatch({ type: 'REQUEST_EVALUATION' });
   }
 
   function handleEndSessionRequest() {
@@ -214,6 +237,17 @@ export default function ChatConversation({
 
     setPreviousInteractionId(reply.interactionId);
     dispatch({ type: 'AI_RESPONSE_RECEIVED', payload: { message: reply.message } });
+  }
+
+  async function sendEvaluationRequestToAI() {
+    await new Promise<void>((resolve) =>
+      setTimeout(() => {
+        console.log('resolve evaluation promise');
+        resolve();
+      }, 1500)
+    );
+
+    dispatch({ type: 'EVALUATION_RECEIVED', payload: { evaluation: 'You did really well' } });
   }
 
   function requestIsStale(requestId: number): boolean {
