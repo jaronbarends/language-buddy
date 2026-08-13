@@ -3,7 +3,6 @@ import 'dotenv/config';
 import { NextRequest, NextResponse } from 'next/server';
 
 // genai no longer uses a single ApiError, but generated hierarchy of specific error classes. Define what we need
-// genai no longer uses a single ApiError, but generated hierarchy of specific error classes. Define what we need
 type GeminiApiError = Error & { status?: number; error?: { code?: string }; body?: string };
 
 const MODEL = 'gemini-3.1-flash-lite';

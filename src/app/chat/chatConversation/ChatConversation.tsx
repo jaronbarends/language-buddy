@@ -202,7 +202,7 @@ export default function ChatConversation({
     dispatch({ type: 'END_SESSION' });
   }
 
-  async function sendMessageToAI(input: string): Promise<void> {
+  async function sendMessageToAI_OLD(input: string): Promise<void> {
     let reply: AIChatResult;
     abortControllerRef.current = new AbortController();
     requestIdRef.current++;
@@ -239,15 +239,81 @@ export default function ChatConversation({
     dispatch({ type: 'AI_RESPONSE_RECEIVED', payload: { message: reply.message } });
   }
 
+  async function sendMessageToAI(input: string): Promise<void> {
+    const reply: AIChatResult | undefined = await sendToAI(input, chatConfig.systemInstruction);
+
+    if (reply === undefined) {
+      // handled in sendToAI
+      return;
+    }
+
+    if (!reply.success) {
+      // then reply must be error object
+      dispatch({ type: 'ERROR', payload: { error: reply } });
+      return;
+    }
+
+    setPreviousInteractionId(reply.interactionId);
+    dispatch({ type: 'AI_RESPONSE_RECEIVED', payload: { message: reply.message } });
+  }
+
   async function sendEvaluationRequestToAI() {
-    await new Promise<void>((resolve) =>
-      setTimeout(() => {
-        console.log('resolve evaluation promise');
-        resolve();
-      }, 1500)
+    // await new Promise<void>((resolve) =>
+    //   setTimeout(() => {
+    //     console.log('resolve evaluation promise');
+    //     resolve();
+    //   }, 1500)
+    // );
+    const reply: AIChatResult | undefined = await sendToAI(
+      chatConfig.evaluationInput,
+      chatConfig.evaluationSystemInstruction
     );
 
-    dispatch({ type: 'EVALUATION_RECEIVED', payload: { evaluation: 'You did really well' } });
+    if (reply === undefined) {
+      // handled in sendToAI
+      return;
+    }
+
+    if (!reply.success) {
+      // then reply must be error object
+      dispatch({ type: 'ERROR', payload: { error: reply } });
+      return;
+    }
+
+    dispatch({ type: 'EVALUATION_RECEIVED', payload: { evaluation: reply.message } });
+  }
+
+  async function sendToAI(
+    input: string,
+    systemInstruction: string
+  ): Promise<AIChatResult | undefined> {
+    let reply: AIChatResult;
+    abortControllerRef.current = new AbortController();
+    requestIdRef.current++;
+    const requestId = requestIdRef.current;
+
+    try {
+      reply = await sendChatMessage({
+        input,
+        previousInteractionId,
+        systemInstruction,
+        abortSignal: abortControllerRef.current.signal,
+      });
+      if (requestIsStale(requestId)) {
+        return;
+      }
+    } catch (error) {
+      if (requestIsStale(requestId)) {
+        return;
+      }
+      if (error instanceof Error && error.name === 'AbortError') {
+        return; // user cancelled, not a real error, don't dispatch
+      }
+      dispatch({ type: 'ERROR', payload: { error: error as AIError } });
+      return;
+    }
+
+    return reply;
   }
 
   function requestIsStale(requestId: number): boolean {

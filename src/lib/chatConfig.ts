@@ -2,9 +2,13 @@ import { getBaseInstruction } from '@/lib/getBaseInstruction';
 import type { Language, LanguageLevel } from '@/lib/language';
 import type { Scenario, Starter } from '@/lib/scenarios';
 
+import { getEvaluationSystemInstruction, getEvaluationInput } from './evaluationConfig';
+
 export type ChatConfig = {
   language: Language;
   systemInstruction: string;
+  evaluationSystemInstruction: string;
+  evaluationInput: string;
   starter: Starter;
 };
 
@@ -20,10 +24,14 @@ export function getChatConfig(
   }
   const baseInstruction = getBaseInstruction(language, languageLevel);
   const systemInstruction = `${baseInstruction.prefix} ${scenario.instruction} ${baseInstruction.suffix}`;
+  const evaluationSystemInstruction = getEvaluationSystemInstruction(language, languageLevel);
+  const evaluationInput = getEvaluationInput(language, languageLevel);
 
   return {
     language,
     systemInstruction,
+    evaluationSystemInstruction,
+    evaluationInput,
     starter: scenario.starter,
   };
 }

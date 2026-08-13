@@ -1,3 +1,5 @@
 .evaluation {
-  background-color: white;
+  padding: var(--size-12) var(--size-16);
+  border-radius: var(--radius-8);
+  background-color: var(--color-bg-default);
 }
