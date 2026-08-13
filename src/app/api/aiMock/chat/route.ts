@@ -1,5 +1,7 @@
-/* mocked route for ai to prevent spending unnecessary tokens during development */
+/* mocked route for ai to prevent spending unnecessary tokens during development and for forcing errors */
 import { NextRequest, NextResponse } from 'next/server';
+
+import { type ChatMessageParams } from '@/app/api/ai/chat/route';
 
 const MOCK_SCENARIOS = {
   success: 'success',
@@ -11,18 +13,19 @@ const MOCK_SCENARIOS = {
 
 type MockScenario = (typeof MOCK_SCENARIOS)[keyof typeof MOCK_SCENARIOS];
 
-const scenario: MockScenario = 'success';
-// const scenario: MockScenario = 'successLongDelay';
-// const scenario: MockScenario = 'rateLimitError';
-// const scenario: MockScenario = 'notFoundError';
-// const scenario: MockScenario = 'aiCreationError';
+let scenario: MockScenario = 'success';
+// let scenario: MockScenario = 'successLongDelay';
+// let scenario: MockScenario = 'rateLimitError';
+// let scenario: MockScenario = 'notFoundError';
+// let scenario: MockScenario = 'aiCreationError';
 
 export async function POST(request: NextRequest) {
-  await request.json();
-  // const successResponseOutputText = `mock response.output_text (response to ${input})`;
-  // const successResponseOutputText =
-  // 'Verdensfotballforbund FIFAs plan om å selge en eierandel i et nytt VM-selskap vil ikke bli gjennomført.';
+  const { input } = (await request.json()) as ChatMessageParams;
   const successResponseOutputText = 'Wat vind jij eigenlijk leuk om te doen?';
+
+  if (input === 'error') {
+    scenario = 'notFoundError';
+  }
 
   switch (scenario) {
     case MOCK_SCENARIOS.success:
@@ -46,7 +49,7 @@ export async function POST(request: NextRequest) {
       });
     case MOCK_SCENARIOS.notFoundError:
       return respondAfterDelay({
-        data: { error: 'Rate limit exceeded', name: 'NotFoundError' },
+        data: { error: 'Not found', name: 'NotFoundError' },
         status: 404,
       });
     default: {
