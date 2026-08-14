@@ -1,9 +1,13 @@
 import 'dotenv/config';
 
-import { type ChatMessageParams } from '@/app/api/ai/chat/route';
+import { AIRequestParams } from '@/lib/aiRequest';
 
+const REAL_API_ENDPOINT = '/api/ai';
 const CHAT_ENDPOINT =
-  process.env.NEXT_PUBLIC_USE_MOCK_AI === 'true' ? '/api/aiMock/chat' : '/api/ai/chat';
+  process.env.NEXT_PUBLIC_USE_MOCK_AI === 'true' ? '/api/aiMock/chat' : REAL_API_ENDPOINT;
+
+const EVALUATION_ENDPOINT =
+  process.env.NEXT_PUBLIC_USE_MOCK_AI === 'true' ? '/api/aiMock/evaluation' : REAL_API_ENDPOINT;
 
 export type AIError = {
   success: false;
@@ -12,7 +16,7 @@ export type AIError = {
   name: string;
 };
 
-export type AIChatResult =
+export type AIResult =
   | {
       success: true;
       interactionId: string;
@@ -20,23 +24,23 @@ export type AIChatResult =
     }
   | AIError;
 
-export async function sendChatMessage({
-  systemInstruction,
-  previousInteractionId,
-  input,
-  abortSignal,
-}: ChatMessageParams): Promise<AIChatResult> {
+export type AIRole = 'chat' | 'evaluation';
+
+export async function sendAIRequest(
+  { systemInstruction, previousInteractionId, input, abortSignal }: AIRequestParams,
+  aiRole: AIRole
+): Promise<AIResult> {
   const body = JSON.stringify({
     systemInstruction,
     previousInteractionId,
     input,
   });
-  const endpoint = CHAT_ENDPOINT;
-  const res: Response = await sendMessage({ body, abortSignal, endpoint });
-  return toAIChatResult(res);
+  const endpoint = aiRole === 'chat' ? CHAT_ENDPOINT : EVALUATION_ENDPOINT;
+  const res: Response = await postRequest({ body, abortSignal, endpoint });
+  return toAIResult(res);
 }
 
-async function sendMessage({
+async function postRequest({
   body,
   abortSignal,
   endpoint,
@@ -56,7 +60,7 @@ async function sendMessage({
   return res;
 }
 
-export async function toAIChatResult(res: Response): Promise<AIChatResult> {
+export async function toAIResult(res: Response): Promise<AIResult> {
   if (!res.ok) {
     const body = await res.json();
     return {

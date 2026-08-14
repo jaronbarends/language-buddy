@@ -1,11 +1,19 @@
 'use client';
 import { useReducer, useState, useRef, useEffect } from 'react';
 
-import { AIError, sendChatMessage, type AIChatResult } from '@/lib/aiService';
+import { AIError, sendAIRequest, type AIResult, type AIRole } from '@/lib/aiService';
 import { type ChatConfig } from '@/lib/chatConfig';
 import { type LanguageVoice } from '@/lib/language';
 
-import { shouldSendReply, chatReducer, chatStartIsPending, type ChatState } from './chatReducer';
+import {
+  shouldSendReply,
+  chatReducer,
+  chatStartIsPending,
+  requestsShouldBeAborted,
+  sessionShouldEnd,
+  shouldRequestEvaluation,
+  type ChatState,
+} from './chatReducer';
 import ControlsArea from './components/ControlsArea';
 import DevHelper from './components/DevHelper';
 import ErrorArea from './components/ErrorArea';
@@ -60,7 +68,26 @@ export default function ChatConversation({
 
   useEffect(() => {
     if (shouldSendReply(state.phase)) {
-      handleSendUserMessage();
+      sendUserMessage();
+    }
+  });
+
+  useEffect(() => {
+    if (shouldRequestEvaluation(state.phase)) {
+      sendEvaluationRequest();
+    }
+  });
+
+  useEffect(() => {
+    if (requestsShouldBeAborted(state.phase)) {
+      requestIdRef.current++;
+      abortControllerRef.current?.abort();
+    }
+  }, [state.phase]);
+
+  useEffect(() => {
+    if (sessionShouldEnd(state.phase)) {
+      onEndSession();
     }
   });
 
@@ -85,8 +112,8 @@ export default function ChatConversation({
           onStartListening={handleStartListening}
           onSendRequested={handleSendRequested}
           onCancelListening={handleCancelListening}
-          onSendUserMessage={handleSendUserMessage}
-          onEndSession={onEndSession}
+          onEvaluationRequested={handleEvaluationRequest}
+          onEndSessionRequested={handleEndSessionRequest}
           phase={state.phase}
         />
       </div>
@@ -135,7 +162,7 @@ export default function ChatConversation({
     dispatch({ type: 'START_LISTENING' });
   }
 
-  async function handleSendUserMessage() {
+  async function sendUserMessage() {
     if (!shouldSendReply(state.phase)) {
       return;
     }
@@ -146,23 +173,126 @@ export default function ChatConversation({
     await sendMessageToAI(input);
   }
 
+  async function sendEvaluationRequest() {
+    if (!shouldRequestEvaluation(state.phase)) {
+      return;
+    }
+
+    dispatch({ type: 'EVALUATION_REQUEST_SENT' });
+
+    await sendEvaluationRequestToAI();
+  }
+
   function handleAISpeechEnd() {
     dispatch({ type: 'AI_FINISHED_SPEAKING' });
   }
 
+  function handleEvaluationRequest() {
+    dispatch({ type: 'REQUEST_EVALUATION' });
+  }
+
+  function handleEndSessionRequest() {
+    dispatch({ type: 'END_SESSION' });
+  }
+
+  // async function sendMessageToAI_OLD(input: string): Promise<void> {
+  //   let reply: AIResult;
+  //   abortControllerRef.current = new AbortController();
+  //   requestIdRef.current++;
+  //   const requestId = requestIdRef.current;
+
+  //   try {
+  //     reply = await sendAIRequest({
+  //       input,
+  //       previousInteractionId,
+  //       systemInstruction: chatConfig.systemInstruction,
+  //       abortSignal: abortControllerRef.current.signal,
+  //     });
+  //     if (requestIsStale(requestId)) {
+  //       return;
+  //     }
+  //   } catch (error) {
+  //     if (requestIsStale(requestId)) {
+  //       return;
+  //     }
+  //     if (error instanceof Error && error.name === 'AbortError') {
+  //       return; // user cancelled, not a real error, don't dispatch
+  //     }
+  //     dispatch({ type: 'ERROR', payload: { error: error as AIError } });
+  //     return;
+  //   }
+
+  //   if (!reply.success) {
+  //     // then reply must be error object
+  //     dispatch({ type: 'ERROR', payload: { error: reply } });
+  //     return;
+  //   }
+
+  //   setPreviousInteractionId(reply.interactionId);
+  //   dispatch({ type: 'AI_RESPONSE_RECEIVED', payload: { message: reply.message } });
+  // }
+
   async function sendMessageToAI(input: string): Promise<void> {
-    let reply: AIChatResult;
+    const aiRole: AIRole = 'chat';
+    const reply: AIResult | undefined = await sendToAI(input, chatConfig.systemInstruction, aiRole);
+
+    if (reply === undefined) {
+      // handled in sendToAI
+      return;
+    }
+
+    if (!reply.success) {
+      // then reply must be error object
+      dispatch({ type: 'ERROR', payload: { error: reply } });
+      return;
+    }
+
+    setPreviousInteractionId(reply.interactionId);
+    dispatch({ type: 'AI_RESPONSE_RECEIVED', payload: { message: reply.message } });
+  }
+
+  async function sendEvaluationRequestToAI() {
+    const aiRole: AIRole = 'evaluation';
+    const reply: AIResult | undefined = await sendToAI(
+      chatConfig.evaluationInput,
+      chatConfig.evaluationSystemInstruction,
+      aiRole
+    );
+
+    if (reply === undefined) {
+      // handled in sendToAI
+      return;
+    }
+
+    if (!reply.success) {
+      // then reply must be error object
+      dispatch({ type: 'ERROR', payload: { error: reply } });
+      return;
+    }
+
+    dispatch({ type: 'EVALUATION_RECEIVED', payload: { evaluation: reply.message } });
+  }
+
+  async function sendToAI(
+    input: string,
+    systemInstruction: string,
+    aiRole: AIRole
+  ): Promise<AIResult | undefined> {
+    let reply: AIResult;
     abortControllerRef.current = new AbortController();
     requestIdRef.current++;
     const requestId = requestIdRef.current;
 
     try {
-      reply = await sendChatMessage({
-        input,
-        previousInteractionId,
-        systemInstruction: chatConfig.systemInstruction,
-        abortSignal: abortControllerRef.current.signal,
-      });
+      reply = await sendAIRequest(
+        {
+          input,
+          previousInteractionId,
+          systemInstruction,
+          abortSignal: abortControllerRef.current.signal,
+        },
+        aiRole
+      );
       if (requestIsStale(requestId)) {
         return;
       }
@@ -177,14 +307,7 @@ export default function ChatConversation({
       return;
     }
 
-    if (!reply.success) {
-      // then reply must be error object
-      dispatch({ type: 'ERROR', payload: { error: reply } });
-      return;
-    }
-
-    setPreviousInteractionId(reply.interactionId);
-    dispatch({ type: 'AI_RESPONSE_RECEIVED', payload: { message: reply.message } });
+    return reply;
   }
 
   function requestIsStale(requestId: number): boolean {

@@ -1,0 +1,4 @@
+.evaluation {
+  padding-inline: var(--size-16);
+  color: var(--color-text-secondary);
+}

@@ -104,8 +104,7 @@ function googleRateToEngineRate(googleRate: number, voice: SpeechSynthesisVoice)
     const fallbackPairing = speechRatePairings.find((p) => p.google === 1);
     return fallbackPairing?.[engine] ?? 1;
   }
-  // eslint-disable-next-line no-console
-  console.log(engine, pairing[engine]);
+
   return pairing[engine];
 }
 

@@ -1,6 +1,6 @@
 # Project status
 
-**Last updated:** 2026-08-10
+**Last updated:** 2026-08-14
 **Current phase:** Early build. Concept locked (scenario-library-based conversational sparring
 partner, Norwegian, multi-turn sessions + async structured evaluation). MVP scoping in progress;
 Spikes 1–4 all complete. AI provider decided (Gemini). State machine now runs the full happy path
@@ -49,40 +49,75 @@ step" list below.
 (OKLCH color scale, spacing/radii, two self-hosted variable fonts, borders/focus-outline, animation
 durations) landed first, then a small shared component set (`Button`, `Loader`, `Feedback`, `Icon`,
 `PageHeading`, `Logo`), then restyling of the setup screen (`SegmentedControl` extracted, flag icons
-+ no-voice warning icon on `LanguagePicker`, `ChatSetup` split into layout chrome + a new
-`SetupForm`) and the conversation loop (chat-style balloons sized to fit-content, `Loader` replacing
-the static AI-pending placeholder). Landed via `visual-design` (PR #14, `497f7da`) plus same-week
-follow-on branches, all merged to `main`. **`ErrorArea` now uses `Feedback` too (2026-08-09)** — the
-conversation-loop error message is no longer a plain unstyled `<div>`; `ErrorArea.module.css` was
-deleted as no-longer-needed (see decisions.md). **Completed:** all of the above, including
-`ErrorArea`. **Remaining or broken work:** no
-accessibility pass beyond what individual new components picked up incidentally (see decisions.md,
-"Known gaps after this pass"). **Next step:** a dedicated accessibility pass (lang attribute,
-aria-live) remains backlog, not scheduled.
-**`Starter` type consolidated into `scenarios.ts` (2026-08-09, see decisions.md):** the duplicate
-`aiHasFirstTurn: boolean` (on `Scenario`/`ChatConfig`) and locally-declared `Starter` type (in
-`SetupForm.tsx`) tracked the same datapoint; `Scenario.starter: Starter` is now the single source,
-with `Starter` exported from `scenarios.ts`.
-**Language level picker added (2026-08-10, see decisions.md):** not a previously-scoped backlog
-item — built directly from two loose backlog ideas. Users pick Beginner (CEFR A1/A2) or
-Intermediate (CEFR B1/B2) in the setup screen (`SetupForm`'s new `SegmentedControl`, defaulting to
-Intermediate); the selected level's `cefrLevel` is threaded through `getChatConfig`/
-`getBaseInstruction` into the AI's system instruction. A third level (Expert/C1/C2) was drafted
-then pulled back out before committing — deliberately postponed, not shipped.
-**Freeform scenarios generalized into an array; scenario-driven opening hint added (2026-08-11, see
-decisions.md):** `scenarios.ts` now exports `freeformScenarios: Scenario[]` (the two freeform
-scenario objects, now private consts) instead of exporting `freeformChatWithAIStart`/
-`freeformChatWithUserStart` individually. `Scenario` gains `initiallySelected?: boolean` (set on the
-AI-starts variant) and `openingHint?: string` (set only on the user-starts variant — "Ask a
-question or name a topic you want to discuss"). `ChatContainer` now owns `scenario` state, seeded
-via a new `getInitialScenario()` that finds the `initiallySelected` entry in `freeformScenarios`;
-`ChatSetup`/`SetupForm` receive it as `freeformScenarios`/`selectedScenario`/`onChangeScenario`
-props instead of `SetupForm` holding its own local `starter` state. `openingHint`, when set on the
-selected scenario, is threaded through `ChatContainer` → `ChatConversation` → `ThreadView` and
-rendered as a new `Feedback type="info"` banner at the top of the thread when present. The
-prop/state name is deliberately `selectedScenario`, not `selectedFreeformScenario` — anticipated to
-hold either a freeform or a future closed scenario once closed scenarios exist, which will need a
-different selection mechanism (see backlog.md, "Predefined-scenario-picks-its-own-starter").
+
+- no-voice warning icon on `LanguagePicker`, `ChatSetup` split into layout chrome + a new
+  `SetupForm`) and the conversation loop (chat-style balloons sized to fit-content, `Loader` replacing
+  the static AI-pending placeholder). Landed via `visual-design` (PR #14, `497f7da`) plus same-week
+  follow-on branches, all merged to `main`. **`ErrorArea` now uses `Feedback` too (2026-08-09)** — the
+  conversation-loop error message is no longer a plain unstyled `<div>`; `ErrorArea.module.css` was
+  deleted as no-longer-needed (see decisions.md). **Completed:** all of the above, including
+  `ErrorArea`. **Remaining or broken work:** no
+  accessibility pass beyond what individual new components picked up incidentally (see decisions.md,
+  "Known gaps after this pass"). **Next step:** a dedicated accessibility pass (lang attribute,
+  aria-live) remains backlog, not scheduled.
+  **`Starter` type consolidated into `scenarios.ts` (2026-08-09, see decisions.md):** the duplicate
+  `aiHasFirstTurn: boolean` (on `Scenario`/`ChatConfig`) and locally-declared `Starter` type (in
+  `SetupForm.tsx`) tracked the same datapoint; `Scenario.starter: Starter` is now the single source,
+  with `Starter` exported from `scenarios.ts`.
+  **Language level picker added (2026-08-10, see decisions.md):** not a previously-scoped backlog
+  item — built directly from two loose backlog ideas. Users pick Beginner (CEFR A1/A2) or
+  Intermediate (CEFR B1/B2) in the setup screen (`SetupForm`'s new `SegmentedControl`, defaulting to
+  Intermediate); the selected level's `cefrLevel` is threaded through `getChatConfig`/
+  `getBaseInstruction` into the AI's system instruction. A third level (Expert/C1/C2) was drafted
+  then pulled back out before committing — deliberately postponed, not shipped.
+  **Freeform scenarios generalized into an array; scenario-driven opening hint added (2026-08-11, see
+  decisions.md):** `scenarios.ts` now exports `freeformScenarios: Scenario[]` (the two freeform
+  scenario objects, now private consts) instead of exporting `freeformChatWithAIStart`/
+  `freeformChatWithUserStart` individually. `Scenario` gains `initiallySelected?: boolean` (set on the
+  AI-starts variant) and `openingHint?: string` (set only on the user-starts variant — "Ask a
+  question or name a topic you want to discuss"). `ChatContainer` now owns `scenario` state, seeded
+  via a new `getInitialScenario()` that finds the `initiallySelected` entry in `freeformScenarios`;
+  `ChatSetup`/`SetupForm` receive it as `freeformScenarios`/`selectedScenario`/`onChangeScenario`
+  props instead of `SetupForm` holding its own local `starter` state. `openingHint`, when set on the
+  selected scenario, is threaded through `ChatContainer` → `ChatConversation` → `ThreadView` and
+  rendered as a new `Feedback type="info"` banner at the top of the thread when present. The
+  prop/state name is deliberately `selectedScenario`, not `selectedFreeformScenario` — anticipated to
+  hold either a freeform or a future closed scenario once closed scenarios exist, which will need a
+  different selection mechanism (see backlog.md, "Predefined-scenario-picks-its-own-starter").
+  **"Stop chat" brought back; ending a session is a dispatched action again (2026-08-12, see
+  decisions.md):** `chatReducer.ts` gains two phases (`chatStopped`, `sessionEnded`) and two actions
+  (`STOP_CHAT`, `END_SESSION`) — reversing the 2026-08-04 removal of `STOP_CHAT`/`chatEnded`, under new
+  names and a changed two-step shape (stop, then a separate end-session step). `ControlsArea` now shows
+  a "Stop chat" secondary button (`canStopChat`) alongside the existing "End session" secondary button
+  (`shouldShowEndSessionButton`, renamed from `shouldShowStopButton`) wherever neither is excluded — a
+  new 3-area CSS grid in `ControlsArea.module.css` lays out both when they're both visible. Once
+  stopped, both secondary buttons disappear and the primary button becomes "End this session"
+  (dispatches `END_SESSION`). Ending a session (from `chatStopped`, from the normal flow, and from
+  `error`) is no longer a direct `onEndSession()` prop call from `ControlsArea` — it dispatches
+  `END_SESSION`, and a new `ChatConversation` effect keyed on `phase.status === 'sessionEnded'` calls
+  the real `onEndSession` prop as a side effect. A second new effect, keyed on `chatStopped`/
+  `sessionEnded` (`requestsShouldBeAborted`), aborts any in-flight AI request via the existing
+  `abortControllerRef`/`requestIdRef` stale-response guard. **Two issues caught and fixed before this
+  was documented as finished, not shipped as originally written** (see decisions.md): `canStopChat`
+  initially didn't exclude the `error` phase, so "Stop chat" would have rendered next to "End this
+  session" during an error and silently discarded `phase.error` if clicked — fixed by excluding
+  `hasError(phase)`. A `shouldShowStopChatButton` helper was added but never wired to anything —
+  removed as dead code. `SetupForm`'s submit button is relabeled "Start chat" (was "Start
+  conversation"), matching the new "Stop chat" naming. **Not yet built:** the `chatStopped` phase
+  currently offers only "End this session" — a future iteration is meant to offer requesting an
+  evaluation from there instead (see backlog.md).
+  **"Stop chat" superseded two days later; evaluation shipped instead (2026-08-13–2026-08-14, see
+  decisions.md):** the above paragraph describes what shipped 2026-08-12 — it's no longer current.
+  `chatStopped`/`STOP_CHAT`/`canStopChat` are all gone from the code as of the `add-phase-stages`
+  branch (merged `aa74377`). Ending a session is once again a single step: `END_SESSION` goes straight
+  to a new `sessionEndRequested` phase, no intermediate stop phase. `ControlsArea` was rebuilt around a
+  `ChatStage` abstraction (`getChatStage(phase)`, `buttonsByStage`, `buttonConfig`,
+  `buttonIsDisabled` — see decisions.md, "`ControlsArea` button config refactor") in the same pass that
+  added the evaluation feature's own "Evaluate" secondary button; "Stop chat" simply didn't reappear
+  once the button set was rebuilt — not a documented decision to drop it, see decisions.md for the
+  caveat. **Evaluation now has a first working implementation** (mock-backed, plain-text output, not
+  yet the structured grammar/vocab/nuance fields requirements.md scopes) — see "What exists" below and
+  decisions.md, "Evaluation: first working implementation," for the full shape.
 
 ---
 
@@ -109,7 +144,7 @@ different selection mechanism (see backlog.md, "Predefined-scenario-picks-its-ow
     differing in `title`, `instruction` text, `starter`, and (AI-starts variant only)
     `initiallySelected`/(user-starts variant only) `openingHint`. `Starter` (`'ai' | 'user'`) is
     defined in `scenarios.ts` and imported by `SetupForm.tsx` (renamed from `aiHasFirstTurn:
-    boolean`, 2026-08-09 — see decisions.md). `ChatContainer` owns the selected scenario as
+boolean`, 2026-08-09 — see decisions.md). `ChatContainer` owns the selected scenario as
     `scenario` state (prop name `selectedScenario` downstream), not `SetupForm` — see "Freeform
     scenarios generalized into an array" above.
   - `ChatConversation.tsx` — renamed from `ChatClient.tsx`, moved to its own folder
@@ -132,18 +167,26 @@ different selection mechanism (see backlog.md, "Predefined-scenario-picks-its-ow
   error shape.
 - Mock chat API route (`src/app/api/aiMock/chat`), toggled via `NEXT_PUBLIC_USE_MOCK_AI`, built
   against the same `AIChatResult`/`sendChatMessage` signature as the real `/api/ai/chat` route.
-- `chatReducer.ts` — 10-state discriminated union (`chatStartPending`, `waitingForAI`,
+- `chatReducer.ts` — 14-state discriminated union (`chatStartPending`, `waitingForAI`,
   `aiTurnSpeaking`, `readyForUserStart`, `readyForUserReply`, `listening`, `stoppingListening`,
-  `cancellingListening`, `sendingUserReply`, `error`) — current names, post the 2026-08-04
-  reply-phase redesign (see decisions.md, "Reply-phase UX redesign implemented"). `listeningStopped`/
-  `readyForSendingUserReply`/`listeningTimedOut`/`chatEnded` from earlier are all gone: the first two
-  were renamed to `stoppingListening`/`sendingUserReply`, `listeningTimedOut` was superseded outright
-  (no app-enforced timeout planned), and `chatEnded` was dropped along with the `STOP_CHAT` action —
-  ending a session is now always a direct `onEndSession` prop call, not a reducer transition (see
-  decisions.md). Reducer covers the full happy-flow transitions (`chatStartPending` →
+  `cancellingListening`, `sendingUserReply`, `requestEvaluation`, `waitingForEvaluation`,
+  `evaluation`, `sessionEndRequested`, `error`). **Current as of 2026-08-14** (see decisions.md,
+  "'Stop chat' superseded by the `ChatStage` refactor" and "Evaluation: first working
+  implementation") — this supersedes the 2026-08-12 `chatStopped`/`sessionEnded` shape described
+  further down this doc: those two phases and the `STOP_CHAT` action are gone again, two days after
+  being added. `END_SESSION` is unconditional (any phase → `sessionEndRequested` directly, no
+  intermediate stop step) and, along with `ERROR`/`REQUEST_EVALUATION`, is checked at the top of the
+  reducer before the phase-specific switch. Three new phases back the evaluation feature:
+  `requestEvaluation` (guarded by `canRequestEvaluation` — only reachable from `aiTurnSpeaking`/
+  `readyForUserReply`) → `waitingForEvaluation` → `evaluation` (terminal, like `sessionEndRequested`).
+  A new `ChatStage` type (`'aiTurnFlow' | 'userTurnFlow' | 'evaluation' | 'error' | 'sessionEnded'`)
+  and `getChatStage(phase)` bucket every phase into one of five stages via an exhaustive switch — this
+  is now what `ControlsArea` renders from (see below) and what `userIsInInputFlow` is defined in terms
+  of. Reducer covers the full happy-flow transitions (`chatStartPending` →
   `readyForUserStart`/`waitingForAI` → `aiTurnSpeaking` → `readyForUserReply` → `listening` →
-  `waitingForAI` → ...), looping indefinitely until `onEndSession` is called from outside the
-  reducer.
+  `waitingForAI` → ...), looping until `END_SESSION`/`REQUEST_EVALUATION` is dispatched from outside
+  that happy-flow switch. `ThreadItem` is now a union (`ChatMessageItem | EvaluationItem`) instead of
+  a single shape, discriminated by a new `type` field.
 - `ChatConversation.tsx` (Client Component, see "Setup screen" bullet above) owns the `useReducer`
   and drives the loop end-to-end: sends the transcript from real STT (`SpeechToText.tsx`, see
   below) to `sendChatMessage`, dispatches on success/failure, and passes `languageVoice` plus an
@@ -151,21 +194,71 @@ different selection mechanism (see backlog.md, "Predefined-scenario-picks-its-ow
   below) instead of the old stubbed `speakAIResponse`/`setTimeout`. `previousInteractionId` is
   tracked in component state and threaded through each call, per Spike 3's finding that context
   (but not `systemInstruction`) carries over via `previous_interaction_id`.
-- `ControlsArea.tsx` — derives primary-button label/handler from phase via `canStartWithUser` /
-  `canStartReply` / `canRequestSend` / `hasError` helpers in `chatReducer.ts`. During `listening`,
-  the primary button is "Send" (`canRequestSend`, dispatches `STOP_LISTENING; { intent: 'send' }`).
-  "End session" is shown via `canStopSession` (`!userIsInInputFlow(phase)`) and always calls
-  `onEndSession` directly — no reducer action, no intermediate phase, from every phase except the
-  `listening`/`stoppingListening`/`cancellingListening`/`sendingUserReply` input-flow window (see
-  decisions.md, "Reply-phase UX redesign implemented"). "Cancel" is shown via
-  `shouldShowCancelButton` across that same input-flow window and dispatches `CANCEL_LISTENING`.
+- **`ControlsArea.tsx` rebuilt around `ChatStage` (2026-08-14, see decisions.md, "`ControlsArea`
+  button config refactor")** — supersedes the 2026-08-12 shape described just above (`canStopChat`/
+  `shouldShowEndSessionButton`/etc. no longer exist). Buttons are now driven by three lookup tables
+  instead of per-button visibility functions: `buttonsByStage: Record<ChatStage, Partial<Record<
+'primary' | 'secondary' | 'tertiary', ButtonId>>>` decides which buttons show in which stage —
+  `aiTurnFlow: { primary: 'speak', secondary: 'evaluate', tertiary: 'endSession' }`, `userTurnFlow: {
+primary: 'send', secondary: 'cancel' }`, `evaluation`/`error`: `{ primary: 'endSession' }`,
+  `sessionEnded: {}`; `buttonConfig` holds each button's static label/handler; `buttonIsDisabled`
+  is the only remaining per-status logic (`speak` needs `canSpeak`, `send` needs `canRequestSend`,
+  `cancel` needs `canRequestCancel`, `evaluate` needs `canRequestEvaluation`; `endSession` is never
+  disabled). The `speak` button's label still special-cases to "Start conversation" when
+  `isReadyForUserStart(phase)`, vs. "Reply" otherwise. `ControlsArea.module.css` uses named grid
+  areas (`primary`/`secondary`/`tertiary`) with `&:has(:nth-child(3))` switching to a 3-button layout
+  only when a third button is present, replacing the old plain two-column grid. Net effect for the
+  user: during a normal AI-turn pause, up to three buttons can show — "Reply"/"Start conversation"
+  (primary), "Evaluate" (secondary, enabled once the AI has replied), "End session" (tertiary, always
+  enabled). During `listening`/`stoppingListening`/`cancellingListening`/`sendingUserReply`
+  (`userTurnFlow` stage), only "Send"/"Cancel" show — no end-session option mid-input, same gating
+  `userIsInInputFlow` always provided, now expressed as `getChatStage(phase) === 'userTurnFlow'`.
 - `ErrorArea.tsx` — renders the error message from the `error` phase via the `Feedback` component
   (2026-08-09, see decisions.md); no per-error-type differentiation. Generic error recovery
   (end-session-only, no Retry) is wired up via the `onEndSession` prop call described above, not a
   reducer action.
 - `ThreadView.tsx` — renders `threadItems` from state, styled by author (`ai`/`user`); also owns
   the TTS playback trigger (see "Real TTS wired up" below) via a `useEffect` keyed on
-  `phase.status === 'aiTurnSpeaking'`.
+  `phase.status === 'aiTurnSpeaking'`. **Renders evaluation items too, as of 2026-08-13–2026-08-14**
+  (see below) — branches on `item.type` (`'message'` → `SpeechBalloon`, `'evaluation'` → the new
+  `Evaluation` component); `shouldAutoScrollThread` now also fires on `phase.status === 'evaluation'`.
+- **Evaluation: first working implementation (2026-08-13–2026-08-14, see decisions.md, "Evaluation:
+  first working implementation"):** an "Evaluate" secondary button (`ControlsArea`, `aiTurnFlow`
+  stage — see above) dispatches `REQUEST_EVALUATION`, walking `requestEvaluation` →
+  `waitingForEvaluation` → terminal `evaluation` through the reducer. `ChatConversation.tsx`'s
+  `sendMessageToAI`/new `sendEvaluationRequestToAI` are both thin wrappers around a shared `sendToAI`
+  helper — the abort-controller/stale-request/error-dispatch plumbing that used to live only in the
+  chat-send path is now shared between chat turns and the evaluation request. The evaluation call
+  reuses the ongoing `previousInteractionId` (continuing the same Gemini interaction, not resending
+  the transcript) with its own system instruction/input from a new `src/lib/evaluationConfig.ts`
+  (`getEvaluationSystemInstruction`/`getEvaluationInput`, threaded onto `ChatConfig` via
+  `getChatConfig` as `evaluationSystemInstruction`/`evaluationInput`). The AI reply renders inside a
+  new `Evaluation.tsx` component (`src/app/chat/chatConversation/components/`). **What this is not
+  yet:** the output is one plain-text block, not the structured grammar/vocabulary/nuance fields
+  requirements.md's MVP scope describes — that item is still open (see decisions.md for why this
+  first pass sidesteps it, and "What's open" below). **Known gaps, not yet fixed:** no loading
+  indicator is shown while `waitingForEvaluation` (the existing AI-pending-balloon effect only keys
+  on the chat-turn wait, not this one); `Evaluation.module.css` is missing the `.evaluationContent`
+  class the component applies to its content `<div>`; a full commented-out `sendMessageToAI_OLD`
+  function (pre-`sendToAI`-extraction) is still sitting in `ChatConversation.tsx`, not deleted. Only
+  verified against the mock AI route so far — real-Gemini evaluation calls haven't been separately
+  tested live (see decisions.md's "known risk" note on whether Gemini's carried-over interaction
+  history is actually sufficient context for this to work as designed).
+- **Real/mock API routes reorganized (2026-08-13–2026-08-14, see decisions.md, "Real AI route
+  generalized; mock routes stay split per role"):** the real route moved from
+  `src/app/api/ai/chat/route.ts` to `src/app/api/ai/route.ts` — one generic endpoint shared by both
+  chat and evaluation calls, since Gemini itself doesn't distinguish "roles," only the
+  `systemInstruction`/`input` content differs. Its local request-body type moved out to a shared
+  `src/lib/aiRequest.ts` (`AIRequestParams`). `aiService.ts`: `sendChatMessage` → `sendAIRequest(params,
+aiRole)` (`AIRole = 'chat' | 'evaluation'`), `AIChatResult` → `AIResult` — `aiRole` only affects
+  which _mock_ endpoint is hit; both mock and real chat/evaluation traffic share `/api/ai` once mocking
+  is off. The mock side stays split into two files (`src/app/api/aiMock/chat/route.ts`, new
+  `src/app/api/aiMock/evaluation/route.ts`) so chat and evaluation scenarios can be dev-toggled
+  independently, sharing an extracted `respondAfterDelay` helper (`src/app/api/aiMock/
+respondAfterDelay.ts`). **Dev convenience added same round:** both mock routes now treat a literal
+  `input === 'error'` as a request to force their `notFoundError` (404) scenario, regardless of the
+  hardcoded `scenario` const — lets error-state UI be triggered on demand (e.g. via `MockSTT`'s dev
+  textarea) without editing code.
 - **Derived-state predicates in `chatReducer.ts` (2026-08-03–2026-08-04):** `canSendReply` and
   `hasError` are now type predicates (`phase is Extract<ChatPhase, { status: '...' }>`), narrowing
   `ChatPhase` at the call site instead of requiring a separate raw `phase.status !== '...'`
@@ -416,10 +509,34 @@ different selection mechanism (see backlog.md, "Predefined-scenario-picks-its-ow
   system instruction; manually confirmed to change model behavior meaningfully between the two
   levels, no automated check exists yet. Expert (C1/C2) deliberately postponed, not scaffolded in
   code (see decisions.md).
+- **"Stop chat" brought back; ending a session is a dispatched `END_SESSION` action again
+  (2026-08-12, implemented)** — reverses the 2026-08-04 decision to drop `STOP_CHAT`/`chatEnded`
+  entirely and the 2026-07-30 decision that ending a session is a direct `onEndSession()` prop call
+  (see decisions.md, "Stop chat brought back... " and "Ending a session is a dispatched `END_SESSION`
+  action again"). New `chatStopped` phase offers only "End this session" for now — requesting an
+  evaluation from there is planned for a future iteration, not built yet (see backlog.md). Pending AI
+  requests are now aborted when the chat is stopped or the session ends (`requestsShouldBeAborted`,
+  reusing the existing `abortControllerRef`/`requestIdRef` stale-response guard). A `hasError`
+  exclusion bug in `canStopChat` and an unused `shouldShowStopChatButton` helper were both caught and
+  fixed during this session, before being documented (see decisions.md).
+  **Superseded 2026-08-14 — see below.**
+- **`ChatStage` refactor; "Stop chat" dropped again; evaluation feature added (2026-08-13–2026-08-14,
+  implemented)** — supersedes the bullet directly above. `chatStopped`/`STOP_CHAT`/`canStopChat` are
+  gone; `END_SESSION` now goes directly to a single `sessionEndRequested` phase (see decisions.md,
+  "'Stop chat' superseded by the `ChatStage` refactor" — dropping "Stop chat" wasn't a documented,
+  deliberate call, just what fell out of rebuilding `ControlsArea` around the new `ChatStage`
+  abstraction in the same pass evaluation was added). `ControlsArea` is now driven by
+  `getChatStage(phase)` + `buttonsByStage`/`buttonConfig`/`buttonIsDisabled` lookup tables instead of
+  per-button visibility functions (see decisions.md, "`ControlsArea` button config refactor," and
+  "What exists" above). Evaluation now has a first working, mock-verified, plain-text implementation
+  reachable via its own always-available "Evaluate" button, not gated behind stopping/ending the chat
+  as backlog.md originally anticipated (see decisions.md, "Evaluation: first working implementation,"
+  and "What exists" above for the known gaps in this first pass).
 
 ## What's open
 
-- Structured evaluation output fields/depth
+- ~~Structured evaluation output fields/depth~~ — no longer just an open question, now the active
+  next task; see the detailed entry further down this list and "Next step" below.
 - Core data structures (session state, evaluation schema) — deliberately deferred until v0
   interaction/state design is done
 - Component/route boundary diagram — same as above
@@ -461,6 +578,34 @@ different selection mechanism (see backlog.md, "Predefined-scenario-picks-its-ow
   empty-transcript branch and discards the transcript. Inert today (nothing dispatches
   `intent: 'edit'` yet) but needs an explicit branch once Edit is built (see decisions.md,
   "Reply-phase UX redesign implemented", and the STT-edit item in backlog.md).
+- ~~Request-evaluation option from `chatStopped`~~ — moot as of 2026-08-14: `chatStopped` no longer
+  exists (see decisions.md, "'Stop chat' superseded by the `ChatStage` refactor"), and evaluation
+  shipped with its own always-available button instead of being gated behind a stop/end step. No
+  longer open.
+- **Structured evaluation output (grammar/vocabulary/nuance fields) — now the active next task
+  (declared 2026-08-14)**: the first evaluation implementation (2026-08-13–2026-08-14) ships one
+  plain-text block, not the fielded structure requirements.md's MVP scope describes; that was always
+  meant as temporary (see decisions.md, "Evaluation output is plain text, not structured/fielded
+  JSON"). The plain-text pass is being replaced by structured output next, before any other work on
+  this project. **Not yet decided:** the actual field set/schema, and the runtime-validation approach
+  for it — decisions.md already flagged that TypeScript types alone don't validate untrusted LLM JSON
+  at runtime and that a validator (e.g. Zod) is a separate necessary decision (see decisions.md,
+  "TypeScript + planned runtime validation (Zod or similar)"); that decision is now live rather than
+  hypothetical, since this is the first place the app will parse LLM-generated JSON.
+- **Evaluation-request loading state** — `waitingForEvaluation` currently shows no loading indicator;
+  the existing AI-pending-balloon effect in `ThreadView.tsx` only keys on the chat-turn wait phase.
+- **`Evaluation.module.css` missing `.evaluationContent` class** — `Evaluation.tsx` applies it to its
+  content `<div>`, but only `.evaluation` is defined; the div currently gets no class.
+- **Dead code: commented-out `sendMessageToAI_OLD`** in `ChatConversation.tsx`, left over from the
+  `sendToAI` extraction (2026-08-13–2026-08-14) — not deleted yet.
+- **Whether real (non-mocked) evaluation calls actually work** — only verified against the mock AI
+  route so far. The design assumes Gemini's carried-over interaction history (via
+  `previousInteractionId`) gives the model enough context to evaluate the user's turns from a short
+  "give feedback" prompt alone, without the transcript being resent explicitly — not confirmed live
+  (see decisions.md, "Evaluation continues the same interaction... ", "Known risk").
+- **Whether dropping "Stop chat" (2026-08-14) was intentional** — see decisions.md, "'Stop chat'
+  superseded by the `ChatStage` refactor." Worth a direct answer from the project owner: keep it
+  dropped, or add it back into `buttonsByStage.aiTurnFlow` alongside "Evaluate"?
 
 ## Infra note (2026-08-04–08-05, Next.js 16 → 15 downgrade — merged)
 
@@ -532,7 +677,9 @@ Two calibration-only files still remain under `spikes/language-speech-rates/`
      (via a shared `userIsInInputFlow` helper), not `listening` alone as originally scoped.
    - `STOP_CHAT` action and terminal `chatEnded` phase removed entirely (not just narrowed) —
      ending a session is now always a direct `onEndSession` call. No cleanup behavior was actually
-     lost by this (see decisions.md for why).
+     lost by this (see decisions.md for why). **Superseded 2026-08-12 — see step 14 below:**
+     `STOP_CHAT` and a `chatStopped` phase are both back, and ending a session dispatches
+     `END_SESSION` again rather than calling `onEndSession` directly.
    - **Not in this round:** Edit (reopened for reconsideration, not designed — see decisions.md and
      backlog.md; the dormant `intent: 'edit'` fallthrough bug is tracked there), evaluation,
      auto-start-listening after the AI's turn (not started).
@@ -547,7 +694,36 @@ Two calibration-only files still remain under `spikes/language-speech-rates/`
     pass"). Not covered: a dedicated accessibility pass — remains open, not blocking evaluation.
 11. Define core data structures (session state shape, transcript shape) consistent with the state
     model — transcript must exclude the hidden opening instruction.
-12. Add evaluation as a second slice once the full v0 conversation loop (steps 4–10) is solid and
-    styled.
+12. ~~Add evaluation as a second slice once the full v0 conversation loop (steps 4–10) is solid and
+    styled~~ — first pass done, 2026-08-13–2026-08-14 (see decisions.md, "Evaluation: first working
+    implementation," and step 15 below): mock-verified, plain-text output only, not yet the
+    structured grammar/vocabulary/nuance fields requirements.md scopes — that part remains open (see
+    "What's open").
 13. Revisit scenario count for v1, predefined-scenario-starter mode, and turn counter / max-turns,
     once v0 exists.
+14. ~~Bring back "Stop chat"; make ending a session a dispatched action again~~ — done, 2026-08-12
+    (see decisions.md, "Stop chat brought back; session-ending moves to a dispatched `END_SESSION`
+    action"): `chatStopped`/`sessionEnded` phases, `STOP_CHAT`/`END_SESSION` actions, a second
+    secondary button in `ControlsArea` (with a 3-area CSS grid to fit it), pending-request abort on
+    stop/end, and the "Start chat" button relabel. Not built yet: offering to request an evaluation
+    from `chatStopped` instead of only "End this session" (see "What's open"). **Superseded 2026-08-14
+    — see step 15.**
+15. ~~Rework `ControlsArea` around `ChatStage`; ship evaluation's first pass~~ — done, 2026-08-13–
+    2026-08-14 (see decisions.md, "`ControlsArea` button config refactor" and "Evaluation: first
+    working implementation"): `chatStopped`/`STOP_CHAT` from step 14 are gone again — `END_SESSION`
+    now goes straight to a single `sessionEndRequested` phase; `ControlsArea` is driven by
+    `getChatStage`/`buttonsByStage`/`buttonConfig`/`buttonIsDisabled` instead of per-button
+    visibility functions; evaluation got its own always-available "Evaluate" button rather than the
+    `chatStopped`-gated design step 14 anticipated. Real/mock AI routes were also reorganized in the
+    same round (`/api/ai/chat` → `/api/ai`, shared by chat and evaluation; mock stays split per role
+    — see decisions.md, "Real AI route generalized"). Known gaps and open questions from this round
+    are tracked in "What's open," not here.
+16. **Replace plain-text evaluation output with structured output — declared 2026-08-14, the active
+    task, before any other project work.** The current `evaluation` payload (see step 15) is a single
+    plain-text block; it was always meant as a placeholder proving the request/render pipeline, not
+    the MVP-scoped answer (see decisions.md, "Evaluation output is plain text, not structured/fielded
+    JSON"). Not yet done, not yet scoped in detail: the field set (grammar/vocabulary/nuance, per
+    requirements.md, but exact shape undecided), the schema/type, and the runtime-validation approach
+    for untrusted LLM JSON (Zod or similar — see decisions.md, "TypeScript + planned runtime
+    validation"). Log the schema/validator decision in decisions.md once made, per this project's doc
+    workflow (CLAUDE.md).

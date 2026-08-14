@@ -12,6 +12,7 @@ import Loader from '@/components/Loader';
 import { type LanguageVoice } from '@/lib/language';
 import { cancelSpeech, speakMessage } from '@/lib/textToSpeech';
 
+import Evaluation from './Evaluation';
 import SpeechBalloon from './SpeechBalloon';
 
 import styles from './ThreadView.module.css';
@@ -91,11 +92,19 @@ export default function ThreadView({
       {openingHint && <Feedback type="info">{openingHint}</Feedback>}
       <ol className={styles.threadItems}>
         {threadItems.map((item, idx) => {
-          return (
-            <SpeechBalloon key={idx} author={item.author} tag="li">
-              {item.message}
-            </SpeechBalloon>
-          );
+          if (item.type === 'message') {
+            return (
+              <SpeechBalloon key={idx} author={item.author} tag="li">
+                {item.message}
+              </SpeechBalloon>
+            );
+          } else {
+            return (
+              <li key={idx}>
+                <Evaluation evaluation={item.message} />
+              </li>
+            );
+          }
         })}
 
         {showFakeBalloons && <FakeBalloons />}

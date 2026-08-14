@@ -7,7 +7,47 @@ when work starts.
 
 ## High priority
 
-- Add evaluation
+- ~~Add evaluation~~ — **first working pass shipped 2026-08-13–2026-08-14** (see status.md, "What
+  exists," and decisions.md, "Evaluation: first working implementation"): an always-available
+  "Evaluate" secondary button (not gated behind `chatStopped` as the 2026-08-12 integration-point
+  note below anticipated — that phase no longer exists, see decisions.md, "'Stop chat' superseded by
+  the `ChatStage` refactor"), mock-verified only, plain-text output. **Still open, not this item
+  anymore — see "Structured evaluation output" below:** the actual grammar/vocabulary/nuance fields
+  requirements.md's MVP scope describes.
+  ~~**Integration point identified 2026-08-12:** the reintroduced `chatStopped` phase (see status.md,
+  "Stop chat brought back," and decisions.md) is meant to offer a "request evaluation" option
+  alongside "End this session" once evaluation exists — not designed yet, just the landing spot for
+  it.~~ — moot, `chatStopped` no longer exists.
+
+### Structured evaluation output (grammar/vocabulary/nuance fields)
+
+**Added:** 2026-08-14, split out of "Add evaluation" above once its first pass shipped as plain text
+only (see decisions.md, "Evaluation output is plain text, not structured/fielded JSON"). **Picked up
+2026-08-14 — moved to status.md as the active next task** (see status.md, "Next step," and "What's
+open"): the plain-text pass was always meant as temporary, and this is the next thing to build,
+ahead of any other project work. Design and build the actual fielded structure requirements.md's MVP
+scope names, plus runtime validation for the LLM's JSON output (see decisions.md, "TypeScript +
+planned runtime validation").
+
+### Fix known gaps from the evaluation first pass
+
+**Added:** 2026-08-14 (see decisions.md, "Known gaps in this first pass," and status.md, "What's
+open"):
+
+- No loading indicator while an evaluation request is in flight (`waitingForEvaluation`)
+- `Evaluation.module.css` is missing the `.evaluationContent` class `Evaluation.tsx` applies
+- Delete the commented-out `sendMessageToAI_OLD` in `ChatConversation.tsx` (dead code left over from
+  the `sendToAI` extraction)
+- Confirm real (non-mocked) evaluation calls actually work — only verified against the mock route so
+  far; the design assumes Gemini's carried-over interaction history is sufficient context, unverified
+  live (see decisions.md)
+
+### Decide whether "Stop chat" should come back
+
+**Added:** 2026-08-14 (see decisions.md, "'Stop chat' superseded by the `ChatStage` refactor").
+"Stop chat" (added 2026-08-12) was dropped two days later as a side effect of the `ChatStage`
+refactor, not a deliberate decision — worth a direct answer: leave it dropped, or add it back into
+`buttonsByStage.aiTurnFlow` alongside "Evaluate"?
 
 ### Mock LLM responses during dev
 

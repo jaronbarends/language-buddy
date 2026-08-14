@@ -9,7 +9,6 @@ const MOCK_SCENARIOS = {
   successLongDelay: 'successLongDelay',
   rateLimitError: 'rateLimitError',
   notFoundError: 'notFoundError', // e.g. wrong ai model
-  aiCreationError: 'aiCreationError', // e.g. missing API key
 } as const;
 
 type MockScenario = (typeof MOCK_SCENARIOS)[keyof typeof MOCK_SCENARIOS];
@@ -18,11 +17,10 @@ const scenario: MockScenario = 'success';
 // const scenario: MockScenario = 'successLongDelay';
 // const scenario: MockScenario = 'rateLimitError';
 // const scenario: MockScenario = 'notFoundError';
-// const scenario: MockScenario = 'aiCreationError';
 
 export async function POST(request: NextRequest) {
   const { input } = (await request.json()) as AIRequestParams;
-  const successResponseOutputText = 'Wat vind jij eigenlijk leuk om te doen?';
+  const successResponseOutputText = 'Je doet het reuze goed';
 
   const selectedScenario = input === 'error' ? MOCK_SCENARIOS.notFoundError : scenario;
 
@@ -40,11 +38,6 @@ export async function POST(request: NextRequest) {
       return respondAfterDelay({
         data: { error: 'Rate limit exceeded', name: 'RateLimitError' },
         status: 429,
-      });
-    case MOCK_SCENARIOS.aiCreationError:
-      return respondAfterDelay({
-        data: { error: 'Could not create ai object', name: 'aiCreationError' },
-        status: 500,
       });
     case MOCK_SCENARIOS.notFoundError:
       return respondAfterDelay({
