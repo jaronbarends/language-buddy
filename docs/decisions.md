@@ -1900,7 +1900,9 @@ session") — the comment's stated intent was never applied to the new button. C
 during an `error` phase would also have silently discarded `phase.error` (overwriting it with
 `chatStopped`), losing the error message with no way back to it. Caught and fixed before this was
 documented as intended behavior: `canStopChat` now also requires `!hasError(phase)`.
-**Status:** Done.
+**Status:** Superseded 2026-08-14 — see "'Stop chat' superseded by the `ChatStage` refactor" further
+down this log. `chatStopped`/`STOP_CHAT`/`canStopChat` no longer exist in the code; ending a session
+is a single-step `sessionEndRequested` phase, not a stop-then-end two-step.
 
 ### Ending a session is a dispatched `END_SESSION` action again, not a direct `onEndSession()` call from `ControlsArea`
 
@@ -1930,7 +1932,11 @@ narrowed... `END_SESSION` removed," both 2026-07-30) — that mechanism is rever
 **Rationale:** Session-ending now needs to participate in reducer state (so `requestsShouldBeAborted`
 — see below — can key off it) rather than being a side-channel prop call the reducer has no
 visibility into.
-**Status:** Done.
+**Status:** Superseded 2026-08-14 in its specifics (the phase is now `sessionEndRequested`, not
+`sessionEnded`, and it's reached in one step rather than optionally via `chatStopped` first) — see
+"'Stop chat' superseded by the `ChatStage` refactor" further down this log. The core mechanism this
+entry established (dispatched `END_SESSION` → terminal phase → effect calls `onEndSession`) is
+unchanged.
 
 ### Pending AI requests are aborted when the chat is stopped or the session ends
 
@@ -1947,7 +1953,9 @@ only a new trigger for calling `.abort()` itself.
 `sendChatMessage` call running to completion in the background, wasting a request against the
 $5/month budget and risking a late `AI_RESPONSE_RECEIVED`/`ERROR` dispatch landing after the user
 had already moved on.
-**Status:** Done.
+**Status:** Still true in shape (`requestsShouldBeAborted` still exists and is still used the same
+way — see decisions.md, 2026-08-14 evaluation entry), but now keyed only on `sessionEndRequested`
+since `chatStopped` no longer exists.
 
 ### Dead code removed: unused `shouldShowStopChatButton`
 
@@ -1956,7 +1964,7 @@ had already moved on.
 during this change but never imported anywhere — `ControlsArea` uses `canStopChat` (different
 logic: also excludes `chatStopped` and, after the fix above, `error`). Removed as unused rather than
 kept or documented as a known gap.
-**Status:** Done.
+**Status:** Done (moot as of 2026-08-14 — `canStopChat` itself no longer exists either).
 
 ### "Start conversation" button relabeled to "Start chat"
 
@@ -1968,14 +1976,236 @@ not itself a functional change.
 
 ## `ControlsArea` button config refactor (2026-08-14)
 
-### Buttons derived from a `ControlsStage`, keyed by priority
+### Buttons derived from a `ChatStage`, keyed by priority
 
 **Date:** 2026-08-14
 **Decision:** Replace `ControlsArea`'s per-button `shouldShowXButton`/`canX` functions and the
-`getPrimaryButtonProps` if-chain with `getChatStage(phase): ChatStage` (exhaustive switch
-over `phase.status`, defined in `chatReducer.ts` alongside the reducer's own switch), `buttonsByStage:
-Record<ChatStage, Partial<Record<ButtonPriority, ButtonId>>>` (which buttons appear in a stage
-and in what priority slot — `primary | secondary | tertiary`), `buttonConfig: Record<ButtonId, {
-label, onClick }>` (static, independent of phase/stage), and `buttonIsDisabled(buttonId, phase)`
-(the only place per-status logic remains).
-**Rationale:** The prior code tangled two concerns — visibility and
+`getPrimaryButtonProps` if-chain with:
+
+- `ChatStage` (`'aiTurnFlow' | 'userTurnFlow' | 'evaluation' | 'error' | 'sessionEnded'`) and
+  `getChatStage(phase): ChatStage` — an exhaustive switch over `phase.status`, defined in
+  `chatReducer.ts` alongside the reducer's own switch (a `never`-typed default enforces every new
+  phase gets bucketed into a stage).
+- `buttonsByStage: Record<ChatStage, Partial<Record<ButtonPriority, ButtonId>>>` — which buttons
+  appear in a stage and in what priority slot (`primary | secondary | tertiary`):
+  `aiTurnFlow: { primary: 'speak', secondary: 'evaluate', tertiary: 'endSession' }`,
+  `userTurnFlow: { primary: 'send', secondary: 'cancel' }`, `evaluation: { primary: 'endSession'
+  }`, `error: { primary: 'endSession' }`, `sessionEnded: {}`.
+- `buttonConfig: Record<ButtonId, { label, onClick }>` — static label/handler per button,
+  independent of phase/stage (`ButtonId` = `'speak' | 'send' | 'cancel' | 'evaluate' |
+  'endSession'`).
+- `buttonIsDisabled(buttonId, phase)` — the only place per-status logic remains: `speak` disabled
+  unless `canSpeak(phase)`, `send` unless `canRequestSend(phase)`, `cancel` unless
+  `canRequestCancel(phase)`, `evaluate` unless `canRequestEvaluation(phase)`; `endSession` is never
+  disabled.
+- `ControlsArea` renders by mapping `priorityOrder` (`['primary', 'secondary', 'tertiary']`) against
+  `buttonsByStage[stage]`, looking up each button's label/handler in `buttonConfig`, skipping empty
+  slots. A `getLabel` override still special-cases the `speak` button's text to "Start conversation"
+  when `isReadyForUserStart(phase)` (vs. "Reply" otherwise) — the one piece of copy that depends on
+  phase, not just stage.
+
+`ControlsArea.module.css` gains named grid areas (`primary`/`secondary`/`tertiary`) instead of a
+plain two-column grid, so a stage can show one, two, or three buttons without a bespoke layout per
+count — `&:has(:nth-child(3))` switches to a 3-area layout (primary spanning the top row, secondary
++ tertiary below) only when a third button is actually present.
+
+**Rationale:** The prior code tangled two concerns — visibility (which buttons show in which phase)
+and per-button enable/disable logic — inside one `if`-chain (`getPrimaryButtonProps`) plus several
+one-off `shouldShowXButton` booleans, each independently re-deriving "what phase am I in" via ad hoc
+groupings of `phase.status` values (e.g. the old `userIsInInputFlow` helper). Adding the evaluation
+feature's own button in that shape would have meant another `shouldShowEvaluateButton` boolean and
+another primary-button branch, growing the same tangle rather than fitting a pattern. Introducing
+`ChatStage` as an explicit, named grouping — with an exhaustive switch enforcing every phase maps to
+exactly one stage — turns "which buttons show" into a single lookup table (`buttonsByStage`) instead
+of scattered conditionals, and separates it cleanly from "is this specific button clickable right
+now" (`buttonIsDisabled`), which still needs the finer-grained phase checks. `userIsInInputFlow` is
+now expressed as `getChatStage(phase) === 'userTurnFlow'`, kept as a thin wrapper since
+`SpeechToText.tsx`/elsewhere still call it by that name.
+**Status:** Done. Landed via branch `add-phase-stages` (commits `c02bfbd`, `c2e7837`, `a1766ff`,
+`fe90035`, merged `aa74377`), the same round of work that reworked "Stop chat" — see "'Stop chat'
+superseded by the `ChatStage` refactor" below for how that interacts with this entry.
+
+### "Stop chat" superseded by the `ChatStage` refactor; single-step session end
+
+**Date:** 2026-08-14
+**Decision:** The `chatStopped` phase, the `STOP_CHAT` action, and the "Stop chat" secondary button
+— all added 2026-08-12, see "Stop chat brought back..." below — are removed again, two days later, as
+part of the same `ChatStage` refactor described above. Ending a session is now a single step: `END_SESSION`
+transitions directly to a new `sessionEndRequested` phase (checked at the top of the reducer,
+unconditionally — no phase is excluded, unlike the old `STOP_CHAT` guard) whose `ChatStage` is
+`sessionEnded`, showing zero buttons. A `ChatConversation` effect keyed on `sessionShouldEnd(phase)`
+(`phase.status === 'sessionEndRequested'`) still calls the `onEndSession` prop, same as the
+2026-08-12 `sessionEnded`-phase effect did. `requestsShouldBeAborted` still aborts in-flight AI
+requests, now keyed on `sessionEndRequested` alone (the commented-out `requestEvaluation` line in
+that function is leftover scaffolding, not active).
+**Rationale:** Not a documented, deliberate reversal — the two-step stop-then-end shape and the
+"Stop chat" button were dropped as a side effect of building the `ChatStage` abstraction and the
+evaluation feature's own secondary button in the same pass, rather than a re-litigated decision
+against the 2026-08-12 rationale. `aiTurnFlow`'s secondary/tertiary slots ended up going to
+`evaluate`/`endSession` instead of `stopChat`/`endSession` — there was no design conversation
+captured about dropping "Stop chat" specifically, just that it didn't reappear once the button set
+was rebuilt around stages. Flagged here explicitly because status.md and the 2026-08-12 entries below
+describe "Stop chat" as current, shipped behavior, which it no longer is as of this refactor — worth
+confirming with the project owner whether "Stop chat" was intentionally dropped or should be added
+back into `buttonsByStage.aiTurnFlow` alongside `evaluate`.
+**Consequence:** The `chatStopped`-shaped landing spot backlog.md described for a future "request
+evaluation from here" option (see the 2026-08-12 entries and backlog.md, "Add evaluation") no longer
+exists — evaluation instead got its own always-available secondary button in `aiTurnFlow`, which
+supersedes that plan more directly than originally scoped, but wasn't a deliberate choice between the
+two designs.
+**Status:** Done (i.e., this is what's actually in the tree) — but see Rationale: the "why" behind
+dropping "Stop chat" itself is not established, only the mechanical outcome.
+
+---
+
+## Evaluation: first working implementation (2026-08-13–2026-08-14)
+
+### Reducer/UI shape: `requestEvaluation` → `waitingForEvaluation` → `evaluation`, own secondary button
+
+**Date:** 2026-08-13–2026-08-14
+**Decision:** Three new phases and three new actions in `chatReducer.ts`:
+
+- `REQUEST_EVALUATION` — checked at the top of the reducer (alongside `ERROR`/`END_SESSION`), guarded
+  by `canRequestEvaluation(phase)` (`aiTurnSpeaking` or `readyForUserReply` only); any phase → `{
+  status: 'requestEvaluation' }`.
+- `EVALUATION_REQUEST_SENT` — `requestEvaluation` → `waitingForEvaluation`.
+- `EVALUATION_RECEIVED; payload: { evaluation }` — `waitingForEvaluation` → `evaluation` (terminal:
+  the `evaluation` case returns `state` unconditionally, same pattern as `sessionEndRequested`),
+  appending a new `EvaluationItem` (`{ type: 'evaluation'; message }`) to `threadItems`.
+
+`ThreadItem` is now a union (`ChatMessageItem | EvaluationItem`) instead of a single shape — existing
+chat messages gained an explicit `type: 'message'` discriminant so `ThreadView` can branch on
+`item.type` to render either a `SpeechBalloon` or the new `Evaluation` component.
+
+`ChatConversation` drives the request the same way it drives a normal AI turn: a `useEffect` keyed on
+`shouldRequestEvaluation(state.phase)` calls `sendEvaluationRequest()`, which dispatches
+`EVALUATION_REQUEST_SENT` then awaits `sendEvaluationRequestToAI()`. Both this and the normal chat
+send path (`sendMessageToAI`) were refactored to share a new `sendToAI(input, systemInstruction,
+aiRole)` helper — the abort-controller/stale-request-guard/error-dispatch plumbing that used to live
+only in `sendMessageToAI` is now shared, differing only in which `AIError`-shaped result triggers
+which dispatch afterward (`AI_RESPONSE_RECEIVED` vs. `EVALUATION_RECEIVED`).
+
+`ControlsArea` gets an "Evaluate" button (`buttonsByStage.aiTurnFlow.secondary`, disabled unless
+`canRequestEvaluation(phase)`) — see the `ChatStage` refactor entry above. It's available any time
+the AI has just replied or is mid-reply-turn, not gated behind ending or stopping the chat first.
+**Rationale:** Reuses the exact same request/dispatch/abort machinery already proven for chat turns,
+rather than a parallel one-off implementation — the two flows (`sendMessageToAI`/
+`sendEvaluationRequestToAI`) are now thin wrappers around the shared `sendToAI`. Putting "Evaluate" in
+the normal turn controls (rather than behind a stop/end step, as backlog.md originally anticipated —
+see "Add evaluation" there) lets a user request feedback at any natural pause without first
+committing to ending the session.
+**Status:** Done, mock-backed only so far (`NEXT_PUBLIC_USE_MOCK_AI=true`) — real-Gemini evaluation
+calls go through the same generalized `/api/ai` route as chat (see "Real AI route generalized" below)
+and haven't been separately verified live yet.
+
+### Evaluation continues the same interaction via `previousInteractionId`, not a fresh transcript replay
+
+**Date:** 2026-08-13–2026-08-14
+**Decision:** `sendEvaluationRequestToAI` calls `sendToAI` with the same `previousInteractionId`
+component state the chat turns already maintain — the evaluation request is sent as a continuation of
+the ongoing Gemini interaction, not as a new interaction seeded with the full transcript serialized
+into the input text.
+**Rationale:** Directly reuses Spike 3's finding (2026-07-25, see above): conversation context
+carries over via `previous_interaction_id` without needing to resend prior turns, but
+`system_instruction` does not and must be sent on every call. `evaluationConfig.ts`'s
+`getEvaluationSystemInstruction` is written accordingly — it re-establishes the evaluator persona
+from scratch (native-speaker teacher, not the in-scenario chat partner) rather than assuming any
+framing carries over, while `getEvaluationInput` only says "go through the history of this chat" —
+relying on the already-carried-over interaction history to supply that content, not re-sending it.
+**Known risk, not yet verified:** this assumes Gemini's stored interaction history is sufficient
+context for the model to actually re-read and evaluate the user's own turns specifically (as opposed
+to the conversation's content generally) when prompted only with a new system instruction + a short
+"give feedback" input. Not confirmed against the real API yet (see "Status" above) — could turn out
+to need the transcript passed explicitly after all.
+
+### Evaluation output is plain text, not structured/fielded JSON
+
+**Date:** 2026-08-13–2026-08-14
+**Decision:** `getEvaluationSystemInstruction`'s only output-format rule is "The reply should be
+plain text only." `getEvaluationInput` asks for one terse, unstructured pass over the user's turns —
+no separate grammar/vocabulary/nuance fields, no JSON schema. `Evaluation.tsx` renders the whole
+string as-is inside a single block.
+**Rationale/status — not a closed decision, just what got built first:** requirements.md's MVP scope
+still describes "async structured evaluation: grammar, vocabulary upgrades, semantic nuance" and
+lists "exact fields/depth of the structured evaluation output" as open. This first pass ships the
+simplest version that exercises the whole pipeline (request → AI call → render) end-to-end, deferring
+the structured-fields question rather than answering it. Worth flagging explicitly since it's easy to
+read the feature as "evaluation: done" from status.md's "What exists" — the plumbing is done, the
+actual MVP-scoped output shape is not.
+**Status:** Requirements.md's "exact fields/depth" item remains open — this entry doesn't resolve it,
+it just records that the first implementation sidesteps it. **Update 2026-08-14:** confirmed as
+temporary, not a settled shape — structured output is now the declared next task (see status.md,
+"Next step," and backlog.md), ahead of any other project work. No schema or validation-library
+decision has been made yet; log it here once it is.
+
+### Known gaps in this first pass
+
+**Date:** 2026-08-14
+- **No loading indicator while `waitingForEvaluation`:** `ThreadView`'s pending-AI-balloon effect is
+  keyed on `isWaitingForAI(phase)` only (the chat-turn wait), not the new `waitingForEvaluation`
+  phase — requesting an evaluation currently gives no visual feedback until the result appears (all
+  three `aiTurnFlow` buttons stay in their disabled/enabled states with nothing indicating a request
+  is in flight).
+- **`Evaluation.module.css` is missing the `.evaluationContent` class** `Evaluation.tsx` applies to
+  its content `<div>` — only `.evaluation` (the outer wrapper) is defined, so the inner div currently
+  renders with `className={undefined}` and no wrapper-specific styling.
+- **Dead commented-out code left in `ChatConversation.tsx`:** a full `sendMessageToAI_OLD` function
+  (the pre-`sendToAI`-extraction implementation) is commented out below the live code, not deleted.
+**Status:** Open — none of these block the feature working, but none are fixed either; tracked here
+rather than only in status.md/backlog.md since they're artifacts of this specific implementation
+pass, not independently-scoped gaps.
+
+---
+
+## Real AI route generalized; mock routes stay split per role (2026-08-13–2026-08-14)
+
+### `/api/ai/chat` → `/api/ai`, shared by both chat and evaluation calls
+
+**Date:** 2026-08-14
+**Decision:** The real Gemini route moves from `src/app/api/ai/chat/route.ts` to
+`src/app/api/ai/route.ts` — one generic endpoint, not one per AI "role". `ChatMessageParams` (the
+route's local request-body type) is extracted into a shared `src/lib/aiRequest.ts` as
+`AIRequestParams`, imported by both the route and `aiService.ts`. In `aiService.ts`,
+`sendChatMessage` is renamed `sendAIRequest(params, aiRole: AIRole)` (`AIRole = 'chat' |
+'evaluation'`) and `AIChatResult` is renamed `AIResult` — but `aiRole` only ever affects which
+_mock_ endpoint is used (`CHAT_ENDPOINT` vs. `EVALUATION_ENDPOINT`); both constants resolve to the
+same `/api/ai` when not mocking, and the real route itself has no notion of "role" at all — it just
+takes `systemInstruction`/`input`/`previousInteractionId` and calls `interactions.create`, same as
+before the rename.
+**Rationale:** Chat and evaluation calls are structurally identical requests against Gemini (same
+shape, same endpoint, same auth) — differentiated entirely by which `systemInstruction`/`input` the
+caller sends, not by anything the route needs to branch on. Introducing a second real route (e.g.
+`/api/ai/evaluation`) would duplicate the entire handler for no behavioral difference. Moving the
+folder out of `chat/` and dropping the `chat` segment reflects that this was never really a
+chat-specific route, just named for its first caller.
+**Status:** Done.
+
+### Mock routes stay split: `/api/aiMock/chat` and `/api/aiMock/evaluation`, sharing `respondAfterDelay`
+
+**Date:** 2026-08-13–2026-08-14
+**Decision:** Unlike the real route, the mock side keeps two separate route files — a new
+`src/app/api/aiMock/evaluation/route.ts` alongside the existing `src/app/api/aiMock/chat/route.ts` —
+each with its own hardcoded `scenario`/`MOCK_SCENARIOS` const and its own canned success text. The
+shared `respondAfterDelay` helper (delay + `NextResponse.json`) is extracted out of the chat mock
+route into `src/app/api/aiMock/respondAfterDelay.ts` so both mock routes import the same
+implementation instead of duplicating it.
+**Rationale:** The real route can stay unified because Gemini itself doesn't care about "role" — but
+the mock exists specifically to let dev flip between success/error/slow-response scenarios by hand
+(editing the `scenario` const), and a chat-flow bug and an evaluation-flow bug are independent things
+to want to test in isolation; one shared mock scenario switch would force testing both flows through
+whatever state the other one happened to be left in. Splitting the routes lets `NEXT_PUBLIC_USE_MOCK_AI`
+dev sessions exercise "evaluation succeeds, chat fails" (or vice versa) simultaneously.
+**Status:** Done.
+
+### Mock error trigger: sending `input === 'error'` forces the mock's error scenario
+
+**Date:** 2026-08-13
+**Decision:** Both mock routes now check `input === 'error'` on the incoming request body — if true,
+they respond with the `notFoundError` (404) scenario regardless of the hardcoded `scenario` const,
+instead of whatever `scenario` is currently set to.
+**Rationale:** Previously, testing error-state UI required editing the `scenario` const by hand and
+restarting/reloading — awkward mid-session, and easy to forget to flip back. Sending the literal word
+"error" as the spoken/typed input (via `MockSTT`'s dev textarea, or by speaking the word) is a
+same-session way to trigger the error path on demand without touching code, while `scenario` still
+controls the _default_ (non-error) behavior for normal dev flow.
+**Status:** Done.
