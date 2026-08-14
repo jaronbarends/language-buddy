@@ -1,8 +1,8 @@
 /* mocked route for ai to prevent spending unnecessary tokens during development and for forcing errors */
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 import { respondAfterDelay } from '@/app/api/aiMock/respondAfterDelay';
-import { AIRequestParams } from '@/lib/aiRequest';
+import { AIRequestBody, getBodyValidationError } from '@/lib/aiRequest';
 
 const MOCK_SCENARIOS = {
   success: 'success',
@@ -19,7 +19,14 @@ const scenario: MockScenario = 'success';
 // const scenario: MockScenario = 'notFoundError';
 
 export async function POST(request: NextRequest) {
-  const { input } = (await request.json()) as AIRequestParams;
+  const body = await request.json();
+  const validation = AIRequestBody.safeParse(body);
+  if (!validation.success) {
+    const error = getBodyValidationError();
+    return NextResponse.json({ error }, { status: 400 });
+  }
+
+  const { input } = validation.data;
   const successResponseOutputText = 'Je doet het reuze goed';
 
   const selectedScenario = input === 'error' ? MOCK_SCENARIOS.notFoundError : scenario;

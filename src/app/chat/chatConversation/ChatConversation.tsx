@@ -289,9 +289,9 @@ export default function ChatConversation({
           input,
           previousInteractionId,
           systemInstruction,
-          abortSignal: abortControllerRef.current.signal,
         },
-        aiRole
+        aiRole,
+        abortControllerRef.current.signal
       );
       if (requestIsStale(requestId)) {
         return;
