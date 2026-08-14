@@ -4,6 +4,7 @@ import {
   canRequestSend,
   canStopChat,
   chatHasStopped,
+  shouldShowEvaluationSecondaryButton,
   canRequestEvaluation,
   evaluationIsShown,
   shouldShowEndSessionSecondaryButton,
@@ -62,8 +63,12 @@ export default function ControlsArea({
             Stop chat
           </Button>
         )}
-        {canRequestEvaluation(phase) && (
-          <Button variant="secondary" onClick={onEvaluationRequested}>
+        {shouldShowEvaluationSecondaryButton(phase) && (
+          <Button
+            variant="secondary"
+            onClick={onEvaluationRequested}
+            disabled={!canRequestEvaluation(phase)}
+          >
             Evaluate chat
           </Button>
         )}
@@ -133,8 +138,8 @@ export default function ControlsArea({
     if (chatHasStopped(phase)) {
       return {
         variant: 'primary',
-        label: 'End this session',
-        onClick: onEndSessionRequested,
+        label: 'Evaluate',
+        onClick: onEvaluationRequested,
       };
     }
     if (evaluationIsShown(phase)) {

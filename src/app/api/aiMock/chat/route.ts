@@ -13,21 +13,19 @@ const MOCK_SCENARIOS = {
 
 type MockScenario = (typeof MOCK_SCENARIOS)[keyof typeof MOCK_SCENARIOS];
 
-let scenario: MockScenario = 'success';
-// let scenario: MockScenario = 'successLongDelay';
-// let scenario: MockScenario = 'rateLimitError';
-// let scenario: MockScenario = 'notFoundError';
-// let scenario: MockScenario = 'aiCreationError';
+const scenario: MockScenario = 'success';
+// const scenario: MockScenario = 'successLongDelay';
+// const scenario: MockScenario = 'rateLimitError';
+// const scenario: MockScenario = 'notFoundError';
+// const scenario: MockScenario = 'aiCreationError';
 
 export async function POST(request: NextRequest) {
   const { input } = (await request.json()) as ChatMessageParams;
   const successResponseOutputText = 'Wat vind jij eigenlijk leuk om te doen?';
 
-  if (input === 'error') {
-    scenario = 'notFoundError';
-  }
+  const selectedScenario = input === 'error' ? MOCK_SCENARIOS.notFoundError : scenario;
 
-  switch (scenario) {
+  switch (selectedScenario) {
     case MOCK_SCENARIOS.success:
       return respondAfterDelay({
         data: { id: 'mock response.id', text: successResponseOutputText },
@@ -53,7 +51,7 @@ export async function POST(request: NextRequest) {
         status: 404,
       });
     default: {
-      const exhaustiveCheck: never = scenario;
+      const exhaustiveCheck: never = selectedScenario;
       throw new Error(`Unhandled mock scenario: ${exhaustiveCheck}`);
     }
   }

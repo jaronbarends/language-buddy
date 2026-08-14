@@ -99,7 +99,11 @@ export default function ThreadView({
               </SpeechBalloon>
             );
           } else {
-            return <Evaluation key={idx} evaluation={item.message} />;
+            return (
+              <li key={idx}>
+                <Evaluation evaluation={item.message} />
+              </li>
+            );
           }
         })}
 

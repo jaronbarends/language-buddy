@@ -34,7 +34,7 @@ export type ChatPhase =
   | { status: 'requestEvaluation' }
   | { status: 'waitingForEvaluation' }
   | { status: 'evaluation' }
-  | { status: 'sessionEnded' }
+  | { status: 'sessionEndRequested' }
   | { status: 'error'; error: AIError };
 
 export type ChatAction =
@@ -82,7 +82,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
   if (action.type === 'END_SESSION' && canEndSession(state.phase)) {
     return {
       threadItems: state.threadItems,
-      phase: { status: 'sessionEnded' },
+      phase: { status: 'sessionEndRequested' },
     };
   }
 
@@ -240,7 +240,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       }
     case 'evaluation':
       return state;
-    case 'sessionEnded':
+    case 'sessionEndRequested':
       // regular cases are handled before the main switch
       // if we come here, nothing needs to happen
       return state;
@@ -258,42 +258,33 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
 
 // derived state functions
 
+// derived state functions: simple status translations
+
+export function chatStartIsPending(phase: ChatPhase): boolean {
+  return phase.status === 'chatStartPending';
+}
+
 export function canStartWithUser(phase: ChatPhase): boolean {
   return phase.status === 'readyForUserStart';
-}
-
-export function canStartReply(phase: ChatPhase): boolean {
-  return phase.status === 'readyForUserReply';
-}
-
-export function canRequestSend(phase: ChatPhase): boolean {
-  return phase.status === 'listening';
-}
-
-export function shouldSendReply(
-  // reply is actually ready to be sent
-  phase: ChatPhase
-): phase is Extract<ChatPhase, { status: 'sendingUserReply' }> {
-  return phase.status === 'sendingUserReply';
-}
-
-export function hasError(phase: ChatPhase): phase is Extract<ChatPhase, { status: 'error' }> {
-  return phase.status === 'error';
-}
-
-export function isAITurnSpeaking(phase: ChatPhase): boolean {
-  return phase.status === 'aiTurnSpeaking';
 }
 
 export function isWaitingForAI(phase: ChatPhase): boolean {
   return phase.status === 'waitingForAI';
 }
 
-export function chatStartIsPending(phase: ChatPhase): boolean {
-  return phase.status === 'chatStartPending';
+export function isAITurnSpeaking(phase: ChatPhase): boolean {
+  return phase.status === 'aiTurnSpeaking';
+}
+
+export function canStartReply(phase: ChatPhase): boolean {
+  return phase.status === 'readyForUserReply';
 }
 
 export function isListening(phase: ChatPhase): boolean {
+  return phase.status === 'listening';
+}
+
+export function canRequestSend(phase: ChatPhase): boolean {
   return phase.status === 'listening';
 }
 
@@ -305,33 +296,27 @@ export function listeningShouldBeCancelled(phase: ChatPhase): boolean {
   return phase.status === 'cancellingListening';
 }
 
-export function canRequestEvaluation(phase: ChatPhase): boolean {
-  return (
-    !isInEvaluationFlow(phase) &&
-    !userIsInInputFlow(phase) &&
-    phase.status !== 'chatStartPending' &&
-    phase.status !== 'sessionEnded' &&
-    !hasError(phase)
-  );
+export function shouldSendReply(
+  // reply is actually ready to be sent
+  phase: ChatPhase
+): phase is Extract<ChatPhase, { status: 'sendingUserReply' }> {
+  return phase.status === 'sendingUserReply';
+}
+
+export function chatHasStopped(phase: ChatPhase): boolean {
+  return phase.status === 'chatStopped';
+}
+
+export function shouldRequestEvaluation(phase: ChatPhase): boolean {
+  return phase.status === 'requestEvaluation';
 }
 
 export function evaluationIsShown(phase: ChatPhase): boolean {
   return phase.status === 'evaluation';
 }
 
-export function canStopChat(phase: ChatPhase): boolean {
-  return (
-    phase.status !== 'chatStopped' &&
-    phase.status !== 'chatStartPending' &&
-    !userIsInInputFlow(phase) &&
-    !isInEvaluationFlow(phase) &&
-    phase.status !== 'sessionEnded' &&
-    !hasError(phase)
-  );
-}
-
-export function chatHasStopped(phase: ChatPhase): boolean {
-  return phase.status === 'chatStopped';
+export function hasError(phase: ChatPhase): phase is Extract<ChatPhase, { status: 'error' }> {
+  return phase.status === 'error';
 }
 
 export function canEndSession(phase: ChatPhase): boolean {
@@ -341,17 +326,10 @@ export function canEndSession(phase: ChatPhase): boolean {
 }
 
 export function sessionShouldEnd(phase: ChatPhase): boolean {
-  return phase.status === 'sessionEnded';
+  return phase.status === 'sessionEndRequested';
 }
 
-export function shouldAutoScrollThread(phase: ChatPhase): boolean {
-  return phase.status === 'aiTurnSpeaking' || phase.status === 'waitingForAI';
-}
-
-export function shouldShowRecognitionPreview(phase: ChatPhase): boolean {
-  const allowedStatuses = ['listening', 'stoppingListening', 'sendingUserReply'];
-  return allowedStatuses.includes(phase.status);
-}
+// derived state functions: grouped statuses
 
 export function userIsInInputFlow(phase: ChatPhase): boolean {
   const inputFlowStatuses = [
@@ -363,9 +341,64 @@ export function userIsInInputFlow(phase: ChatPhase): boolean {
   return inputFlowStatuses.includes(phase.status);
 }
 
+function isAITurn(phase: ChatPhase): boolean {
+  return phase.status === 'waitingForAI' || phase.status === 'aiTurnSpeaking';
+}
+
 function isInEvaluationFlow(phase: ChatPhase): boolean {
   const evaluationFlowStatuses = ['requestEvaluation', 'waitingForEvaluation', 'evaluation'];
   return evaluationFlowStatuses.includes(phase.status);
+}
+
+// derived state functions: permissions
+
+export function canRequestEvaluation(phase: ChatPhase): boolean {
+  return (
+    phase.status === 'aiTurnSpeaking' ||
+    phase.status === 'readyForUserReply' ||
+    phase.status === 'chatStopped'
+  );
+}
+
+export function canStopChat(phase: ChatPhase): boolean {
+  return (
+    phase.status !== 'chatStopped' &&
+    phase.status !== 'chatStartPending' &&
+    !userIsInInputFlow(phase) &&
+    !isInEvaluationFlow(phase) &&
+    phase.status !== 'sessionEndRequested' &&
+    !hasError(phase)
+  );
+}
+
+export function canRequestCancel(phase: ChatPhase): boolean {
+  return phase.status === 'listening';
+}
+
+// derived state functions: behavior
+
+export function requestsShouldBeAborted(phase: ChatPhase): boolean {
+  return (
+    phase.status === 'chatStopped' ||
+    // phase.status === 'requestEvaluation' ||
+    phase.status === 'sessionEndRequested'
+  );
+}
+
+// derived state functions: controls ui
+
+export function shouldShowEvaluationSecondaryButton(phase: ChatPhase): boolean {
+  return (
+    isAITurn(phase) ||
+    phase.status === 'readyForUserReply' ||
+    phase.status === 'requestEvaluation' ||
+    phase.status === 'waitingForEvaluation'
+    // !isInEvaluationFlow(phase) &&
+    // userIsInInputFlow(phase) &&
+    // phase.status !== 'chatStartPending' &&
+    // phase.status !== 'sessionEndRequested' &&
+    // !hasError(phase)
+  );
 }
 
 export function shouldShowCancelButton(phase: ChatPhase): boolean {
@@ -377,14 +410,17 @@ export function shouldShowEndSessionSecondaryButton(phase: ChatPhase) {
   return chatHasStopped(phase) && !hasError(phase);
 }
 
-export function shouldRequestEvaluation(phase: ChatPhase): boolean {
-  return phase.status === 'requestEvaluation';
+// derived state functions: thread view ui
+
+export function shouldShowRecognitionPreview(phase: ChatPhase): boolean {
+  const allowedStatuses = ['listening', 'stoppingListening', 'sendingUserReply'];
+  return allowedStatuses.includes(phase.status);
 }
 
-export function canRequestCancel(phase: ChatPhase): boolean {
-  return phase.status === 'listening';
-}
-
-export function requestsShouldBeAborted(phase: ChatPhase): boolean {
-  return phase.status === 'chatStopped' || phase.status === 'sessionEnded';
+export function shouldAutoScrollThread(phase: ChatPhase): boolean {
+  return (
+    phase.status === 'aiTurnSpeaking' ||
+    phase.status === 'waitingForAI' ||
+    phase.status === 'evaluation'
+  );
 }

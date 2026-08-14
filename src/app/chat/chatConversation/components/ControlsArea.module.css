@@ -15,7 +15,18 @@
   }
 
   @media (max-width: 29.99rem) {
-    grid-template-columns: auto;
-    grid-template-rows: 1fr 1fr;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(2, 1fr);
+    grid-template-areas:
+      'primary'
+      'secondary';
+
+    &:has(:nth-child(3)) {
+      grid-template-rows: repeat(3, 1fr);
+      grid-template-areas:
+        'primary'
+        'secondary'
+        'tertiary';
+    }
   }
 }
