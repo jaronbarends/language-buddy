@@ -1,6 +1,6 @@
 import 'dotenv/config';
 
-import { AIRequestParams } from '@/lib/aiRequest';
+import { AIRequestBody } from '@/lib/aiRequest';
 
 const REAL_API_ENDPOINT = '/api/ai';
 const CHAT_ENDPOINT =
@@ -27,8 +27,9 @@ export type AIResult =
 export type AIRole = 'chat' | 'evaluation';
 
 export async function sendAIRequest(
-  { systemInstruction, previousInteractionId, input, abortSignal }: AIRequestParams,
-  aiRole: AIRole
+  { systemInstruction, previousInteractionId, input }: AIRequestBody,
+  aiRole: AIRole,
+  abortSignal: AbortSignal
 ): Promise<AIResult> {
   const body = JSON.stringify({
     systemInstruction,
