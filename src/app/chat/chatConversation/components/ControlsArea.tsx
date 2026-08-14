@@ -2,6 +2,7 @@ import {
   isReadyForUserStart,
   canRequestEvaluation,
   canRequestCancel,
+  canRequestSend,
   canSpeak,
   getChatStage,
   type ChatPhase,
@@ -23,6 +24,15 @@ type ControlsAreaProps = {
 type ButtonPriority = 'primary' | 'secondary' | 'tertiary';
 type ButtonId = 'speak' | 'send' | 'cancel' | 'evaluate' | 'endSession';
 
+const priorityOrder = ['primary', 'secondary', 'tertiary'] as const satisfies ButtonPriority[];
+const buttonsByStage: Record<ChatStage, Partial<Record<ButtonPriority, ButtonId>>> = {
+  aiTurnFlow: { primary: 'speak', secondary: 'evaluate', tertiary: 'endSession' },
+  userTurnFlow: { primary: 'send', secondary: 'cancel' },
+  evaluation: { primary: 'endSession' },
+  error: { primary: 'endSession' },
+  sessionEnded: {},
+};
+
 export default function ControlsArea({
   phase,
   onStartListening,
@@ -31,14 +41,6 @@ export default function ControlsArea({
   onEvaluationRequested,
   onEndSessionRequested,
 }: ControlsAreaProps) {
-  const buttonsByStage: Record<ChatStage, Partial<Record<ButtonPriority, ButtonId>>> = {
-    aiInputFlow: { primary: 'speak', secondary: 'evaluate', tertiary: 'endSession' },
-    userInputFlow: { primary: 'send', secondary: 'cancel' },
-    evaluation: { primary: 'endSession' },
-    error: { primary: 'endSession' },
-    sessionEnded: {},
-  };
-
   const buttonConfig: Record<ButtonId, { label: string; onClick: () => void }> = {
     speak: { label: 'Reply', onClick: onStartListening },
     send: { label: 'Send', onClick: onSendRequested },
@@ -47,7 +49,6 @@ export default function ControlsArea({
     endSession: { label: 'End session', onClick: onEndSessionRequested },
   };
   const stage: ChatStage = getChatStage(phase);
-  const priorityOrder: ButtonPriority[] = ['primary', 'secondary', 'tertiary'];
   const stageButtons = buttonsByStage[stage];
 
   return (
@@ -86,6 +87,8 @@ function buttonIsDisabled(buttonId: ButtonId, phase: ChatPhase): boolean {
   switch (buttonId) {
     case 'speak':
       return !canSpeak(phase);
+    case 'send':
+      return !canRequestSend(phase);
     case 'cancel':
       return !canRequestCancel(phase);
     case 'evaluate':

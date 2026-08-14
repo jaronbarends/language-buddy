@@ -36,7 +36,7 @@ export type ChatPhase =
   | { status: 'sessionEndRequested' }
   | { status: 'error'; error: AIError };
 
-export type ChatStage = 'aiInputFlow' | 'userInputFlow' | 'evaluation' | 'error' | 'sessionEnded';
+export type ChatStage = 'aiTurnFlow' | 'userTurnFlow' | 'evaluation' | 'error' | 'sessionEnded';
 
 export type ChatAction =
   | { type: 'AI_START_INPUT_SENT' }
@@ -341,7 +341,7 @@ export function shouldAutoScrollThread(phase: ChatPhase): boolean {
 // derived state functions: stages
 
 export function userIsInInputFlow(phase: ChatPhase): boolean {
-  return getChatStage(phase) === 'userInputFlow';
+  return getChatStage(phase) === 'userTurnFlow';
 }
 
 export function getChatStage(phase: ChatPhase): ChatStage {
@@ -353,12 +353,12 @@ export function getChatStage(phase: ChatPhase): ChatStage {
     case 'readyForUserStart':
     case 'requestEvaluation':
     case 'waitingForEvaluation':
-      return 'aiInputFlow';
+      return 'aiTurnFlow';
     case 'listening':
     case 'stoppingListening':
     case 'cancellingListening':
     case 'sendingUserReply':
-      return 'userInputFlow';
+      return 'userTurnFlow';
     case 'evaluation':
       return 'evaluation';
     case 'error':

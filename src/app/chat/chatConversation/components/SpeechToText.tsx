@@ -54,7 +54,7 @@ export default function SpeechToText({
     if (canSpeak(phase)) {
       setLiveTranscriptByRef('');
     }
-  });
+  }, [phase]);
 
   useEffect(() => {
     if (isListening(phase)) {
