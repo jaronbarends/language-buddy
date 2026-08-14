@@ -498,7 +498,7 @@ in backlog.md, not designed here. **Update 2026-08-04:** the turn-counter mechan
 is discarded (see "Turn counter / max-turns: discarded" below) — "AI always speaks last" is no
 longer actively enforceable and currently isn't enforced: a session can end via "End session" after
 any turn, including mid-AI-turn, the same way `STOP_CHAT` always could before it (see decisions.md,
-"Reply-phase UX redesign implemented"). This rule now describes the intended shape of a *normal*
+"Reply-phase UX redesign implemented"). This rule now describes the intended shape of a _normal_
 session ending (nothing currently forces it), not a guarantee.
 
 ### No dedicated `sending` state
@@ -1499,7 +1499,7 @@ checked on `ChatSetup`, not discovered mid-conversation. New `src/lib/speechReco
 
 - `speechRecognitionIsSupported()` — reads `window.SpeechRecognition ?? window.webkitSpeechRecognition`
   and returns whether a constructor exists; returns `false` (via an internal `typeof window ===
-  'undefined'` guard) when called during SSR.
+'undefined'` guard) when called during SSR.
 - `getCrossBrowserSpeechRecognition()` — returns `new Constructor()` if supported, `undefined`
   otherwise. `SpeechToText.tsx`'s `initSpeechRecognition` now returns `SpeechRecognition | undefined`
   instead of throwing when unsupported; `startListening`/`stopListening`/`cancelListening` already
@@ -1533,7 +1533,7 @@ session at all, and there's no partial/degraded mode to fall back into.
 first. `window` doesn't exist there, so a direct call would need to assume `false` during SSR and
 would only get the real answer on client re-render; without `useSyncExternalStore`, React has no way
 to know the SSR-rendered value is provisional, and React 19 hydration would throw a mismatch error
-the moment a browser that *does* support `SpeechRecognition` hydrates to a different boolean than
+the moment a browser that _does_ support `SpeechRecognition` hydrates to a different boolean than
 what was server-rendered. `useSyncExternalStore`'s `getServerSnapshot` param exists exactly for this
 case: it tells React explicitly what value to expect during the SSR pass, so hydration reconciles
 cleanly and the real client value takes over on mount.
@@ -1597,7 +1597,7 @@ still no separate `design.md` file; token values live directly in `src/styles/se
 **Decision:** Small `src/components/` library, styled against the tokens above:
 
 - **`Button`** (`src/components/button/Button.tsx`) — `variant: 'primary' | 'secondary' |
-  'feedback'`, optional `fontSize: 'medium' | 'large'`. Renders a Next.js `Link` when given an
+'feedback'`, optional `fontSize: 'medium' | 'large'`. Renders a Next.js `Link` when given an
   `href`, a native `<button>` otherwise (same class list either way) — one component covers both
   link-styled-as-button and real-button cases rather than two separate components.
 - **`Loader`** (`src/components/Loader.tsx`) — three-dot loading indicator, `role="status"` +
@@ -1919,7 +1919,7 @@ back to `readyForNewChat`/`chatStartPending` in place, without unmounting `ChatC
 new `END_SESSION` does not reset in place — it transitions to a terminal `sessionEnded` phase whose
 effect calls the `onEndSession` prop, which is still owned by `ChatContainer` and still switches the
 container back to rendering `ChatSetup`, unmounting `ChatConversation` entirely (the same outcome
-the direct call already produced since 2026-07-30). Only the *mechanism* for reaching that outcome
+the direct call already produced since 2026-07-30). Only the _mechanism_ for reaching that outcome
 changed — a dispatched action + effect, instead of a direct prop call from a click handler — not
 what happens once it fires.
 
@@ -1965,3 +1965,17 @@ kept or documented as a known gap.
 **Rationale:** Matches the "Stop chat"/`ChatConversation` naming introduced by this same change —
 not itself a functional change.
 **Status:** Done.
+
+## `ControlsArea` button config refactor (2026-08-14)
+
+### Buttons derived from a `ControlsStage`, keyed by priority
+
+**Date:** 2026-08-14
+**Decision:** Replace `ControlsArea`'s per-button `shouldShowXButton`/`canX` functions and the
+`getPrimaryButtonProps` if-chain with `getChatStage(phase): ChatStage` (exhaustive switch
+over `phase.status`, defined in `chatReducer.ts` alongside the reducer's own switch), `buttonsByStage:
+Record<ChatStage, Partial<Record<ButtonPriority, ButtonId>>>` (which buttons appear in a stage
+and in what priority slot — `primary | secondary | tertiary`), `buttonConfig: Record<ButtonId, {
+label, onClick }>` (static, independent of phase/stage), and `buttonIsDisabled(buttonId, phase)`
+(the only place per-status logic remains).
+**Rationale:** The prior code tangled two concerns — visibility and

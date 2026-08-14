@@ -1,5 +1,4 @@
-import { ChatPhase } from '@/app/chat/chatConversation/chatReducer';
-import { hasError } from '@/app/chat/chatConversation/chatReducer';
+import { ChatPhase, hasError } from '@/app/chat/chatConversation/chatReducer';
 import Feedback from '@/components/Feedback';
 
 export default function ErrorArea({ phase }: { phase: ChatPhase }) {

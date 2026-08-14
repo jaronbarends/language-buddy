@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import {
-  canStartReply,
-  canStartWithUser,
+  canSpeak,
   isListening,
   isWaitingForAI,
   listeningShouldBeStopped,
@@ -52,10 +51,10 @@ export default function SpeechToText({
   }, []);
 
   useEffect(() => {
-    if (canStartReply(phase) || canStartWithUser(phase)) {
+    if (canSpeak(phase)) {
       setLiveTranscriptByRef('');
     }
-  });
+  }, [phase]);
 
   useEffect(() => {
     if (isListening(phase)) {

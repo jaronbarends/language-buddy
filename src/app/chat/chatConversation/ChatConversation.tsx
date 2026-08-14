@@ -112,8 +112,6 @@ export default function ChatConversation({
           onStartListening={handleStartListening}
           onSendRequested={handleSendRequested}
           onCancelListening={handleCancelListening}
-          // onSendUserMessage={sendUserMessage}
-          onStopChat={handleStopChat}
           onEvaluationRequested={handleEvaluationRequest}
           onEndSessionRequested={handleEndSessionRequest}
           phase={state.phase}
@@ -180,7 +178,6 @@ export default function ChatConversation({
       return;
     }
 
-    console.log('send evaluation request to ai');
     dispatch({ type: 'EVALUATION_REQUEST_SENT' });
 
     await sendEvaluationRequestToAI();
@@ -188,10 +185,6 @@ export default function ChatConversation({
 
   function handleAISpeechEnd() {
     dispatch({ type: 'AI_FINISHED_SPEAKING' });
-  }
-
-  function handleStopChat() {
-    dispatch({ type: 'STOP_CHAT' });
   }
 
   function handleEvaluationRequest() {
@@ -258,12 +251,6 @@ export default function ChatConversation({
   }
 
   async function sendEvaluationRequestToAI() {
-    // await new Promise<void>((resolve) =>
-    //   setTimeout(() => {
-    //     console.log('resolve evaluation promise');
-    //     resolve();
-    //   }, 1500)
-    // );
     const reply: AIChatResult | undefined = await sendToAI(
       chatConfig.evaluationInput,
       chatConfig.evaluationSystemInstruction
