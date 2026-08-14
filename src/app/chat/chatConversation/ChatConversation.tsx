@@ -113,7 +113,7 @@ export default function ChatConversation({
           onSendRequested={handleSendRequested}
           onCancelListening={handleCancelListening}
           // onSendUserMessage={sendUserMessage}
-          onStopChat={handleStopChat}
+          // onStopChat={handleStopChat}
           onEvaluationRequested={handleEvaluationRequest}
           onEndSessionRequested={handleEndSessionRequest}
           phase={state.phase}
@@ -190,9 +190,9 @@ export default function ChatConversation({
     dispatch({ type: 'AI_FINISHED_SPEAKING' });
   }
 
-  function handleStopChat() {
-    dispatch({ type: 'STOP_CHAT' });
-  }
+  // function handleStopChat() {
+  //   dispatch({ type: 'STOP_CHAT' });
+  // }
 
   function handleEvaluationRequest() {
     dispatch({ type: 'REQUEST_EVALUATION' });

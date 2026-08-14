@@ -1965,3 +1965,17 @@ kept or documented as a known gap.
 **Rationale:** Matches the "Stop chat"/`ChatConversation` naming introduced by this same change —
 not itself a functional change.
 **Status:** Done.
+
+## `ControlsArea` button config refactor (2026-08-14)
+
+### Buttons derived from a `ControlsStage`, keyed by priority
+
+**Date:** 2026-08-14
+**Decision:** Replace `ControlsArea`'s per-button `shouldShowXButton`/`canX` functions and the
+`getPrimaryButtonProps` if-chain with `getControlsStage(phase): ControlsStage` (exhaustive switch
+over `phase.status`, same pattern as `chatReducer`'s own switch), `buttonsByStage:
+Record<ControlsStage, Partial<Record<ButtonPriority, ButtonId>>>` (which buttons appear in a stage
+and in what priority slot — `primary | secondary | tertiary`), `buttonConfig: Record<ButtonId, {
+label, onClick }>` (static, independent of phase/stage), and `isButtonDisabled(buttonId, phase)`
+(the only place per-status logic remains).
+**Rationale:** The prior code tangled two concerns — visibility and
