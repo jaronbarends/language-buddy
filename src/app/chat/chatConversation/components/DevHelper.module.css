@@ -2,4 +2,6 @@
   position: fixed;
   top: 1rem;
   right: 1rem;
+  padding: var(--size-8);
+  background: rgba(from var(--color-bg-default) r g b / 0.7);
 }

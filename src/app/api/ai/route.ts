@@ -2,17 +2,12 @@ import { GoogleGenAI } from '@google/genai';
 import 'dotenv/config';
 import { NextRequest, NextResponse } from 'next/server';
 
+import { AIRequestParams } from '@/lib/aiRequest';
+
 // genai no longer uses a single ApiError, but generated hierarchy of specific error classes. Define what we need
 type GeminiApiError = Error & { status?: number; error?: { code?: string }; body?: string };
 
 const MODEL = 'gemini-3.1-flash-lite';
-
-export type ChatMessageParams = {
-  input: string;
-  systemInstruction: string;
-  previousInteractionId?: string;
-  abortSignal?: AbortSignal;
-};
 
 type InteractionConfig = {
   model: string;
@@ -23,7 +18,7 @@ type InteractionConfig = {
 
 export async function POST(request: NextRequest) {
   const { systemInstruction, previousInteractionId, input } =
-    (await request.json()) as ChatMessageParams;
+    (await request.json()) as AIRequestParams;
 
   const ai = await createAI();
 

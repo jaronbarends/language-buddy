@@ -1,7 +1,7 @@
 'use client';
 import { useReducer, useState, useRef, useEffect } from 'react';
 
-import { AIError, sendChatMessage, type AIChatResult } from '@/lib/aiService';
+import { AIError, sendAIRequest, type AIResult, type AIRole } from '@/lib/aiService';
 import { type ChatConfig } from '@/lib/chatConfig';
 import { type LanguageVoice } from '@/lib/language';
 
@@ -195,45 +195,46 @@ export default function ChatConversation({
     dispatch({ type: 'END_SESSION' });
   }
 
-  async function sendMessageToAI_OLD(input: string): Promise<void> {
-    let reply: AIChatResult;
-    abortControllerRef.current = new AbortController();
-    requestIdRef.current++;
-    const requestId = requestIdRef.current;
+  // async function sendMessageToAI_OLD(input: string): Promise<void> {
+  //   let reply: AIResult;
+  //   abortControllerRef.current = new AbortController();
+  //   requestIdRef.current++;
+  //   const requestId = requestIdRef.current;
 
-    try {
-      reply = await sendChatMessage({
-        input,
-        previousInteractionId,
-        systemInstruction: chatConfig.systemInstruction,
-        abortSignal: abortControllerRef.current.signal,
-      });
-      if (requestIsStale(requestId)) {
-        return;
-      }
-    } catch (error) {
-      if (requestIsStale(requestId)) {
-        return;
-      }
-      if (error instanceof Error && error.name === 'AbortError') {
-        return; // user cancelled, not a real error, don't dispatch
-      }
-      dispatch({ type: 'ERROR', payload: { error: error as AIError } });
-      return;
-    }
+  //   try {
+  //     reply = await sendAIRequest({
+  //       input,
+  //       previousInteractionId,
+  //       systemInstruction: chatConfig.systemInstruction,
+  //       abortSignal: abortControllerRef.current.signal,
+  //     });
+  //     if (requestIsStale(requestId)) {
+  //       return;
+  //     }
+  //   } catch (error) {
+  //     if (requestIsStale(requestId)) {
+  //       return;
+  //     }
+  //     if (error instanceof Error && error.name === 'AbortError') {
+  //       return; // user cancelled, not a real error, don't dispatch
+  //     }
+  //     dispatch({ type: 'ERROR', payload: { error: error as AIError } });
+  //     return;
+  //   }
 
-    if (!reply.success) {
-      // then reply must be error object
-      dispatch({ type: 'ERROR', payload: { error: reply } });
-      return;
-    }
+  //   if (!reply.success) {
+  //     // then reply must be error object
+  //     dispatch({ type: 'ERROR', payload: { error: reply } });
+  //     return;
+  //   }
 
-    setPreviousInteractionId(reply.interactionId);
-    dispatch({ type: 'AI_RESPONSE_RECEIVED', payload: { message: reply.message } });
-  }
+  //   setPreviousInteractionId(reply.interactionId);
+  //   dispatch({ type: 'AI_RESPONSE_RECEIVED', payload: { message: reply.message } });
+  // }
 
   async function sendMessageToAI(input: string): Promise<void> {
-    const reply: AIChatResult | undefined = await sendToAI(input, chatConfig.systemInstruction);
+    const aiRole: AIRole = 'chat';
+    const reply: AIResult | undefined = await sendToAI(input, chatConfig.systemInstruction, aiRole);
 
     if (reply === undefined) {
       // handled in sendToAI
@@ -251,9 +252,11 @@ export default function ChatConversation({
   }
 
   async function sendEvaluationRequestToAI() {
-    const reply: AIChatResult | undefined = await sendToAI(
+    const aiRole: AIRole = 'evaluation';
+    const reply: AIResult | undefined = await sendToAI(
       chatConfig.evaluationInput,
-      chatConfig.evaluationSystemInstruction
+      chatConfig.evaluationSystemInstruction,
+      aiRole
     );
 
     if (reply === undefined) {
@@ -272,20 +275,24 @@ export default function ChatConversation({
 
   async function sendToAI(
     input: string,
-    systemInstruction: string
-  ): Promise<AIChatResult | undefined> {
-    let reply: AIChatResult;
+    systemInstruction: string,
+    aiRole: AIRole
+  ): Promise<AIResult | undefined> {
+    let reply: AIResult;
     abortControllerRef.current = new AbortController();
     requestIdRef.current++;
     const requestId = requestIdRef.current;
 
     try {
-      reply = await sendChatMessage({
-        input,
-        previousInteractionId,
-        systemInstruction,
-        abortSignal: abortControllerRef.current.signal,
-      });
+      reply = await sendAIRequest(
+        {
+          input,
+          previousInteractionId,
+          systemInstruction,
+          abortSignal: abortControllerRef.current.signal,
+        },
+        aiRole
+      );
       if (requestIsStale(requestId)) {
         return;
       }
