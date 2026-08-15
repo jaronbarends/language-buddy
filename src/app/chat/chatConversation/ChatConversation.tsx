@@ -1,7 +1,7 @@
 'use client';
 import { useReducer, useState, useRef, useEffect } from 'react';
 
-import { AIError, sendAIRequest, type AIResult, type AIRole } from '@/lib/aiService';
+import { AIError, sendAIRequest, type AIChatResult, type AIRole } from '@/lib/aiService';
 import { type ChatConfig } from '@/lib/chatConfig';
 import { type LanguageVoice } from '@/lib/language';
 
@@ -196,7 +196,7 @@ export default function ChatConversation({
   }
 
   // async function sendMessageToAI_OLD(input: string): Promise<void> {
-  //   let reply: AIResult;
+  //   let reply: AIChatResult;
   //   abortControllerRef.current = new AbortController();
   //   requestIdRef.current++;
   //   const requestId = requestIdRef.current;
@@ -234,7 +234,11 @@ export default function ChatConversation({
 
   async function sendMessageToAI(input: string): Promise<void> {
     const aiRole: AIRole = 'chat';
-    const reply: AIResult | undefined = await sendToAI(input, chatConfig.systemInstruction, aiRole);
+    const reply: AIChatResult | undefined = await sendToAI(
+      input,
+      chatConfig.systemInstruction,
+      aiRole
+    );
 
     if (reply === undefined) {
       // handled in sendToAI
@@ -253,7 +257,7 @@ export default function ChatConversation({
 
   async function sendEvaluationRequestToAI() {
     const aiRole: AIRole = 'evaluation';
-    const reply: AIResult | undefined = await sendToAI(
+    const reply: AIChatResult | undefined = await sendToAI(
       chatConfig.evaluationInput,
       chatConfig.evaluationSystemInstruction,
       aiRole
@@ -277,8 +281,8 @@ export default function ChatConversation({
     input: string,
     systemInstruction: string,
     aiRole: AIRole
-  ): Promise<AIResult | undefined> {
-    let reply: AIResult;
+  ): Promise<AIChatResult | undefined> {
+    let reply: AIChatResult;
     abortControllerRef.current = new AbortController();
     requestIdRef.current++;
     const requestId = requestIdRef.current;

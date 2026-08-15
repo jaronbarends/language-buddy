@@ -2,7 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import 'dotenv/config';
 import { NextRequest, NextResponse } from 'next/server';
 
-import { AIRequestBody, getBodyValidationError } from '@/lib/aiRequest';
+import { AIChatRequestBodySchema, getBodyValidationError } from '@/lib/aiRequest';
 
 // genai no longer uses a single ApiError, but generated hierarchy of specific error classes. Define what we need
 type GeminiApiError = Error & { status?: number; error?: { code?: string }; body?: string };
@@ -18,7 +18,7 @@ type InteractionConfig = {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const validation = AIRequestBody.safeParse(body);
+  const validation = AIChatRequestBodySchema.safeParse(body);
   if (!validation.success) {
     const error = getBodyValidationError();
     return NextResponse.json({ error }, { status: 400 });

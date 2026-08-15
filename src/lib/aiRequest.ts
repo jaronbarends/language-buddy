@@ -1,14 +1,18 @@
 import { z } from 'zod';
 
-export const AIRequestBody = z.object({
+export const AIChatRequestBodySchema = z.object({
   input: z.string(),
   systemInstruction: z.string(),
   previousInteractionId: z.string().optional(),
 });
+export type AIChatRequestBody = z.infer<typeof AIChatRequestBodySchema>;
 
-export type AIRequestBody = z.infer<typeof AIRequestBody>;
-
-export const bodyValidationError = 'AIRequestBody validation failed';
+export const AIEvaluationRequestBodySchema = z.object({
+  input: z.string(),
+  systemInstruction: z.string(),
+  previousInteractionId: z.string(),
+});
+export type AIEvaluationRequestBody = z.infer<typeof AIEvaluationRequestBodySchema>;
 
 export function getBodyValidationError(): string {
   // if you want, pass validation.error (type ZodError) and give more detailed feedback
