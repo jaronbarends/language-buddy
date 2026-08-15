@@ -1,6 +1,4 @@
-import type { ReactNode } from 'react';
-
-import { type AIEvaluation, type Comment } from '@/lib/aiResponse';
+import { type AIEvaluation, type Segment } from '@/lib/aiResponse';
 
 import styles from './Evaluation.module.css';
 
@@ -10,8 +8,14 @@ export default function Evaluation({ evaluation }: { evaluation: AIEvaluation })
       <h1>Evaluation</h1>
       <div className={styles.evaluationContent}>
         <ol className={styles.comments}>
-          {evaluation.comments.map((comment, idx) => (
-            <li key={idx}>{parseComment(comment)}</li>
+          {evaluation.comments.map((comment, commentIdx) => (
+            <li key={commentIdx}>
+              {comment.segments.map((segment, segmentIdx) => (
+                <span key={segmentIdx} className={getClassName(segment)}>
+                  {segment.text}{' '}
+                </span>
+              ))}
+            </li>
           ))}
         </ol>
       </div>
@@ -19,21 +23,13 @@ export default function Evaluation({ evaluation }: { evaluation: AIEvaluation })
   );
 }
 
-function parseComment(comment: Comment): ReactNode {
-  const parts = comment.segments.map((segment) => {
-    switch (segment.type) {
-      case 'userInput':
-        return <span className={styles.userInput}>{segment.text}</span>;
-      case 'suggestion':
-        return <span className={styles.suggestion}>{segment.text}</span>;
-      default:
-        return <>{segment.text}</>;
-    }
-  });
-  const parts2 = comment.segments.map((segment, idx) => {
-    // return <span key={idx}>{segment.text}</span>;
-    return segment.text;
-  });
-  // console.log('parts2:', parts2);
-  return <>{parts2.join(' ')} </>;
+function getClassName(segment: Segment): string {
+  switch (segment.type) {
+    case 'suggestion':
+      return styles.suggestion;
+    case 'userInput':
+      return styles.userInput;
+    default:
+      return '';
+  }
 }

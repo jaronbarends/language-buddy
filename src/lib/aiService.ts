@@ -1,7 +1,7 @@
 import 'dotenv/config';
 
 import { type AIChatRequestBody, AIEvaluationRequestBody } from '@/lib/aiRequest';
-import { type AIEvaluation, type SegmentType } from '@/lib/aiResponse';
+import { type AIEvaluation } from '@/lib/aiResponse';
 
 const CHAT_ENDPOINT =
   process.env.NEXT_PUBLIC_USE_MOCK_AI === 'true' ? '/api/aiMock/chat' : '/api/ai/chat';
@@ -115,13 +115,24 @@ export async function toAIEvaluationResult(res: Response): Promise<AIEvaluationR
 
   const { id, text } = await res.json();
 
-  const segmentType: SegmentType = 'text';
-  const mockEvaluation = {
+  const mockEvaluation: AIEvaluation = {
     comments: [
       {
         segments: [
-          { type: segmentType, text: 'you did well' },
-          { type: segmentType, text: 'really well' },
+          { type: 'text', text: 'where you said' },
+          { type: 'userInput', text: 'zup zap' },
+          { type: 'text', text: 'you probably meant' },
+          { type: 'suggestion', text: 'ziiip' },
+          { type: 'text', text: 'that is what native people would say when they discuss zops.' },
+        ],
+      },
+      {
+        segments: [
+          { type: 'text', text: 'where you said' },
+          { type: 'userInput', text: 'zup zap' },
+          { type: 'text', text: 'you probably meant' },
+          { type: 'suggestion', text: 'ziiip' },
+          { type: 'text', text: 'that is what native people would say when they discuss zops.' },
         ],
       },
     ],

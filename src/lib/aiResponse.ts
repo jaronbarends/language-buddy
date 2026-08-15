@@ -7,6 +7,8 @@ const SegmentSchema = z.object({
   type: SegmentTypeSchema,
   text: z.string(),
 });
+export type Segment = z.infer<typeof SegmentSchema>;
+
 const CommentSchema = z.object({
   segments: z.array(SegmentSchema),
 });

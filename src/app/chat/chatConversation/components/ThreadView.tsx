@@ -105,7 +105,6 @@ export default function ThreadView({
           } else {
             return (
               <li key={idx}>
-                {/* <Evaluation evaluation={item.message} /> */}
                 <Evaluation evaluation={item.evaluation} />
               </li>
             );
