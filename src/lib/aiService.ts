@@ -119,7 +119,10 @@ export async function toAIEvaluationResult(res: Response): Promise<AIEvaluationR
   const mockEvaluation = {
     comments: [
       {
-        segments: [{ type: segmentType, text: 'you did well' }],
+        segments: [
+          { type: segmentType, text: 'you did well' },
+          { type: segmentType, text: 'really well' },
+        ],
       },
     ],
   };

@@ -18,3 +18,5 @@ export function getBodyValidationError(): string {
   // if you want, pass validation.error (type ZodError) and give more detailed feedback
   return 'AIRequestBody validation failed';
 }
+
+export type AIRequestBody = AIChatRequestBody | AIEvaluationRequestBody;

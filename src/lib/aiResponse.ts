@@ -10,6 +10,7 @@ const SegmentSchema = z.object({
 const CommentSchema = z.object({
   segments: z.array(SegmentSchema),
 });
+export type Comment = z.infer<typeof CommentSchema>;
 
 export const AIEvaluationSchema = z.object({
   comments: z.array(CommentSchema),
