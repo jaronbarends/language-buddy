@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
 const SegmentTypeSchema = z.enum(['text', 'userInput', 'suggestion']);
+export type SegmentType = z.infer<typeof SegmentTypeSchema>;
+
 const SegmentSchema = z.object({
   type: SegmentTypeSchema,
   text: z.string(),

@@ -54,7 +54,8 @@ export default function ThreadView({
     };
 
     function startAISpeechWithLastMessage() {
-      const message = threadItems[threadItems.length - 1].message;
+      // const message = threadItems[threadItems.length - 1].message;
+      const message = 'hardcoded in startAISpeechWithLastMessage';
       speakMessage(message, languageVoice, () => {
         if (!speechIsCancelled) {
           onAISpeechEnd();
@@ -101,7 +102,8 @@ export default function ThreadView({
           } else {
             return (
               <li key={idx}>
-                <Evaluation evaluation={item.message} />
+                {/* <Evaluation evaluation={item.message} /> */}
+                <Evaluation evaluation="{item.evaluation}" />
               </li>
             );
           }

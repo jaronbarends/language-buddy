@@ -1,7 +1,15 @@
 'use client';
 import { useReducer, useState, useRef, useEffect } from 'react';
 
-import { AIError, sendAIRequest, type AIChatResult, type AIRole } from '@/lib/aiService';
+import { AIEvaluationRequestBody } from '@/lib/aiRequest';
+import {
+  AIError,
+  AIEvaluationResult,
+  sendAIChatRequest,
+  sendAIEvaluationRequest,
+  type AIChatResult,
+  type AIRole,
+} from '@/lib/aiService';
 import { type ChatConfig } from '@/lib/chatConfig';
 import { type LanguageVoice } from '@/lib/language';
 
@@ -195,46 +203,9 @@ export default function ChatConversation({
     dispatch({ type: 'END_SESSION' });
   }
 
-  // async function sendMessageToAI_OLD(input: string): Promise<void> {
-  //   let reply: AIChatResult;
-  //   abortControllerRef.current = new AbortController();
-  //   requestIdRef.current++;
-  //   const requestId = requestIdRef.current;
-
-  //   try {
-  //     reply = await sendAIRequest({
-  //       input,
-  //       previousInteractionId,
-  //       systemInstruction: chatConfig.systemInstruction,
-  //       abortSignal: abortControllerRef.current.signal,
-  //     });
-  //     if (requestIsStale(requestId)) {
-  //       return;
-  //     }
-  //   } catch (error) {
-  //     if (requestIsStale(requestId)) {
-  //       return;
-  //     }
-  //     if (error instanceof Error && error.name === 'AbortError') {
-  //       return; // user cancelled, not a real error, don't dispatch
-  //     }
-  //     dispatch({ type: 'ERROR', payload: { error: error as AIError } });
-  //     return;
-  //   }
-
-  //   if (!reply.success) {
-  //     // then reply must be error object
-  //     dispatch({ type: 'ERROR', payload: { error: reply } });
-  //     return;
-  //   }
-
-  //   setPreviousInteractionId(reply.interactionId);
-  //   dispatch({ type: 'AI_RESPONSE_RECEIVED', payload: { message: reply.message } });
-  // }
-
   async function sendMessageToAI(input: string): Promise<void> {
     const aiRole: AIRole = 'chat';
-    const reply: AIChatResult | undefined = await sendToAI(
+    const reply: AIChatResult | undefined = await sendToAI_OLD(
       input,
       chatConfig.systemInstruction,
       aiRole
@@ -255,13 +226,45 @@ export default function ChatConversation({
     dispatch({ type: 'AI_RESPONSE_RECEIVED', payload: { message: reply.message } });
   }
 
+  // async function sendEvaluationRequestToAI_OLD() {
+  //   const aiRole: AIRole = 'evaluation';
+  //   const reply: AIChatResult | undefined = await sendToAI(
+  //     chatConfig.evaluationInput,
+  //     chatConfig.evaluationSystemInstruction,
+  //     aiRole
+  //   );
+
+  //   if (reply === undefined) {
+  //     // handled in sendToAI
+  //     return;
+  //   }
+
+  //   if (!reply.success) {
+  //     // then reply must be error object
+  //     dispatch({ type: 'ERROR', payload: { error: reply } });
+  //     return;
+  //   }
+
+  //   dispatch({ type: 'EVALUATION_RECEIVED', payload: { evaluation: reply.message } });
+  // }
+
   async function sendEvaluationRequestToAI() {
-    const aiRole: AIRole = 'evaluation';
-    const reply: AIChatResult | undefined = await sendToAI(
-      chatConfig.evaluationInput,
-      chatConfig.evaluationSystemInstruction,
-      aiRole
-    );
+    if (!previousInteractionId) {
+      // TODO: handle this
+      return;
+    }
+    const body: AIEvaluationRequestBody = {
+      input: chatConfig.evaluationInput,
+      systemInstruction: chatConfig.evaluationSystemInstruction,
+      previousInteractionId,
+    };
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
+    const requestFunction: () => Promise<AIEvaluationResult> = async () =>
+      sendAIEvaluationRequest(body, signal);
+
+    const reply: AIEvaluationResult | undefined =
+      await sendToAI<AIEvaluationResult>(requestFunction);
 
     if (reply === undefined) {
       // handled in sendToAI
@@ -274,10 +277,37 @@ export default function ChatConversation({
       return;
     }
 
-    dispatch({ type: 'EVALUATION_RECEIVED', payload: { evaluation: reply.message } });
+    dispatch({ type: 'EVALUATION_RECEIVED', payload: { evaluation: reply.evaluation } });
   }
 
-  async function sendToAI(
+  async function sendToAI<T extends AIChatResult | AIEvaluationResult>(
+    requestFunction: () => Promise<T>
+  ): Promise<T | undefined> {
+    let reply: T;
+    requestIdRef.current++;
+    const requestId = requestIdRef.current;
+
+    try {
+      reply = await requestFunction();
+
+      if (requestIsStale(requestId)) {
+        return;
+      }
+    } catch (error) {
+      if (requestIsStale(requestId)) {
+        return;
+      }
+      if (error instanceof Error && error.name === 'AbortError') {
+        return; // user cancelled, not a real error, don't dispatch
+      }
+      dispatch({ type: 'ERROR', payload: { error: error as AIError } });
+      return;
+    }
+
+    return reply;
+  }
+
+  async function sendToAI_OLD(
     input: string,
     systemInstruction: string,
     aiRole: AIRole
@@ -288,13 +318,12 @@ export default function ChatConversation({
     const requestId = requestIdRef.current;
 
     try {
-      reply = await sendAIRequest(
+      reply = await sendAIChatRequest(
         {
           input,
           previousInteractionId,
           systemInstruction,
         },
-        aiRole,
         abortControllerRef.current.signal
       );
       if (requestIsStale(requestId)) {

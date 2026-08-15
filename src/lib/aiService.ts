@@ -1,7 +1,7 @@
 import 'dotenv/config';
 
-import { type AIChatRequestBody } from '@/lib/aiRequest';
-import { type AIEvaluation } from '@/lib/aiResponse';
+import { type AIChatRequestBody, AIEvaluationRequestBody } from '@/lib/aiRequest';
+import { type AIEvaluation, type SegmentType } from '@/lib/aiResponse';
 
 const CHAT_ENDPOINT =
   process.env.NEXT_PUBLIC_USE_MOCK_AI === 'true' ? '/api/aiMock/chat' : '/api/ai/chat';
@@ -34,9 +34,8 @@ export type AIEvaluationResult =
 
 export type AIRole = 'chat' | 'evaluation';
 
-export async function sendAIRequest(
+export async function sendAIChatRequest(
   { systemInstruction, previousInteractionId, input }: AIChatRequestBody,
-  aiRole: AIRole,
   abortSignal: AbortSignal
 ): Promise<AIChatResult> {
   const body = JSON.stringify({
@@ -44,9 +43,23 @@ export async function sendAIRequest(
     previousInteractionId,
     input,
   });
-  const endpoint = aiRole === 'chat' ? CHAT_ENDPOINT : EVALUATION_ENDPOINT;
+  const endpoint = CHAT_ENDPOINT;
   const res: Response = await postRequest({ body, abortSignal, endpoint });
   return toAIChatResult(res);
+}
+
+export async function sendAIEvaluationRequest(
+  { systemInstruction, previousInteractionId, input }: AIEvaluationRequestBody,
+  abortSignal: AbortSignal
+): Promise<AIEvaluationResult> {
+  const body = JSON.stringify({
+    systemInstruction,
+    previousInteractionId,
+    input,
+  });
+  const endpoint = EVALUATION_ENDPOINT;
+  const res: Response = await postRequest({ body, abortSignal, endpoint });
+  return toAIEvaluationResult(res);
 }
 
 async function postRequest({
@@ -86,5 +99,34 @@ export async function toAIChatResult(res: Response): Promise<AIChatResult> {
     success: true,
     interactionId: id,
     message: text,
+  };
+}
+
+export async function toAIEvaluationResult(res: Response): Promise<AIEvaluationResult> {
+  if (!res.ok) {
+    const body = await res.json();
+    return {
+      success: false,
+      error: body.error,
+      name: body.name,
+      status: res.status,
+    };
+  }
+
+  const { id, text } = await res.json();
+
+  const segmentType: SegmentType = 'text';
+  const mockEvaluation = {
+    comments: [
+      {
+        segments: [{ type: segmentType, text: 'you did well' }],
+      },
+    ],
+  };
+
+  return {
+    success: true,
+    interactionId: id,
+    evaluation: mockEvaluation,
   };
 }
