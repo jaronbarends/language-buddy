@@ -23,7 +23,7 @@ export function getChatConfig(
     );
   }
   const baseInstruction = getBaseInstruction(language, languageLevel);
-  const systemInstruction = `${baseInstruction.prefix} ${scenario.instruction} ${baseInstruction.suffix}`;
+  const systemInstruction = `${baseInstruction}${scenario.instructionText}`;
   const evaluationSystemInstruction = getEvaluationSystemInstruction(language, languageLevel);
   const evaluationInput = getEvaluationInput(language, languageLevel);
 

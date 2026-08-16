@@ -2348,3 +2348,89 @@ Two compounding unknowns remain unconfirmed against the live Gemini API:
   `gemini-3.1-flash-lite` specifically — `AIEvaluationSchema.safeParse` fails closed if not (see
   above), but a live test hasn't been run to see how often, if ever, that failure path actually fires.
 **Status:** Open — tracked in backlog.md and status.md's "What's open."
+
+## Evaluation & chat prompt refinement (2026-08-16)
+
+### System/input split principle for prompts sent to Gemini
+
+**Date:** 2026-08-16
+**Decision:** `systemInstruction` holds persona and context that would hold true regardless of
+which task this persona is given (identity, tone, stable facts about the user, ASR-input caveat).
+`input` holds only what's specific to the current task (the task itself, and any constraint that
+wouldn't apply if the persona were used for something else). Test applied per line: "would this
+still be true if the task type changed?"
+**Rationale:** `system_instruction` is request-scoped in Gemini (must be re-sent every turn, per
+2026-08-xx decision on this), so the usual "system = persists" justification doesn't apply here —
+the split needed its own basis. Applied to `evaluationConfig.ts`: caught a duplicated ASR caveat
+(stated in both system and input) and clarified that "answer in English" is task-specific, not
+persona-general (a hypothetical target-language-question task would break that assumption).
+**Status:** Done. Applied to `getEvaluationSystemInstruction`/`getEvaluationInput`.
+
+### Two separate CEFR levels: learning-language level vs. English level
+
+**Date:** 2026-08-16
+**Decision:** `evaluationConfig.ts` now tracks two distinct levels: `level.cefrLevel` (the user's
+level in the language being learned, e.g. Norwegian) and a new `englishCEFRLevel` constant (`B2/C1`,
+the level the evaluation's English feedback text should be written at).
+**Rationale:** These were previously conflated — a single `cefrLevel` was being reused to imply
+something about English complexity, but a user's Norwegian level says nothing about their English
+level. Fixed constant chosen (rather than exposing a real user-facing setting) since a real English
+CEFR value isn't currently collected.
+**Status:** Done.
+
+### Evaluation instructions vs. constraints split
+
+**Date:** 2026-08-16
+**Decision:** Within `getEvaluationInput`, "Evaluation instructions" holds what counts as evaluable
+content and how to select it (categories to look for — grammar, vocabulary upgrades, semantic
+nuance, not exposed as output categories; focus on 3-5 most instructive mistakes; calibrate against
+CEFR level; ground feedback in the user's exact words; note suspected transcription errors; exclude
+spacing/punctuation/diacritics and AI-authored turns from scope). "Constraints" holds delivery rules
+independent of content (English at `englishCEFRLevel`; terse; no praise; no questions; one-way
+message).
+**Rationale:** Both sections previously mixed "what to evaluate" with "how to deliver it." Content-
+scope rules (e.g. don't give feedback on punctuation) were originally under Constraints but are the
+same family as other scope-exclusion rules already under Evaluation instructions.
+**Status:** Done.
+
+### Chat system instruction: prefix/suffix split collapsed to one `baseInstruction`
+
+**Date:** 2026-08-16
+**Decision:** `getBaseInstruction` no longer returns `{ prefix, suffix }` for `chatConfig.ts` to
+wrap around `scenario.instructionText`. It returns a single string; the scenario is appended after
+it (`${baseInstruction}${scenario.instructionText}`).
+**Rationale:** The split existed to let a suffix section "override" the scenario for anti-gaming
+purposes, but only own-authored scenario content is ever concatenated into `systemInstruction` — the
+user's spoken input is sent as a separate `input` field each turn, never merged into
+`systemInstruction`. The anti-gaming threat model didn't match where user input actually flows, so
+it didn't justify the split. (Recency-based instruction-priority — put stable rules last so they
+win over an accidentally-conflicting scenario — remains a valid *different* reason to reintroduce a
+split later, if a real scenario/base-rule conflict is observed; not needed now with only two
+scenarios in `scenarios.ts`.)
+**Status:** Done.
+
+### Scenario heading (`## Scenario`) lives in `scenarios.ts`, not in `getBaseInstruction`
+
+**Date:** 2026-08-16
+**Decision:** Each `Scenario.instructionText` now includes its own `## Scenario` heading, rather
+than `chatConfig.ts` or `getBaseInstruction` injecting one during concatenation.
+**Rationale:** Signals to whoever writes a scenario that markdown structure is available and
+expected there, and removes the need for `chatConfig.ts`'s concatenation logic to track whether
+`baseInstruction` already closes with a heading.
+**Status:** Done.
+
+### "Plain text only" output constraint replaced with a TTS-reasoned instruction
+
+**Date:** 2026-08-16
+**Decision:** `getBaseInstruction`'s constraint "The reply should be plain text only" (added to stop
+the model from replying with bullet/numbered lists) is replaced with: "Write your reply as natural
+spoken language — no lists, headings, or other written-text formatting. The text will be read aloud
+via text-to-speech." Manually verified to still suppress list-formatted replies.
+**Rationale:** The original instruction asserted a conclusion ("plain text only") without stating
+why, which is also the exact phrasing that silently fought Gemini's schema-based structured output
+on the evaluation route (see "Stale plain text system instruction" decision, earlier). Chat doesn't
+use `response_format` currently, so that failure mode wasn't live here — but leaving the same
+landmine phrase in a second file was a risk for whenever chat adopts structured output. The new
+wording gives the model the actual reason (TTS) instead of a bare format ban, and removes the
+landmine.
+**Status:** Done.
