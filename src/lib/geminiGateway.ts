@@ -1,31 +1,23 @@
 import { GoogleGenAI } from '@google/genai';
 import 'dotenv/config';
-import { NextRequest, NextResponse } from 'next/server';
-
-import { AIRequestBody, getBodyValidationError } from '@/lib/aiRequest';
+import { NextResponse } from 'next/server';
+import 'server-only';
 
 // genai no longer uses a single ApiError, but generated hierarchy of specific error classes. Define what we need
 type GeminiApiError = Error & { status?: number; error?: { code?: string }; body?: string };
 
-const MODEL = 'gemini-3.1-flash-lite';
-
-type InteractionConfig = {
-  model: string;
+type BaseInteractionConfig = {
   input: string;
   previous_interaction_id?: string;
-  system_instruction?: string;
+  system_instruction: string;
 };
 
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const validation = AIRequestBody.safeParse(body);
-  if (!validation.success) {
-    const error = getBodyValidationError();
-    return NextResponse.json({ error }, { status: 400 });
-  }
+const MODEL = 'gemini-3.1-flash-lite';
 
-  const { systemInstruction, previousInteractionId, input } = validation.data;
-
+export async function postToGemini<T extends BaseInteractionConfig>(
+  interactionConfig: T,
+  signal: AbortSignal
+) {
   const ai = await createAI();
 
   if (!ai) {
@@ -35,15 +27,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const config: InteractionConfig = {
+  const options = { fetchOptions: { signal } };
+
+  const config = {
     model: MODEL,
-    input,
-    system_instruction: systemInstruction,
+    ...interactionConfig,
   };
-  if (previousInteractionId) {
-    config.previous_interaction_id = previousInteractionId;
-  }
-  const options = { fetchOptions: { signal: request.signal } };
 
   try {
     const response = await ai.interactions.create(config, options);

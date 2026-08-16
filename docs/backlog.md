@@ -19,7 +19,7 @@ when work starts.
   alongside "End this session" once evaluation exists — not designed yet, just the landing spot for
   it.~~ — moot, `chatStopped` no longer exists.
 
-### Structured evaluation output (grammar/vocabulary/nuance fields)
+### ~~Structured evaluation output (grammar/vocabulary/nuance fields)~~
 
 **Added:** 2026-08-14, split out of "Add evaluation" above once its first pass shipped as plain text
 only (see decisions.md, "Evaluation output is plain text, not structured/fielded JSON"). **Picked up
@@ -28,19 +28,29 @@ open"): the plain-text pass was always meant as temporary, and this is the next 
 ahead of any other project work. Design and build the actual fielded structure requirements.md's MVP
 scope names, plus runtime validation for the LLM's JSON output (see decisions.md, "TypeScript +
 planned runtime validation").
+**Done 2026-08-16** (branch `structured-evaluation-output`, see decisions.md, "Structured evaluation
+output implemented"): `AIEvaluationSchema` — `comments` made of typed `segments`
+(`text`/`userInput`/`suggestion`) — enforced via Gemini's `response_format` and validated client-side
+via Zod. **Not literally grammar/vocabulary/nuance fields** — worth confirming with the project owner
+whether this segmented-comment shape satisfies requirements.md's framing or whether three named
+categories are still wanted (see status.md, "Next step," step 17).
 
 ### Fix known gaps from the evaluation first pass
 
 **Added:** 2026-08-14 (see decisions.md, "Known gaps in this first pass," and status.md, "What's
 open"):
 
-- No loading indicator while an evaluation request is in flight (`waitingForEvaluation`)
-- `Evaluation.module.css` is missing the `.evaluationContent` class `Evaluation.tsx` applies
-- Delete the commented-out `sendMessageToAI_OLD` in `ChatConversation.tsx` (dead code left over from
-  the `sendToAI` extraction)
-- Confirm real (non-mocked) evaluation calls actually work — only verified against the mock route so
-  far; the design assumes Gemini's carried-over interaction history is sufficient context, unverified
-  live (see decisions.md)
+- No loading indicator while an evaluation request is in flight (`waitingForEvaluation`) — **still
+  open**, untouched by the 2026-08-16 structured-output round
+- `Evaluation.module.css` is missing the `.evaluationContent` class `Evaluation.tsx` applies — **still
+  open**, untouched by the 2026-08-16 round
+- ~~Delete the commented-out `sendMessageToAI_OLD` in `ChatConversation.tsx`~~ — **done 2026-08-16**,
+  deleted as part of splitting `sendMessageToAI`/`sendEvaluationRequestToAI` into per-role functions
+  (see decisions.md)
+- Confirm real (non-mocked) evaluation calls actually work — **still open, now two unknowns**: the
+  carried-over-interaction-history assumption (flagged 2026-08-14), and, new since 2026-08-16, whether
+  Gemini's `response_format` reliably returns schema-conformant JSON from `gemini-3.1-flash-lite` (see
+  decisions.md, "Known risk, still open")
 
 ### Decide whether "Stop chat" should come back
 

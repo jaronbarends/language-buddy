@@ -1,3 +1,4 @@
+import type { AIEvaluation } from '@/lib/aiResponse';
 import { type AIError } from '@/lib/aiService';
 
 export type ThreadItem = ChatMessageItem | EvaluationItem;
@@ -10,7 +11,7 @@ export type ChatMessageItem = {
 
 export type EvaluationItem = {
   type: 'evaluation';
-  message: string;
+  evaluation: AIEvaluation;
 };
 
 export type ChatState = {
@@ -52,7 +53,7 @@ export type ChatAction =
   | { type: 'USER_MESSAGE_SENT'; payload: { message: string } }
   | { type: 'REQUEST_EVALUATION' }
   | { type: 'EVALUATION_REQUEST_SENT' }
-  | { type: 'EVALUATION_RECEIVED'; payload: { evaluation: string } }
+  | { type: 'EVALUATION_RECEIVED'; payload: { evaluation: AIEvaluation } }
   | { type: 'END_SESSION' }
   | { type: 'ERROR'; payload: { error: AIError } };
 
@@ -217,7 +218,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         case 'EVALUATION_RECEIVED': {
           const newItem: EvaluationItem = {
             type: 'evaluation',
-            message: action.payload.evaluation,
+            evaluation: action.payload.evaluation,
           };
           return {
             threadItems: [...state.threadItems, newItem],
