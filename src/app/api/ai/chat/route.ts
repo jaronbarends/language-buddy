@@ -10,7 +10,14 @@ export type ChatInteractionConfig = {
 };
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    const error = getBodyValidationError();
+    return NextResponse.json({ error }, { status: 400 });
+  }
+
   const validation = AIChatRequestBodySchema.safeParse(body);
   if (!validation.success) {
     const error = getBodyValidationError();

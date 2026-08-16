@@ -10,7 +10,7 @@ export type AIChatRequestBody = z.infer<typeof AIChatRequestBodySchema>;
 export const AIEvaluationRequestBodySchema = z.object({
   input: z.string(),
   systemInstruction: z.string(),
-  previousInteractionId: z.string(),
+  previousInteractionId: z.string().min(1),
 });
 export type AIEvaluationRequestBody = z.infer<typeof AIEvaluationRequestBodySchema>;
 

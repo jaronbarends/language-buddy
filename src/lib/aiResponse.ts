@@ -25,4 +25,4 @@ export type SegmentType = z.infer<typeof SegmentTypeSchema>;
 export type Segment = z.infer<typeof SegmentSchema>;
 export type Comment = z.infer<typeof CommentSchema>;
 export type AIEvaluation = z.infer<typeof AIEvaluationSchema>;
-export type AIEvaluationJSONSchemaType = z.infer<typeof AIEvaluationJSONSchema>;
+export type AIEvaluationJSONSchemaType = typeof AIEvaluationJSONSchema;

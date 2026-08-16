@@ -112,16 +112,24 @@ export async function toAIEvaluationResult(res: Response): Promise<AIEvaluationR
   }
 
   const { id, text } = await res.json();
-  const rawEvaluation = JSON.parse(text);
+
+  const evaluationFailedError: AIError = {
+    success: false,
+    error: 'Evaluation failed',
+    status: 400,
+    name: 'EvaluationError',
+  };
+
+  let rawEvaluation: unknown;
+  try {
+    rawEvaluation = JSON.parse(text);
+  } catch {
+    return evaluationFailedError;
+  }
+
   const validation = AIEvaluationSchema.safeParse(rawEvaluation);
   if (!validation.success) {
-    const aiError: AIError = {
-      success: false,
-      error: 'Evaluation failed',
-      status: 400,
-      name: 'EvaluationError',
-    };
-    return aiError;
+    return evaluationFailedError;
   }
   const evaluation = validation.data as AIEvaluation;
 
