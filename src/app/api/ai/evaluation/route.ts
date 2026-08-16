@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { AIEvaluationRequestBodySchema, getBodyValidationError } from '@/lib/aiRequest';
+import { AIEvaluationJSONSchema, type AIEvaluationJSONSchemaType } from '@/lib/aiResponse';
 import { postToGemini } from '@/lib/geminiGateway';
 
 export type EvaluationInteractionConfig = {
   input: string;
   previous_interaction_id: string;
   system_instruction: string;
+  response_format: {
+    type: 'text';
+    mime_type: 'application/json';
+    schema: AIEvaluationJSONSchemaType;
+  };
 };
 
 export async function POST(request: NextRequest) {
@@ -22,6 +28,11 @@ export async function POST(request: NextRequest) {
     input,
     system_instruction: systemInstruction,
     previous_interaction_id: previousInteractionId,
+    response_format: {
+      type: 'text',
+      mime_type: 'application/json',
+      schema: AIEvaluationJSONSchema,
+    },
   };
 
   return postToGemini(config, request.signal);

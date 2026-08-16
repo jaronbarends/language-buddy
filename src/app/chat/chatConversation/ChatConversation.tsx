@@ -233,7 +233,7 @@ export default function ChatConversation({
 
   async function sendEvaluationRequestToAI() {
     if (!previousInteractionId) {
-      // should never happen
+      // should never happen; evaluation can only be requested when we have interaction id
       return;
     }
     const body: AIEvaluationRequestBody = {

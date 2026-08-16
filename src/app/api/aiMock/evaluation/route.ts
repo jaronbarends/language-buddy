@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { respondAfterDelay } from '@/app/api/aiMock/respondAfterDelay';
 import { AIChatRequestBodySchema, getBodyValidationError } from '@/lib/aiRequest';
+import { AIEvaluation } from '@/lib/aiResponse';
 
 const MOCK_SCENARIOS = {
   success: 'success',
@@ -18,6 +19,8 @@ const scenario: MockScenario = 'success';
 // const scenario: MockScenario = 'rateLimitError';
 // const scenario: MockScenario = 'notFoundError';
 
+const successResponseOutputText = getMockEvaluationText();
+
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const validation = AIChatRequestBodySchema.safeParse(body);
@@ -27,7 +30,6 @@ export async function POST(request: NextRequest) {
   }
 
   const { input } = validation.data;
-  const successResponseOutputText = 'Je doet het reuze goed';
 
   const selectedScenario = input === 'error' ? MOCK_SCENARIOS.notFoundError : scenario;
 
@@ -56,4 +58,31 @@ export async function POST(request: NextRequest) {
       throw new Error(`Unhandled mock scenario: ${exhaustiveCheck}`);
     }
   }
+}
+
+function getMockEvaluationText(): string {
+  const mockEvaluation: AIEvaluation = {
+    comments: [
+      {
+        segments: [
+          { type: 'text', text: 'where you said' },
+          { type: 'userInput', text: 'zup zap' },
+          { type: 'text', text: 'you probably meant' },
+          { type: 'suggestion', text: 'ziiip' },
+          { type: 'text', text: 'that is what native people would say when they discuss zops.' },
+        ],
+      },
+      {
+        segments: [
+          { type: 'text', text: 'where you said' },
+          { type: 'userInput', text: 'zup zap' },
+          { type: 'text', text: 'you probably meant' },
+          { type: 'suggestion', text: 'ziiip' },
+          { type: 'text', text: 'that is what native people would say when they discuss zops.' },
+        ],
+      },
+    ],
+  };
+
+  return JSON.stringify(mockEvaluation);
 }

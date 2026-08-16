@@ -1,7 +1,7 @@
 import 'dotenv/config';
 
 import { type AIChatRequestBody, AIEvaluationRequestBody } from '@/lib/aiRequest';
-import { type AIEvaluation } from '@/lib/aiResponse';
+import { AIEvaluationSchema, type AIEvaluation } from '@/lib/aiResponse';
 
 const CHAT_ENDPOINT =
   process.env.NEXT_PUBLIC_USE_MOCK_AI === 'true' ? '/api/aiMock/chat' : '/api/ai/chat';
@@ -31,8 +31,6 @@ export type AIEvaluationResult =
       evaluation: AIEvaluation;
     }
   | AIError;
-
-export type AIRole = 'chat' | 'evaluation';
 
 export async function sendAIChatRequest(
   { systemInstruction, previousInteractionId, input }: AIChatRequestBody,
@@ -114,33 +112,22 @@ export async function toAIEvaluationResult(res: Response): Promise<AIEvaluationR
   }
 
   const { id, text } = await res.json();
-
-  const mockEvaluation: AIEvaluation = {
-    comments: [
-      {
-        segments: [
-          { type: 'text', text: 'where you said' },
-          { type: 'userInput', text: 'zup zap' },
-          { type: 'text', text: 'you probably meant' },
-          { type: 'suggestion', text: 'ziiip' },
-          { type: 'text', text: 'that is what native people would say when they discuss zops.' },
-        ],
-      },
-      {
-        segments: [
-          { type: 'text', text: 'where you said' },
-          { type: 'userInput', text: 'zup zap' },
-          { type: 'text', text: 'you probably meant' },
-          { type: 'suggestion', text: 'ziiip' },
-          { type: 'text', text: 'that is what native people would say when they discuss zops.' },
-        ],
-      },
-    ],
-  };
+  const rawEvaluation = JSON.parse(text);
+  const validation = AIEvaluationSchema.safeParse(rawEvaluation);
+  if (!validation.success) {
+    const aiError: AIError = {
+      success: false,
+      error: 'Evaluation failed',
+      status: 400,
+      name: 'EvaluationError',
+    };
+    return aiError;
+  }
+  const evaluation = validation.data as AIEvaluation;
 
   return {
     success: true,
     interactionId: id,
-    evaluation: mockEvaluation,
+    evaluation,
   };
 }
