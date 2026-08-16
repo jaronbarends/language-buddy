@@ -214,16 +214,10 @@ export default function ChatConversation({
     const requestFunction: () => Promise<AIChatResult> = async () =>
       sendAIChatRequest(body, signal);
 
-    const reply: AIChatResult | undefined = await sendToAI<AIChatResult>(requestFunction);
+    const reply = await sendToAI<AIChatResult>(requestFunction);
 
     if (reply === undefined) {
-      // handled in sendToAI
-      return;
-    }
-
-    if (!reply.success) {
-      // then reply must be error object
-      dispatch({ type: 'ERROR', payload: { error: reply } });
+      // handled in sendToAI (abort, stale request)
       return;
     }
 
@@ -247,17 +241,10 @@ export default function ChatConversation({
     const requestFunction: () => Promise<AIEvaluationResult> = async () =>
       sendAIEvaluationRequest(body, signal);
 
-    const reply: AIEvaluationResult | undefined =
-      await sendToAI<AIEvaluationResult>(requestFunction);
+    const reply = await sendToAI<AIEvaluationResult>(requestFunction);
 
     if (reply === undefined) {
-      // handled in sendToAI
-      return;
-    }
-
-    if (!reply.success) {
-      // then reply must be error object
-      dispatch({ type: 'ERROR', payload: { error: reply } });
+      // handled in sendToAI (abort, stale request)
       return;
     }
 
@@ -266,7 +253,7 @@ export default function ChatConversation({
 
   async function sendToAI<T extends AIChatResult | AIEvaluationResult>(
     requestFunction: () => Promise<T>
-  ): Promise<T | undefined> {
+  ): Promise<Extract<T, { success: true }> | undefined> {
     let reply: T;
     requestIdRef.current++;
     const requestId = requestIdRef.current;
@@ -288,7 +275,12 @@ export default function ChatConversation({
       return;
     }
 
-    return reply;
+    if (!reply.success) {
+      dispatch({ type: 'ERROR', payload: { error: reply } });
+      return;
+    }
+
+    return reply as Extract<T, { success: true }>;
   }
 
   function requestIsStale(requestId: number): boolean {
