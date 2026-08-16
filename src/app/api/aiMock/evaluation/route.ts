@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { respondAfterDelay } from '@/app/api/aiMock/respondAfterDelay';
-import { AIChatRequestBodySchema, getBodyValidationError } from '@/lib/aiRequest';
+import { AIEvaluationRequestBodySchema, getBodyValidationError } from '@/lib/aiRequest';
 import { AIEvaluation } from '@/lib/aiResponse';
 
 const MOCK_SCENARIOS = {
@@ -23,7 +23,7 @@ const successResponseOutputText = getMockEvaluationText();
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const validation = AIChatRequestBodySchema.safeParse(body);
+  const validation = AIEvaluationRequestBodySchema.safeParse(body);
   if (!validation.success) {
     const error = getBodyValidationError();
     return NextResponse.json({ error }, { status: 400 });

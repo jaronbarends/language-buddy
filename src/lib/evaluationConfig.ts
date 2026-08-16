@@ -20,8 +20,6 @@ export function getEvaluationSystemInstruction(language: Language, level: Langua
 
     - The user speaks ${languageTag} at CEFR level ${cefrLevel}
     - The input text is gathered by the Web SpeechRecognition API. When you encounter illogical words, consider the possibility that this may be a transcription error.
-
-    ## Rules required for parsing your output
   `;
 
   return instruction;

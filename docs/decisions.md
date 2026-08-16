@@ -75,7 +75,10 @@ TypeScript, both named as ramp-up goals for this project.
 **Rationale:** Noted explicitly that TS types do not validate untrusted LLM JSON at runtime — a
 runtime validator (e.g. Zod) is a separate, necessary decision once the schemas are defined, not
 redundant with the types.
-**Status:** Not yet implemented — schemas not yet designed.
+**Status:** Library chosen and implemented: Zod. Request-body validation landed first (`aiRequest.ts`,
+PR #25, 2026-08-14). Runtime validation of the AI's own JSON output landed 2026-08-16, once
+evaluation's fielded schema existed to validate against — see "Structured evaluation output
+implemented" below.
 
 ### AI backend: Google AI Studio / Gemini free tier
 
@@ -2136,7 +2139,9 @@ actual MVP-scoped output shape is not.
 it just records that the first implementation sidesteps it. **Update 2026-08-14:** confirmed as
 temporary, not a settled shape — structured output is now the declared next task (see status.md,
 "Next step," and backlog.md), ahead of any other project work. No schema or validation-library
-decision has been made yet; log it here once it is.
+decision has been made yet; log it here once it is. **Superseded 2026-08-16 — see "Structured
+evaluation output implemented" below.** Plain text is no longer what ships; the field set chosen
+there is comments/segments, not literally grammar/vocabulary/nuance — see that entry for why.
 
 ### Known gaps in this first pass
 
@@ -2153,7 +2158,10 @@ decision has been made yet; log it here once it is.
   (the pre-`sendToAI`-extraction implementation) is commented out below the live code, not deleted.
 **Status:** Open — none of these block the feature working, but none are fixed either; tracked here
 rather than only in status.md/backlog.md since they're artifacts of this specific implementation
-pass, not independently-scoped gaps.
+pass, not independently-scoped gaps. **Update 2026-08-16:** the `sendMessageToAI_OLD` dead code is
+deleted (see "Structured evaluation output implemented" below — cleanup landed as part of the
+`sendMessageToAI`/`sendEvaluationRequestToAI` split into per-role functions). The loading-indicator
+and `.evaluationContent` gaps are still open, untouched by that round.
 
 ---
 
@@ -2178,7 +2186,12 @@ caller sends, not by anything the route needs to branch on. Introducing a second
 `/api/ai/evaluation`) would duplicate the entire handler for no behavioral difference. Moving the
 folder out of `chat/` and dropping the `chat` segment reflects that this was never really a
 chat-specific route, just named for its first caller.
-**Status:** Done.
+**Status:** Superseded 2026-08-16 — see "Structured evaluation output implemented" below. Once
+evaluation needed its own request schema (`previousInteractionId` required, not optional) and its own
+`response_format`/JSON schema, "no notion of role" stopped being true — the route split back into
+`/api/ai/chat` and `/api/ai/evaluation`. The shared logic this entry cared about (one Gemini call
+implementation, not duplicated per role) still holds, just relocated to `src/lib/geminiGateway.ts`'s
+`postToGemini` instead of living in a single shared route file.
 
 ### Mock routes stay split: `/api/aiMock/chat` and `/api/aiMock/evaluation`, sharing `respondAfterDelay`
 
@@ -2209,3 +2222,129 @@ restarting/reloading — awkward mid-session, and easy to forget to flip back. S
 same-session way to trigger the error path on demand without touching code, while `scenario` still
 controls the _default_ (non-error) behavior for normal dev flow.
 **Status:** Done.
+
+---
+
+## Structured evaluation output implemented (2026-08-16, branch `structured-evaluation-output`)
+
+### Evaluation schema: comments made of typed segments, not grammar/vocabulary/nuance categories
+
+**Date:** 2026-08-16
+**Decision:** `src/lib/aiResponse.ts` defines the evaluation's real shape via Zod:
+`AIEvaluationSchema = { comments: [{ segments: [{ type: 'text' | 'userInput' | 'suggestion', text
+}] }] }`. A comment is a sentence built from inline segments — plain narration text, a quoted piece
+of the user's own input, or a suggested replacement — rather than one paragraph per fixed category
+(grammar / vocabulary / nuance).
+**Rationale:** Not a literal implementation of requirements.md's "grammar, vocabulary upgrades,
+semantic nuance" framing — that framing described the *kind* of feedback, not a required data shape.
+Segment-typed comments let the UI style "what you said" vs. "what you probably meant" inline
+(`Evaluation.tsx`/`Evaluation.module.css` — see below) without the model having to sort feedback into
+three buckets that may not apply evenly to every remark. This resolves requirements.md's "exact
+fields/depth of the structured evaluation output" open item, but with a different shape than that
+line originally implied — worth a deliberate look before treating it as a closed requirements.md
+checkbox (requirements.md itself is not edited here, per this project's doc-workflow rule).
+**Status:** Done, mock-verified. Not yet confirmed against the real Gemini API (see "Known risk,
+still open" below).
+
+### Gemini's structured-output feature (`response_format`) enforces the schema server-side
+
+**Date:** 2026-08-16
+**Decision:** `src/app/api/ai/evaluation/route.ts` sends `response_format: { type: 'text', mime_type:
+'application/json', schema: AIEvaluationJSONSchema }` on the `interactions.create` call, where
+`AIEvaluationJSONSchema = z.toJSONSchema(AIEvaluationSchema)`. The chat route sends no
+`response_format` — chat replies stay free-form text.
+**Rationale:** Lets Gemini itself constrain output to the schema shape, rather than relying purely on
+prose instructions ("reply in JSON shaped like...") and hoping the model complies. Reusing the same
+Zod schema to derive the JSON Schema sent to Gemini keeps the two in sync by construction — there's
+one schema, not a hand-written JSON Schema kept manually consistent with the Zod one.
+**Status:** Done. The client-side `AIEvaluationSchema.safeParse` (see below) still runs after this —
+`response_format` narrows what Gemini is likely to return, it isn't treated as a guarantee.
+
+### Runtime validation of the AI's JSON response, not just the request body
+
+**Date:** 2026-08-16
+**Decision:** `aiService.ts`'s `toAIEvaluationResult` parses the response text as JSON, then runs it
+through `AIEvaluationSchema.safeParse`. On failure, it returns a generic `AIError` (`name:
+'EvaluationError'`) rather than passing malformed data through to the reducer/UI.
+**Rationale:** Closes the runtime-validation gap flagged back on 2026-07-25 ("TypeScript + planned
+runtime validation") — TS types alone can't validate untrusted LLM JSON, and this is the first place
+the app parses LLM-generated JSON into a typed structure. Failing closed (a generic error, not a
+crash or silently-wrong render) matches this project's existing error-handling policy (end-session
+only, no per-error-type differentiation — see 2026-07-27).
+**Status:** Done.
+
+### Request/response types and routes split per role again: `AIChatResult`/`AIEvaluationResult`, `/api/ai/chat`/`/api/ai/evaluation`
+
+**Date:** 2026-08-16
+**Decision:** Reverses the 2026-08-14 "Real AI route generalized" merge (see above, now marked
+superseded). `aiService.ts` exports `sendAIChatRequest`/`sendAIEvaluationRequest` (dropping the single
+`sendAIRequest(params, aiRole)` shape) returning `AIChatResult`/`AIEvaluationResult` respectively — no
+more shared `AIResult`/`AIRole`. Real routes split back into `src/app/api/ai/chat/route.ts` and
+`src/app/api/ai/evaluation/route.ts`, each validating against its own Zod request schema
+(`AIChatRequestBodySchema` — `previousInteractionId` optional; `AIEvaluationRequestBodySchema` —
+`previousInteractionId` required, since an evaluation only makes sense as a continuation of an
+existing chat interaction) and building its own `interactions.create` config (only the evaluation
+route adds `response_format`). The actual Gemini SDK call — auth, model, error normalization — is
+factored out of both routes into `src/lib/geminiGateway.ts`'s `postToGemini<T>(interactionConfig,
+signal)`, a generic helper (not a route handler) that both route files call.
+**Rationale:** The 2026-08-14 merge was justified on "Gemini doesn't care about role, only
+`systemInstruction`/`input` differ" — true until evaluation needed its own request contract
+(`previousInteractionId` required) and its own `response_format`. At that point a single route would
+need to branch on role internally anyway, which is exactly the duplication the merge was meant to
+avoid, just moved inside one file instead of across two. Splitting the routes back out, while keeping
+`postToGemini` as the one shared implementation of "call Gemini, normalize the error," gets both:
+each route's request/response contract is fully typed and independently validated, without
+duplicating the SDK-calling logic itself. `ChatConversation.tsx`'s `sendMessageToAI`/
+`sendEvaluationRequestToAI` were refactored in step with this — each builds its own typed request body
+and calls a shared generic `sendToAI<T extends AIChatResult | AIEvaluationResult>(requestFunction)`
+for the abort-controller/stale-request-guard/error-dispatch plumbing, rather than the previous
+`sendToAI(input, systemInstruction, aiRole)` shape that had to smuggle the role through. The
+commented-out `sendMessageToAI_OLD` pre-`sendToAI`-extraction function (flagged as dead code on
+2026-08-14) was deleted as part of this pass, not left behind again.
+**Status:** Done.
+
+### `ThreadView` speaks the last *message*, not the last thread item
+
+**Date:** 2026-08-16
+**Decision:** `ThreadView.tsx`'s `startAISpeechWithLastMessage` no longer reads
+`threadItems[threadItems.length - 1].message` directly. It uses
+`threadItems.findLast((item) => item.type === 'message')` and no-ops if none is found.
+**Rationale:** Bug fix, not a style change: once an `EvaluationItem` can be the last item in
+`threadItems` (any time a session's most recent action was requesting an evaluation) and
+`EvaluationItem` no longer has a `.message` field (it has `.evaluation: AIEvaluation` now — see
+above), the old direct-index read would have read `undefined` off an evaluation item and either
+thrown or spoken "undefined" the next time an `aiTurnSpeaking` phase's TTS effect fired. Caught while
+implementing the schema change, not previously reported as a live bug.
+**Status:** Done.
+
+### Cleanup caught during doc review, fixed same session
+
+**Date:** 2026-08-16
+Three loose ends found while writing up this round's diff, each confirmed as unintentional
+leftover (not a deliberate design choice) and fixed rather than documented as-is:
+- **Unused `AIRequestBody` union type** (`src/lib/aiRequest.ts`) — `AIChatRequestBody |
+  AIEvaluationRequestBody`, a leftover from before the request schema split; nothing imported it.
+  Deleted.
+- **Dangling `## Rules required for parsing your output` heading** (`src/lib/evaluationConfig.ts`,
+  `getEvaluationSystemInstruction`) — its only bullet ("reply should be plain text only") was removed
+  once `response_format` took over enforcing output shape, leaving an empty section header behind.
+  Deleted.
+- **Mock evaluation route validated against the wrong schema** (`src/app/api/aiMock/evaluation/
+  route.ts`) — still used `AIChatRequestBodySchema` (`previousInteractionId` optional) instead of the
+  new `AIEvaluationRequestBodySchema` (`previousInteractionId` required) the real evaluation route
+  uses, so the mock accepted requests the real route would reject. Fixed to import and validate
+  against `AIEvaluationRequestBodySchema`.
+**Status:** Done, verified via `tsc --noEmit` and `eslint` on the three touched files.
+
+### Known risk, still open: real (non-mocked) evaluation calls unverified
+
+**Date:** 2026-08-16
+Everything above is verified against the mock evaluation route only (`NEXT_PUBLIC_USE_MOCK_AI=true`).
+Two compounding unknowns remain unconfirmed against the live Gemini API:
+- Whether Gemini's carried-over interaction history is actually sufficient context for the model to
+  evaluate the user's own turns from a short "give feedback" prompt alone (flagged 2026-08-14, still
+  unresolved).
+- Whether `response_format`'s JSON-schema constraint reliably produces schema-conformant output from
+  `gemini-3.1-flash-lite` specifically — `AIEvaluationSchema.safeParse` fails closed if not (see
+  above), but a live test hasn't been run to see how often, if ever, that failure path actually fires.
+**Status:** Open — tracked in backlog.md and status.md's "What's open."
