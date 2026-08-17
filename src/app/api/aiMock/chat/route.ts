@@ -32,15 +32,16 @@ export async function POST(request: NextRequest) {
   const successResponseOutputText = 'Wat vind jij eigenlijk leuk om te doen?';
 
   const selectedScenario = input === 'error' ? MOCK_SCENARIOS.notFoundError : scenario;
+  const interactionId = `mock-interaction-id-${Math.floor(10000 * Math.random())}`;
 
   switch (selectedScenario) {
     case MOCK_SCENARIOS.success:
       return respondAfterDelay({
-        data: { id: 'mock response.id', text: successResponseOutputText },
+        data: { id: interactionId, text: successResponseOutputText },
       });
     case MOCK_SCENARIOS.successLongDelay:
       return respondAfterDelay({
-        data: { id: 'mock response.id', text: successResponseOutputText },
+        data: { id: interactionId, text: successResponseOutputText },
         delayMs: 5000,
       });
     case MOCK_SCENARIOS.rateLimitError:

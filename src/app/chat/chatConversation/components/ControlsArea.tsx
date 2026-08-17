@@ -14,6 +14,7 @@ import styles from './ControlsArea.module.css';
 
 type ControlsAreaProps = {
   phase: ChatPhase;
+  messageCount: number;
   onStartListening: () => void;
   onSendRequested: () => void;
   onEvaluationRequested: () => void;
@@ -35,6 +36,7 @@ const buttonsByStage: Record<ChatStage, Partial<Record<ButtonPriority, ButtonId>
 
 export default function ControlsArea({
   phase,
+  messageCount,
   onStartListening,
   onSendRequested,
   onCancelListening,
@@ -65,7 +67,7 @@ export default function ControlsArea({
               key={buttonId}
               variant={priority === 'primary' ? 'primary' : 'secondary'}
               onClick={onClick}
-              disabled={buttonIsDisabled(buttonId, phase)}
+              disabled={buttonIsDisabled(buttonId, phase, messageCount)}
             >
               {label}
             </Button>
@@ -83,7 +85,7 @@ export default function ControlsArea({
   }
 }
 
-function buttonIsDisabled(buttonId: ButtonId, phase: ChatPhase): boolean {
+function buttonIsDisabled(buttonId: ButtonId, phase: ChatPhase, messageCount: number): boolean {
   switch (buttonId) {
     case 'speak':
       return !canSpeak(phase);
@@ -92,7 +94,7 @@ function buttonIsDisabled(buttonId: ButtonId, phase: ChatPhase): boolean {
     case 'cancel':
       return !canRequestCancel(phase);
     case 'evaluate':
-      return !canRequestEvaluation(phase);
+      return !canRequestEvaluation(phase, messageCount);
     default:
       return false;
   }

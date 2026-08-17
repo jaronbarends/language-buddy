@@ -117,12 +117,13 @@ export default function ChatConversation({
           languageTag={chatConfig.language.languageTag}
         />
         <ControlsArea
+          phase={state.phase}
+          messageCount={state.threadItems.length}
           onStartListening={handleStartListening}
           onSendRequested={handleSendRequested}
           onCancelListening={handleCancelListening}
           onEvaluationRequested={handleEvaluationRequest}
           onEndSessionRequested={handleEndSessionRequest}
-          phase={state.phase}
         />
       </div>
       {process.env.NEXT_PUBLIC_SHOW_DEV_HELPER && (
