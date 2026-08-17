@@ -1,3 +1,12 @@
+@keyframes bounceIn {
+  0% {
+    scale: 0;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
 .message {
   margin-inline: 0 auto;
   width: fit-content;
@@ -8,11 +17,35 @@
   border: var(--border-default) var(--color-border-neutral);
   font-weight: var(--font-weight-medium);
   line-height: var(--line-height-body-tight);
+  transition: 0.5s;
+  animation: bounceIn 0.3s forwards
+    linear(
+      0,
+      0.414 7.7%,
+      0.734 15.9%,
+      0.96 24.6%,
+      1.041 29.2%,
+      1.102 34.1%,
+      1.135 38.1%,
+      1.156 42.3%,
+      1.165 46.8%,
+      1.163 51.7%,
+      1.136 60.4%,
+      1.024 84.7%,
+      1.005 92.3%,
+      1
+    );
 }
 
 .messageFromAi {
   display: flex;
   border-bottom-left-radius: var(--radius-4);
+  transform-origin: bottom left;
+
+  &:not(:first-child) {
+    scale: 0; /* will be handled by animation */
+    animation-delay: 500ms;
+  }
 }
 
 .messageFromUser {
@@ -21,4 +54,5 @@
   background-color: var(--color-bg-secondary-subtle);
   border-color: var(--color-border-secondary);
   color: var(--color-text-secondary);
+  transform-origin: bottom right;
 }

@@ -7,6 +7,7 @@ export type ChatMessageItem = {
   type: 'message';
   message: string;
   author: 'ai' | 'user';
+  pending?: boolean;
 };
 
 export type EvaluationItem = {
@@ -57,11 +58,19 @@ export type ChatAction =
   | { type: 'END_SESSION' }
   | { type: 'ERROR'; payload: { error: AIError } };
 
+const loadingAIItem: ThreadItem = {
+  type: 'message',
+  message: '',
+  author: 'ai',
+  pending: true,
+};
+Object.freeze(loadingAIItem); // prevent unwanted changing of props; should always be destructured
+
 // initial state should be { status: 'chatStartPending' }
 export function chatReducer(state: ChatState, action: ChatAction): ChatState {
   if (action.type === 'ERROR') {
     return {
-      threadItems: state.threadItems,
+      threadItems: removePendingAIItems(state.threadItems),
       phase: { status: 'error', error: action.payload.error },
     };
   }
@@ -78,7 +87,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
 
   if (action.type === 'END_SESSION') {
     return {
-      threadItems: state.threadItems,
+      threadItems: removePendingAIItems(state.threadItems),
       phase: { status: 'sessionEndRequested' },
     };
   }
@@ -88,7 +97,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       switch (action.type) {
         case 'AI_START_INPUT_SENT':
           return {
-            threadItems: state.threadItems,
+            threadItems: [...state.threadItems, loadingAIItem],
             phase: { status: 'waitingForAI' },
           };
         case 'START_CHAT_WITH_USER':
@@ -102,13 +111,14 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
     case 'waitingForAI': {
       switch (action.type) {
         case 'AI_RESPONSE_RECEIVED': {
-          const newItem: ThreadItem = {
-            type: 'message',
-            message: action.payload.message,
-            author: 'ai',
-          };
+          // turn update pending item
+          const updatedItems = state.threadItems.map((item) =>
+            item.type === 'message' && item.pending ?
+              { ...item, message: action.payload.message, pending: false }
+            : item
+          );
           return {
-            threadItems: [...state.threadItems, newItem],
+            threadItems: updatedItems,
             phase: { status: 'aiTurnSpeaking', message: action.payload.message },
           };
         }
@@ -199,7 +209,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
             author: 'user',
           };
           return {
-            threadItems: [...state.threadItems, newItem],
+            threadItems: [...state.threadItems, newItem, loadingAIItem],
             phase: { status: 'waitingForAI' },
           };
         }
@@ -383,4 +393,8 @@ export function getChatStage(phase: ChatPhase): ChatStage {
       return exhaustiveCheck;
     }
   }
+}
+
+function removePendingAIItems(threadItems: ThreadItem[]): ThreadItem[] {
+  return threadItems.filter((item) => item.type !== 'message' || !item.pending);
 }

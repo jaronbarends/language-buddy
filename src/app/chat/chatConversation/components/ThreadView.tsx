@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 import {
   isAITurnSpeaking,
-  isWaitingForAI,
   shouldAutoScrollThread,
   type ThreadItem,
   type ChatPhase,
@@ -33,7 +32,6 @@ export default function ThreadView({
   onAISpeechEnd,
 }: threadItemsProps) {
   const threadViewRef = useRef<HTMLDivElement>(null);
-  const [showAIPendingBalloon, setShowAIPendingBalloon] = useState<boolean>(false);
   const showFakeBalloons = false;
 
   useEffect(() => {
@@ -74,22 +72,7 @@ export default function ThreadView({
         behavior: 'smooth',
       });
     }
-  }, [phase, threadItems, showAIPendingBalloon]);
-
-  useEffect(() => {
-    if (!isWaitingForAI(phase)) {
-      return;
-    }
-
-    const timer: ReturnType<typeof setTimeout> = setTimeout(() => {
-      setShowAIPendingBalloon(true);
-    }, 500);
-
-    return () => {
-      clearTimeout(timer);
-      setShowAIPendingBalloon(false);
-    };
-  }, [phase]);
+  }, [phase, threadItems]);
 
   return (
     <div className={styles.threadView} ref={threadViewRef}>
@@ -98,8 +81,10 @@ export default function ThreadView({
         {threadItems.map((item, idx) => {
           if (item.type === 'message') {
             return (
-              <SpeechBalloon key={idx} author={item.author} tag="li">
-                {item.message}
+              <SpeechBalloon key={idx} author={item.author} tag="li" pending={item.pending}>
+                {item.pending ?
+                  <Loader ariaLabel="Loading ai response" />
+                : item.message}
               </SpeechBalloon>
             );
           } else {
@@ -112,11 +97,6 @@ export default function ThreadView({
         })}
 
         {showFakeBalloons && <FakeBalloons />}
-        {showAIPendingBalloon && (
-          <SpeechBalloon author="ai" tag="li">
-            <Loader ariaLabel="Loading ai response" />
-          </SpeechBalloon>
-        )}
       </ol>
     </div>
   );
