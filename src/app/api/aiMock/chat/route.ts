@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
   const successResponseOutputText = 'Wat vind jij eigenlijk leuk om te doen?';
 
   const selectedScenario = input === 'error' ? MOCK_SCENARIOS.notFoundError : scenario;
-  const interactionId = `mock-interaction-id-${Math.floor(10000 * Math.random())}`;
+  const interactionId = crypto.randomUUID();
 
   switch (selectedScenario) {
     case MOCK_SCENARIOS.success:
