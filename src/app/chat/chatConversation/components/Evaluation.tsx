@@ -1,3 +1,4 @@
+import Loader from '@/components/Loader';
 import { type AIEvaluation, type Segment } from '@/lib/aiResponse';
 
 import styles from './Evaluation.module.css';
@@ -19,6 +20,16 @@ export default function Evaluation({ evaluation }: { evaluation: AIEvaluation })
           ))}
         </ol>
       </div>
+    </div>
+  );
+}
+
+export function EvaluationLoader() {
+  return (
+    <div className={styles.evaluationLoader}>
+      <h1 className={styles.loaderHeading}>
+        Evaluating chat <Loader ariaLabel="Loading evaluation" />
+      </h1>
     </div>
   );
 }
