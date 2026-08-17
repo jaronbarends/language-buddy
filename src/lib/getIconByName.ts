@@ -1,4 +1,16 @@
-import { FaVolumeXmark, FaTriangleExclamation, FaCircleInfo } from 'react-icons/fa6';
+import {
+  FaVolumeXmark,
+  FaTriangleExclamation,
+  FaCircleInfo,
+  FaFlagCheckered,
+  FaGraduationCap,
+  FaComments,
+  FaMicrophone,
+  FaSquareBinary,
+  FaPaperPlane,
+  FaXmark,
+  FaUser,
+} from 'react-icons/fa6';
 
 import de from '@/assets/icons/flags/de.svg';
 import es from '@/assets/icons/flags/es.svg';
@@ -22,7 +34,16 @@ export const ICONS = {
   volumeMute: FaVolumeXmark,
   error: FaTriangleExclamation,
   info: FaCircleInfo,
+  finish: FaFlagCheckered,
+  evaluation: FaGraduationCap,
+  chat: FaComments,
+  microphone: FaMicrophone,
+  ai: FaSquareBinary,
+  send: FaPaperPlane,
+  cancel: FaXmark,
+  user: FaUser,
 } as const;
+export type IconName = keyof typeof ICONS;
 
 function flagIconExists(iconName: string): iconName is FlagIconName {
   return iconName in FLAG_ICONS;
@@ -37,5 +58,3 @@ export function getFlagIconName(languageTag: string): FlagIconName | undefined {
   const iconName = `flag-${countryCode}`;
   return flagIconExists(iconName) ? iconName : undefined;
 }
-
-export type IconName = keyof typeof ICONS;

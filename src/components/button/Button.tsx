@@ -2,6 +2,10 @@ import clsx from 'clsx';
 import Link from 'next/link';
 import { type RefObject, ReactNode } from 'react';
 
+import { LabelWithIcon } from '@/components/icon/Icon';
+import { type IconSize } from '@/components/icon/Icon';
+import { type IconName } from '@/lib/getIconByName';
+
 import styles from './Button.module.css';
 
 type ButtonVariant = 'primary' | 'secondary' | 'feedback';
@@ -15,6 +19,8 @@ export interface ButtonProps {
   ref?: RefObject<HTMLButtonElement | null>;
   type?: 'button' | 'submit';
   fontSize?: 'medium' | 'large';
+  iconName?: IconName;
+  iconSize?: IconSize;
 }
 
 export default function Button({
@@ -26,10 +32,18 @@ export default function Button({
   ref,
   type = 'button',
   fontSize = 'medium',
+  iconName,
+  iconSize = 24,
 }: ButtonProps) {
   if (href) {
     return (
       <Link className={clsx(styles.button, styles[variant])} href={href}>
+        {iconName && (
+          <LabelWithIcon iconName={iconName} iconSize={iconSize}>
+            {children}
+          </LabelWithIcon>
+        )}
+        {!iconName && children}
         {children}
       </Link>
     );
@@ -42,7 +56,12 @@ export default function Button({
       ref={ref}
       type={type}
     >
-      {children}
+      {iconName && (
+        <LabelWithIcon iconName={iconName} iconSize={iconSize}>
+          {children}
+        </LabelWithIcon>
+      )}
+      {!iconName && children}
     </button>
   );
 }

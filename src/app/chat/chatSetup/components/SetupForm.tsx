@@ -92,6 +92,7 @@ export default function SetupForm({
           type="submit"
           disabled={!speechSupportIsChecked || !speechRecognitionIsSupportedClientSide}
           fontSize="large"
+          iconName="chat"
         >
           Start chat
         </Button>

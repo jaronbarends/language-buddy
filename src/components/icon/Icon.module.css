@@ -1,6 +1,7 @@
 .icon {
   --icon-size: var(--size-16);
   width: var(--icon-size);
+  height: calc(var(--icon-size));
   aspect-ratio: 1;
   display: inline-flex;
   align-items: center;
@@ -14,6 +15,13 @@
 
 .flagIcon {
   overflow: hidden;
-  aspect-ratio: 4/3;
+  aspect-ratio: 4 / 3;
+  height: calc(0.75 * var(--icon-size));
   border-radius: var(--radius-4);
+}
+
+.labelWithIcon {
+  display: flex;
+  align-items: center;
+  gap: var(--size-8);
 }
