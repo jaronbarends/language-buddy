@@ -5,14 +5,11 @@ import {
   FaFlagCheckered,
   FaGraduationCap,
   FaComment,
-  // FaComments,
   FaMicrophone,
-  FaPaperPlane,
+  FaRegPaperPlane,
   FaXmark,
-  // FaUser,
   FaCircleUser,
   FaRobot,
-  // FaNetworkWired,
 } from 'react-icons/fa6';
 
 import de from '@/assets/icons/flags/de.svg';
@@ -42,7 +39,7 @@ export const ICONS = {
   chat: FaComment,
   microphone: FaMicrophone,
   ai: FaRobot,
-  send: FaPaperPlane,
+  send: FaRegPaperPlane,
   cancel: FaXmark,
   user: FaCircleUser,
 } as const;

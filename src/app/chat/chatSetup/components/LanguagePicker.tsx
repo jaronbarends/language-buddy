@@ -44,7 +44,7 @@ export default function LanguagePicker({
 
               {flagIconName && (
                 <div className={styles.flagIcon}>
-                  <Icon iconName={flagIconName} size={32} isFlagIcon />
+                  <Icon iconName={flagIconName} iconSize={32} isFlagIcon />
                 </div>
               )}
               {language.name}

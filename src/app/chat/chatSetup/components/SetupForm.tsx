@@ -52,8 +52,8 @@ export default function SetupForm({
   }));
 
   const starterOptions: SegmentedControlOption<Starter>[] = [
-    { label: 'AI should start', value: 'ai', iconName: 'ai' },
-    { label: 'I will start', value: 'user', iconName: 'user' },
+    { label: 'AI', value: 'ai', iconName: 'ai' },
+    { label: 'Me', value: 'user', iconName: 'user' },
   ];
 
   return (
@@ -67,7 +67,7 @@ export default function SetupForm({
       />
       <SegmentedControl
         groupName="level"
-        groupLabel="What level?"
+        groupLabel="What is your level?"
         options={levelOptions}
         selectedValue={selectedLevel.name}
         onSelect={onChangeLevel}
