@@ -66,7 +66,10 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
     };
   }
 
-  if (action.type === 'REQUEST_EVALUATION' && canRequestEvaluation(state.phase)) {
+  if (
+    action.type === 'REQUEST_EVALUATION' &&
+    canRequestEvaluation(state.phase, state.threadItems.length)
+  ) {
     return {
       threadItems: state.threadItems,
       phase: { status: 'requestEvaluation' },
@@ -307,8 +310,17 @@ export function sessionShouldEnd(phase: ChatPhase): boolean {
 
 // derived state functions: permissions
 
-export function canRequestEvaluation(phase: ChatPhase): boolean {
-  return phase.status === 'aiTurnSpeaking' || phase.status === 'readyForUserReply';
+export function canRequestEvaluation(phase: ChatPhase, messageCount: number): boolean {
+  // WARNING: don't include 'waitingForAI' here. See comment in requestsShouldBeAborted
+
+  // 2 possible scenarios; for both we need at least 2 items:
+  // 1. ai starts, then user's message is item #2
+  // 2. user starts; user's message is item #1. For evaluation, we need previousInteractionId. We only have that when AI's reply comes back from server; then AI's message is item #2
+  const chatContainsUserMessage = messageCount > 1;
+  return (
+    (phase.status === 'aiTurnSpeaking' || phase.status === 'readyForUserReply') &&
+    chatContainsUserMessage
+  );
 }
 
 export function canRequestCancel(phase: ChatPhase): boolean {
@@ -319,7 +331,7 @@ export function canRequestCancel(phase: ChatPhase): boolean {
 
 export function requestsShouldBeAborted(phase: ChatPhase): boolean {
   return (
-    // phase.status === 'requestEvaluation' ||
+    // WARNING: don't include 'requestEvaluation' here in order to abort waitingForAI. That request (that sends the user's last message) needs to complete in order for the previousInteractionId to be updated. Without that, the evaluation will not include the last message.
     phase.status === 'sessionEndRequested'
   );
 }

@@ -1993,10 +1993,10 @@ not itself a functional change.
   appear in a stage and in what priority slot (`primary | secondary | tertiary`):
   `aiTurnFlow: { primary: 'speak', secondary: 'evaluate', tertiary: 'endSession' }`,
   `userTurnFlow: { primary: 'send', secondary: 'cancel' }`, `evaluation: { primary: 'endSession'
-  }`, `error: { primary: 'endSession' }`, `sessionEnded: {}`.
+}`, `error: { primary: 'endSession' }`, `sessionEnded: {}`.
 - `buttonConfig: Record<ButtonId, { label, onClick }>` — static label/handler per button,
   independent of phase/stage (`ButtonId` = `'speak' | 'send' | 'cancel' | 'evaluate' |
-  'endSession'`).
+'endSession'`).
 - `buttonIsDisabled(buttonId, phase)` — the only place per-status logic remains: `speak` disabled
   unless `canSpeak(phase)`, `send` unless `canRequestSend(phase)`, `cancel` unless
   `canRequestCancel(phase)`, `evaluate` unless `canRequestEvaluation(phase)`; `endSession` is never
@@ -2010,7 +2010,8 @@ not itself a functional change.
 `ControlsArea.module.css` gains named grid areas (`primary`/`secondary`/`tertiary`) instead of a
 plain two-column grid, so a stage can show one, two, or three buttons without a bespoke layout per
 count — `&:has(:nth-child(3))` switches to a 3-area layout (primary spanning the top row, secondary
-+ tertiary below) only when a third button is actually present.
+
+- tertiary below) only when a third button is actually present.
 
 **Rationale:** The prior code tangled two concerns — visibility (which buttons show in which phase)
 and per-button enable/disable logic — inside one `if`-chain (`getPrimaryButtonProps`) plus several
@@ -2070,7 +2071,7 @@ dropping "Stop chat" itself is not established, only the mechanical outcome.
 
 - `REQUEST_EVALUATION` — checked at the top of the reducer (alongside `ERROR`/`END_SESSION`), guarded
   by `canRequestEvaluation(phase)` (`aiTurnSpeaking` or `readyForUserReply` only); any phase → `{
-  status: 'requestEvaluation' }`.
+status: 'requestEvaluation' }`.
 - `EVALUATION_REQUEST_SENT` — `requestEvaluation` → `waitingForEvaluation`.
 - `EVALUATION_RECEIVED; payload: { evaluation }` — `waitingForEvaluation` → `evaluation` (terminal:
   the `evaluation` case returns `state` unconditionally, same pattern as `sessionEndRequested`),
@@ -2146,6 +2147,7 @@ there is comments/segments, not literally grammar/vocabulary/nuance — see that
 ### Known gaps in this first pass
 
 **Date:** 2026-08-14
+
 - **No loading indicator while `waitingForEvaluation`:** `ThreadView`'s pending-AI-balloon effect is
   keyed on `isWaitingForAI(phase)` only (the chat-turn wait), not the new `waitingForEvaluation`
   phase — requesting an evaluation currently gives no visual feedback until the result appears (all
@@ -2156,12 +2158,12 @@ there is comments/segments, not literally grammar/vocabulary/nuance — see that
   renders with `className={undefined}` and no wrapper-specific styling.
 - **Dead commented-out code left in `ChatConversation.tsx`:** a full `sendMessageToAI_OLD` function
   (the pre-`sendToAI`-extraction implementation) is commented out below the live code, not deleted.
-**Status:** Open — none of these block the feature working, but none are fixed either; tracked here
-rather than only in status.md/backlog.md since they're artifacts of this specific implementation
-pass, not independently-scoped gaps. **Update 2026-08-16:** the `sendMessageToAI_OLD` dead code is
-deleted (see "Structured evaluation output implemented" below — cleanup landed as part of the
-`sendMessageToAI`/`sendEvaluationRequestToAI` split into per-role functions). The loading-indicator
-and `.evaluationContent` gaps are still open, untouched by that round.
+  **Status:** Open — none of these block the feature working, but none are fixed either; tracked here
+  rather than only in status.md/backlog.md since they're artifacts of this specific implementation
+  pass, not independently-scoped gaps. **Update 2026-08-16:** the `sendMessageToAI_OLD` dead code is
+  deleted (see "Structured evaluation output implemented" below — cleanup landed as part of the
+  `sendMessageToAI`/`sendEvaluationRequestToAI` split into per-role functions). The loading-indicator
+  and `.evaluationContent` gaps are still open, untouched by that round.
 
 ---
 
@@ -2236,7 +2238,7 @@ controls the _default_ (non-error) behavior for normal dev flow.
 of the user's own input, or a suggested replacement — rather than one paragraph per fixed category
 (grammar / vocabulary / nuance).
 **Rationale:** Not a literal implementation of requirements.md's "grammar, vocabulary upgrades,
-semantic nuance" framing — that framing described the *kind* of feedback, not a required data shape.
+semantic nuance" framing — that framing described the _kind_ of feedback, not a required data shape.
 Segment-typed comments let the UI style "what you said" vs. "what you probably meant" inline
 (`Evaluation.tsx`/`Evaluation.module.css` — see below) without the model having to sort feedback into
 three buckets that may not apply evenly to every remark. This resolves requirements.md's "exact
@@ -2303,7 +2305,7 @@ commented-out `sendMessageToAI_OLD` pre-`sendToAI`-extraction function (flagged 
 2026-08-14) was deleted as part of this pass, not left behind again.
 **Status:** Done.
 
-### `ThreadView` speaks the last *message*, not the last thread item
+### `ThreadView` speaks the last _message_, not the last thread item
 
 **Date:** 2026-08-16
 **Decision:** `ThreadView.tsx`'s `startAISpeechWithLastMessage` no longer reads
@@ -2322,32 +2324,34 @@ implementing the schema change, not previously reported as a live bug.
 **Date:** 2026-08-16
 Three loose ends found while writing up this round's diff, each confirmed as unintentional
 leftover (not a deliberate design choice) and fixed rather than documented as-is:
+
 - **Unused `AIRequestBody` union type** (`src/lib/aiRequest.ts`) — `AIChatRequestBody |
-  AIEvaluationRequestBody`, a leftover from before the request schema split; nothing imported it.
+AIEvaluationRequestBody`, a leftover from before the request schema split; nothing imported it.
   Deleted.
 - **Dangling `## Rules required for parsing your output` heading** (`src/lib/evaluationConfig.ts`,
   `getEvaluationSystemInstruction`) — its only bullet ("reply should be plain text only") was removed
   once `response_format` took over enforcing output shape, leaving an empty section header behind.
   Deleted.
 - **Mock evaluation route validated against the wrong schema** (`src/app/api/aiMock/evaluation/
-  route.ts`) — still used `AIChatRequestBodySchema` (`previousInteractionId` optional) instead of the
+route.ts`) — still used `AIChatRequestBodySchema` (`previousInteractionId` optional) instead of the
   new `AIEvaluationRequestBodySchema` (`previousInteractionId` required) the real evaluation route
   uses, so the mock accepted requests the real route would reject. Fixed to import and validate
   against `AIEvaluationRequestBodySchema`.
-**Status:** Done, verified via `tsc --noEmit` and `eslint` on the three touched files.
+  **Status:** Done, verified via `tsc --noEmit` and `eslint` on the three touched files.
 
 ### Known risk, still open: real (non-mocked) evaluation calls unverified
 
 **Date:** 2026-08-16
 Everything above is verified against the mock evaluation route only (`NEXT_PUBLIC_USE_MOCK_AI=true`).
 Two compounding unknowns remain unconfirmed against the live Gemini API:
+
 - Whether Gemini's carried-over interaction history is actually sufficient context for the model to
   evaluate the user's own turns from a short "give feedback" prompt alone (flagged 2026-08-14, still
   unresolved).
 - Whether `response_format`'s JSON-schema constraint reliably produces schema-conformant output from
   `gemini-3.1-flash-lite` specifically — `AIEvaluationSchema.safeParse` fails closed if not (see
   above), but a live test hasn't been run to see how often, if ever, that failure path actually fires.
-**Status:** Open — tracked in backlog.md and status.md's "What's open."
+  **Status:** Open — tracked in backlog.md and status.md's "What's open."
 
 ## Evaluation & chat prompt refinement (2026-08-16)
 
@@ -2404,7 +2408,7 @@ purposes, but only own-authored scenario content is ever concatenated into `syst
 user's spoken input is sent as a separate `input` field each turn, never merged into
 `systemInstruction`. The anti-gaming threat model didn't match where user input actually flows, so
 it didn't justify the split. (Recency-based instruction-priority — put stable rules last so they
-win over an accidentally-conflicting scenario — remains a valid *different* reason to reintroduce a
+win over an accidentally-conflicting scenario — remains a valid _different_ reason to reintroduce a
 split later, if a real scenario/base-rule conflict is observed; not needed now with only two
 scenarios in `scenarios.ts`.)
 **Status:** Done.
@@ -2435,6 +2439,12 @@ wording gives the model the actual reason (TTS) instead of a bare format ban, an
 landmine.
 **Status:** Done.
 
+## Do not add option to request evaluation while waiting for AI reply
+
+**Date:** 2026-08-17
+**Decision:** Do not make it possible to request evaluation while waiting for AI chat reply. Accept the fact that not being able to request in this phase is annoying (you have to wait for a reply, when you probably already know you want to request the evaluation the moment you send your last message.)
+**Rationale:** The `previousInteractionId` is only updated when `sendMessageToAI` is completed. When we abort that request, and the `previousInteractionId` is not updated, the last message won't be part of the evaluation.
+**Status:** Done.
 ---
 
 ## Icons added to buttons (2026-08-17)
