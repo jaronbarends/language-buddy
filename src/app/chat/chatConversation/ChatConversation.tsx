@@ -65,6 +65,14 @@ export default function ChatConversation({
     // deliberately leave out dependency array - we want this to run on every render to stay current
   });
 
+  // make sure this useEffect runs before starting any new requests
+  useEffect(() => {
+    if (requestsShouldBeAborted(state.phase)) {
+      requestIdRef.current++;
+      abortControllerRef.current?.abort();
+    }
+  }, [state.phase]);
+
   useEffect(() => {
     if (!chatStartIsPending(state.phase) || hasStartedRef.current) {
       return;
@@ -84,13 +92,6 @@ export default function ChatConversation({
       sendEvaluationRequest();
     }
   });
-
-  useEffect(() => {
-    if (requestsShouldBeAborted(state.phase)) {
-      requestIdRef.current++;
-      abortControllerRef.current?.abort();
-    }
-  }, [state.phase]);
 
   useEffect(() => {
     if (sessionShouldEnd(state.phase)) {
@@ -257,7 +258,6 @@ export default function ChatConversation({
     let reply: T;
     requestIdRef.current++;
     const requestId = requestIdRef.current;
-
     try {
       reply = await requestFunction();
 

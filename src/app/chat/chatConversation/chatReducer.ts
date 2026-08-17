@@ -308,6 +308,7 @@ export function sessionShouldEnd(phase: ChatPhase): boolean {
 // derived state functions: permissions
 
 export function canRequestEvaluation(phase: ChatPhase): boolean {
+  // WARNING: don't include 'waitingForAI' here. See comment in requestsShouldBeAborted
   return phase.status === 'aiTurnSpeaking' || phase.status === 'readyForUserReply';
 }
 
@@ -319,7 +320,7 @@ export function canRequestCancel(phase: ChatPhase): boolean {
 
 export function requestsShouldBeAborted(phase: ChatPhase): boolean {
   return (
-    // phase.status === 'requestEvaluation' ||
+    // WARNING: don't include 'requestEvaluation' here in order to abort waitingForAI. That request (that sends the user's last message) needs to complete in order for the previousInteractionId to be updated. Without that, the evaluation will not include the last message.
     phase.status === 'sessionEndRequested'
   );
 }
