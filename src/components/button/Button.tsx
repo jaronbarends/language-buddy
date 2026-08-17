@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { type RefObject, ReactNode } from 'react';
 
 import { LabelWithIcon } from '@/components/icon/Icon';
-import { type IconSize } from '@/components/icon/Icon';
 import { type IconName } from '@/lib/getIconByName';
 
 import styles from './Button.module.css';
@@ -20,7 +19,6 @@ export interface ButtonProps {
   type?: 'button' | 'submit';
   fontSize?: 'medium' | 'large';
   iconName?: IconName;
-  iconSize?: IconSize;
 }
 
 export default function Button({
@@ -33,8 +31,9 @@ export default function Button({
   type = 'button',
   fontSize = 'medium',
   iconName,
-  iconSize = 24,
 }: ButtonProps) {
+  const iconSize = 24;
+
   if (href) {
     return (
       <Link className={clsx(styles.button, styles[variant])} href={href}>

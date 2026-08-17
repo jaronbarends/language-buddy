@@ -4,12 +4,15 @@ import {
   FaCircleInfo,
   FaFlagCheckered,
   FaGraduationCap,
-  FaComments,
+  FaComment,
+  // FaComments,
   FaMicrophone,
-  FaSquareBinary,
   FaPaperPlane,
   FaXmark,
-  FaUser,
+  // FaUser,
+  FaCircleUser,
+  FaRobot,
+  // FaNetworkWired,
 } from 'react-icons/fa6';
 
 import de from '@/assets/icons/flags/de.svg';
@@ -36,12 +39,12 @@ export const ICONS = {
   info: FaCircleInfo,
   finish: FaFlagCheckered,
   evaluation: FaGraduationCap,
-  chat: FaComments,
+  chat: FaComment,
   microphone: FaMicrophone,
-  ai: FaSquareBinary,
+  ai: FaRobot,
   send: FaPaperPlane,
   cancel: FaXmark,
-  user: FaUser,
+  user: FaCircleUser,
 } as const;
 export type IconName = keyof typeof ICONS;
 

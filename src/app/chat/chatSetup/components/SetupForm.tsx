@@ -52,8 +52,8 @@ export default function SetupForm({
   }));
 
   const starterOptions: SegmentedControlOption<Starter>[] = [
-    { label: 'AI should start', value: 'ai' },
-    { label: 'I will start', value: 'user' },
+    { label: 'AI should start', value: 'ai', iconName: 'ai' },
+    { label: 'I will start', value: 'user', iconName: 'user' },
   ];
 
   return (
