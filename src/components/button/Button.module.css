@@ -17,8 +17,7 @@
   transition-property: border-width, translate;
   transition-duration: var(--duration-instant);
 
-  &:active,
-  &:disabled {
+  &:active {
     border-bottom-width: var(--border-width);
     translate: 0 var(--bevel);
   }

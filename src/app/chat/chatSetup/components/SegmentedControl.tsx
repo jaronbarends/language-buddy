@@ -1,8 +1,12 @@
+import { LabelWithIcon } from '@/components/icon/Icon';
+import { type IconName } from '@/lib/getIconByName';
+
 import styles from './SegmentedControl.module.css';
 
 export type SegmentedControlOption<T> = {
   label: string;
   value: T;
+  iconName?: IconName;
 };
 
 export type SegmentedControlProps<T> = {
@@ -37,7 +41,12 @@ export default function SegmentedControl<T>({
                 }}
                 className="u-hidden-form-control"
               />
-              {option.label}
+              {option.iconName && (
+                <LabelWithIcon iconName={option.iconName} iconSize={24}>
+                  {option.label}
+                </LabelWithIcon>
+              )}
+              {!option.iconName && option.label}
             </label>
           );
         })}

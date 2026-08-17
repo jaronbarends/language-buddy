@@ -23,7 +23,7 @@ export default function Feedback({ type, children }: FeedbackProps) {
   const iconName = feedbackIconNames[type];
   return (
     <div className={clsx(styles.feedback, styles[type])}>
-      <Icon iconName={iconName} size={24} />
+      <Icon iconName={iconName} iconSize={24} />
       <div>{children}</div>
     </div>
   );

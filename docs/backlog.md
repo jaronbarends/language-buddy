@@ -70,7 +70,8 @@ wired to the mock for all UI dev.
 
 - add lang attribute to speech output elements
 - add Edit option
-- add icons to buttons
+- ~~add icons to buttons~~ — **done 2026-08-17**, branch `button-icons` (see decisions.md, "Icons
+  added to buttons," and status.md)
 
 ---
 
