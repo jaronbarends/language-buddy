@@ -9,6 +9,7 @@ import {
   type ChatStage,
 } from '@/app/chat/chatConversation/chatReducer';
 import Button from '@/components/button/Button';
+import { type IconName } from '@/lib/getIconByName';
 
 import styles from './ControlsArea.module.css';
 
@@ -43,12 +44,15 @@ export default function ControlsArea({
   onEvaluationRequested,
   onEndSessionRequested,
 }: ControlsAreaProps) {
-  const buttonConfig: Record<ButtonId, { label: string; onClick: () => void }> = {
-    speak: { label: 'Reply', onClick: onStartListening },
-    send: { label: 'Send', onClick: onSendRequested },
-    cancel: { label: 'Cancel', onClick: onCancelListening },
-    evaluate: { label: 'Evaluate', onClick: onEvaluationRequested },
-    endSession: { label: 'End session', onClick: onEndSessionRequested },
+  const buttonConfig: Record<
+    ButtonId,
+    { label: string; iconName?: IconName; onClick: () => void }
+  > = {
+    speak: { label: 'Reply', iconName: 'microphone', onClick: onStartListening },
+    send: { label: 'Send', iconName: 'send', onClick: onSendRequested },
+    cancel: { label: 'Cancel', iconName: 'cancel', onClick: onCancelListening },
+    evaluate: { label: 'Evaluate', iconName: 'evaluation', onClick: onEvaluationRequested },
+    endSession: { label: 'End session', iconName: 'finish', onClick: onEndSessionRequested },
   };
   const stage: ChatStage = getChatStage(phase);
   const stageButtons = buttonsByStage[stage];
@@ -60,7 +64,7 @@ export default function ControlsArea({
           const buttonId = stageButtons[priority];
           if (!buttonId) return null;
 
-          const { onClick } = buttonConfig[buttonId];
+          const { onClick, iconName } = buttonConfig[buttonId];
           const label = getLabel(buttonId);
           return (
             <Button
@@ -68,6 +72,7 @@ export default function ControlsArea({
               variant={priority === 'primary' ? 'primary' : 'secondary'}
               onClick={onClick}
               disabled={buttonIsDisabled(buttonId, phase, messageCount)}
+              iconName={iconName}
             >
               {label}
             </Button>

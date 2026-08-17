@@ -2445,3 +2445,54 @@ landmine.
 **Decision:** Do not make it possible to request evaluation while waiting for AI chat reply. Accept the fact that not being able to request in this phase is annoying (you have to wait for a reply, when you probably already know you want to request the evaluation the moment you send your last message.)
 **Rationale:** The `previousInteractionId` is only updated when `sendMessageToAI` is completed. When we abort that request, and the `previousInteractionId` is not updated, the last message won't be part of the evaluation.
 **Status:** Done.
+---
+
+## Icons added to buttons (2026-08-17)
+
+### Icon component: `size` renamed to `iconSize`; new `ariaLabel`/`role="img"` handling; new `LabelWithIcon` shared component
+
+**Date:** 2026-08-17
+**Decision:** `Icon.tsx`'s `size` prop is renamed to `iconSize` (clarity only — no naming clash
+forced it). `Icon` now accepts an optional `ariaLabel`; when omitted, the icon renders
+`aria-hidden="true"` (as before, but now owned internally by `Icon` rather than by call sites);
+when present, it also sets `role="img"`. A new `LabelWithIcon` component (`Icon.tsx`, exported
+alongside `Icon`) wraps an `Icon` plus arbitrary children in a flex row (`.labelWithIcon` in
+`Icon.module.css`, `gap: var(--size-8)`), for the icon+label pattern now used by both `Button` and
+`SegmentedControl`.
+**Rationale:** Icon accessibility was previously handled ad hoc at each call site (e.g.
+`LanguagePicker` wrapped its flag icon in a `<div aria-hidden="true">`); moving that logic into
+`Icon` itself gives every icon usage consistent hidden/labeled behavior without each caller
+re-implementing it — `LanguagePicker`'s wrapper `aria-hidden` was removed as now-redundant.
+`LabelWithIcon` was extracted because the icon+label flex layout is needed in two unrelated
+components (`Button`, `SegmentedControl`).
+**Status:** Done.
+
+### Buttons and segmented-control options can now show an icon
+
+**Date:** 2026-08-17
+**Decision:** `Button` gains an optional `iconName` prop; when set, its children render inside
+`LabelWithIcon` (fixed `iconSize={24}`) instead of directly. `SegmentedControlOption` gains an
+optional `iconName`; when set, the option label renders via `LabelWithIcon` instead of plain text.
+`getIconByName.ts`'s `ICONS` registry gains eight new `react-icons/fa6` glyphs (`finish`,
+`evaluation`, `chat`, `microphone`, `ai`, `send`, `cancel`, `user`) to back this. Wired up in:
+- `ControlsArea.tsx`'s `buttonConfig` — `speak`/`send`/`cancel`/`evaluate`/`endSession` all get an
+  icon (microphone/send/cancel/evaluation/finish respectively).
+- `SetupForm.tsx` — the starter `SegmentedControl` options get `ai`/`user` icons, with their labels
+  shortened from "AI should start"/"I will start" to "AI"/"Me" to fit the icon+label layout; the
+  "Start chat" submit button gets a `chat` icon; the level-picker `groupLabel` changed from "What
+  level?" to "What is your level?" (a copy tweak made alongside this pass, not functionally related
+  to icons).
+
+**Rationale:** Backlog item ("add icons to buttons," see backlog.md) — purely a visual/labeling
+layer on top of the existing `Button`/`SegmentedControl` components, no new interaction behavior.
+**Status:** Done.
+
+### Disabled buttons no longer show the pressed/bevel look (unrelated fix, same branch)
+
+**Date:** 2026-08-17
+**Decision:** `Button.module.css`'s bevel/translate effect (`border-bottom-width`,
+`translate: 0 var(--bevel)`) now applies only on `:active`, not `:disabled`. Previously both
+selectors shared the rule.
+**Rationale:** Visual bug fix noticed along the way — a disabled button shouldn't look pressed-in —
+unrelated to the icon work itself, just shipped in the same branch.
+**Status:** Done.
