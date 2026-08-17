@@ -43,7 +43,6 @@ export default function Button({
           </LabelWithIcon>
         )}
         {!iconName && children}
-        {children}
       </Link>
     );
   }

@@ -24,6 +24,7 @@ export default function Icon({ iconName, iconSize, isFlagIcon, ariaLabel }: Icon
       style={sizeStyle}
       aria-label={ariaLabel}
       aria-hidden={!ariaLabel}
+      role={ariaLabel ? 'img' : undefined}
     >
       <IconComponent />
     </div>
