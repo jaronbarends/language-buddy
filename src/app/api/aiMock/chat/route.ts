@@ -37,7 +37,10 @@ export async function POST(request: NextRequest) {
   switch (selectedScenario) {
     case MOCK_SCENARIOS.success:
       return respondAfterDelay({
-        data: { id: interactionId, text: successResponseOutputText + crypto.randomUUID() },
+        data: {
+          id: interactionId,
+          text: successResponseOutputText + interactionId.substring(0, 3),
+        },
       });
     case MOCK_SCENARIOS.successLongDelay:
       return respondAfterDelay({
