@@ -1,9 +1,15 @@
+import { getSharedInstructionContext } from '@/lib/getSharedInstructionContext';
 import type { Language, LanguageLevel } from '@/lib/language';
 
-export function getBaseInstruction(language: Language, level: LanguageLevel): string {
+export function getChatBaseInstruction(
+  language: Language,
+  level: LanguageLevel,
+  aiStartingPrompt: string
+): string {
   const languageTag = language.languageTag;
   const cefrLevel = level.cefrLevel;
-  const baseInstruction = `
+  const sharedInstructionContext = getSharedInstructionContext(language, level, aiStartingPrompt);
+  const chatBaseInstruction = `
 ## Role/persona
 
 - You are a native speaker of ${languageTag}.
@@ -17,7 +23,7 @@ export function getBaseInstruction(language: Language, level: LanguageLevel): st
 
 ## Context
 
-- The input text is gathered by the Web SpeechRecognition API. When you encounter illogical words, consider the possibility that this may be a transcription error.
+${sharedInstructionContext}
 
 ## Constraints
 
@@ -28,5 +34,5 @@ export function getBaseInstruction(language: Language, level: LanguageLevel): st
 
 `; // baseInstruction should end with empty line for formatting purposes when scenario gets injected
 
-  return baseInstruction;
+  return chatBaseInstruction;
 }

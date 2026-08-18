@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 
-import { type ChatConfig } from '@/lib/chatConfig';
+import { type ConversationConfig } from '@/lib/conversationConfig';
 import { LanguageLevelName, type Language, type LanguageVoice } from '@/lib/language';
 import {
   type SupportedLanguageVoices,
@@ -15,7 +15,9 @@ import { initSpeech } from '@/lib/textToSpeech';
 import ChatConversation from './chatConversation/ChatConversation';
 import ChatSetup from './chatSetup/ChatSetup';
 
-type ContainerState = { status: 'setup' } | { status: 'conversation'; chatConfig: ChatConfig };
+type ContainerState =
+  | { status: 'setup' }
+  | { status: 'conversation'; conversationConfig: ConversationConfig };
 
 export default function ChatContainer() {
   const [containerState, setContainerState] = useState<ContainerState>({ status: 'setup' });
@@ -54,7 +56,7 @@ export default function ChatContainer() {
           onStartSession={handleSessionStart}
         />
       : <ChatConversation
-          chatConfig={containerState.chatConfig}
+          conversationConfig={containerState.conversationConfig}
           languageVoice={languageVoice}
           openingHint={scenario.openingHint}
           onEndSession={handleSessionEnd}
@@ -63,11 +65,11 @@ export default function ChatContainer() {
     </>
   );
 
-  function handleSessionStart(chatConfig: ChatConfig) {
+  function handleSessionStart(conversationConfig: ConversationConfig) {
     if (speechIsSupported) {
       unlockSpeechSynthesis();
     }
-    setContainerState({ status: 'conversation', chatConfig });
+    setContainerState({ status: 'conversation', conversationConfig });
   }
 
   function handleSessionEnd() {
