@@ -1,12 +1,12 @@
-import { getBaseInstruction } from '@/lib/getBaseInstruction';
+import { getChatBaseInstruction } from '@/lib/getChatBaseInstruction';
 import type { Language, LanguageLevel } from '@/lib/language';
 import type { Scenario, Starter } from '@/lib/scenarios';
 
 import { getEvaluationSystemInstruction, getEvaluationInput } from './evaluationConfig';
 
-export type ChatConfig = {
+export type ConversationConfig = {
   language: Language;
-  systemInstruction: string;
+  chatSystemInstruction: string;
   evaluationSystemInstruction: string;
   evaluationInput: string;
   starter: Starter;
@@ -14,19 +14,19 @@ export type ChatConfig = {
 
 export const aiStartingPrompt = 'start the conversation according to the system instructions';
 
-export function getChatConfig(
+export function getConversationConfig(
   language: Language,
   languageLevel: LanguageLevel,
   scenario: Scenario
-): ChatConfig {
+): ConversationConfig {
   if (!isValidLanguageTag(language.languageTag)) {
     throw new Error(
       `Language tag ${language.languageTag} is not valid. Should look like 'en' or 'en-US'`
     );
   }
 
-  const baseInstruction = getBaseInstruction(language, languageLevel, aiStartingPrompt);
-  const systemInstruction = `${baseInstruction}${scenario.instructionText}`;
+  const baseInstruction = getChatBaseInstruction(language, languageLevel, aiStartingPrompt);
+  const chatSystemInstruction = `${baseInstruction}${scenario.instructionText}`;
   const evaluationSystemInstruction = getEvaluationSystemInstruction(
     language,
     languageLevel,
@@ -36,7 +36,7 @@ export function getChatConfig(
 
   return {
     language,
-    systemInstruction,
+    chatSystemInstruction,
     evaluationSystemInstruction,
     evaluationInput,
     starter: scenario.starter,

@@ -1,6 +1,6 @@
 import Feedback from '@/components/Feedback';
 import Button from '@/components/button/Button';
-import { type ChatConfig, getChatConfig } from '@/lib/chatConfig';
+import { type ConversationConfig, getConversationConfig } from '@/lib/conversationConfig';
 import {
   languageLevels,
   type Language,
@@ -28,7 +28,7 @@ type SetupFormProps = {
   onChangeScenario: (scenario: Scenario) => void;
   speechSupportIsChecked: boolean;
   supportedLanguageVoices: SupportedLanguageVoices;
-  onStartSession: (chatConfig: ChatConfig) => void;
+  onStartSession: (conversationConfig: ConversationConfig) => void;
 };
 
 export default function SetupForm({
@@ -113,8 +113,8 @@ export default function SetupForm({
   function handleSubmit(evt: React.SubmitEvent<HTMLFormElement>) {
     evt.preventDefault();
 
-    const chatConfig = getChatConfig(selectedLanguage, selectedLevel, selectedScenario);
+    const conversationConfig = getConversationConfig(selectedLanguage, selectedLevel, selectedScenario);
 
-    onStartSession(chatConfig);
+    onStartSession(conversationConfig);
   }
 }

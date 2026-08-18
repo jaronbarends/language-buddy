@@ -1,7 +1,7 @@
 import { getSharedInstructionContext } from '@/lib/getSharedInstructionContext';
 import type { Language, LanguageLevel } from '@/lib/language';
 
-export function getBaseInstruction(
+export function getChatBaseInstruction(
   language: Language,
   level: LanguageLevel,
   aiStartingPrompt: string
@@ -9,7 +9,7 @@ export function getBaseInstruction(
   const languageTag = language.languageTag;
   const cefrLevel = level.cefrLevel;
   const sharedInstructionContext = getSharedInstructionContext(language, level, aiStartingPrompt);
-  const baseInstruction = `
+  const chatBaseInstruction = `
 ## Role/persona
 
 - You are a native speaker of ${languageTag}.
@@ -34,5 +34,5 @@ ${sharedInstructionContext}
 
 `; // baseInstruction should end with empty line for formatting purposes when scenario gets injected
 
-  return baseInstruction;
+  return chatBaseInstruction;
 }

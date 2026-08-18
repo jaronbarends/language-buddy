@@ -9,7 +9,7 @@ import {
   sendAIEvaluationRequest,
   type AIChatResult,
 } from '@/lib/aiService';
-import { type ChatConfig, aiStartingPrompt } from '@/lib/chatConfig';
+import { type ConversationConfig, aiStartingPrompt } from '@/lib/conversationConfig';
 import { type LanguageVoice } from '@/lib/language';
 
 import {
@@ -30,14 +30,14 @@ import ThreadView from './components/ThreadView';
 import styles from './ChatConversation.module.css';
 
 type ChatConversationProps = {
-  chatConfig: ChatConfig;
+  conversationConfig: ConversationConfig;
   languageVoice: LanguageVoice;
   openingHint: string | undefined;
   onEndSession: () => void;
 };
 
 export default function ChatConversation({
-  chatConfig,
+  conversationConfig,
   languageVoice,
   openingHint,
   onEndSession,
@@ -51,12 +51,12 @@ export default function ChatConversation({
   const startChatRef = useRef<() => void>(() => {});
 
   // Keep up to date via this effect (not useCallback) so startChat always uses
-  // the latest chatConfig/startChatWithAI/startChatWithUser. We don't want those as
+  // the latest conversationConfig/startChatWithAI/startChatWithUser. We don't want those as
   // dependencies in the useEffect that calls startChatRef.current below, because
   // them changing mid-session shouldn't re-trigger chat start.
   useEffect(() => {
     startChatRef.current = () => {
-      if (chatConfig.starter === 'ai') {
+      if (conversationConfig.starter === 'ai') {
         startChatWithAI();
       } else {
         startChatWithUser();
@@ -114,7 +114,7 @@ export default function ChatConversation({
           phase={state.phase}
           onTranscriptCreated={handleTranscriptCreated}
           onListeningCancelled={handleListeningCancelled}
-          languageTag={chatConfig.language.languageTag}
+          languageTag={conversationConfig.language.languageTag}
         />
         <ControlsArea
           phase={state.phase}
@@ -127,7 +127,7 @@ export default function ChatConversation({
         />
       </div>
       {process.env.NEXT_PUBLIC_SHOW_DEV_HELPER && (
-        <DevHelper phase={state.phase} language={chatConfig.language} />
+        <DevHelper phase={state.phase} language={conversationConfig.language} />
       )}
     </>
   );
@@ -207,7 +207,7 @@ export default function ChatConversation({
   async function sendMessageToAI(input: string): Promise<void> {
     const body: AIChatRequestBody = {
       input,
-      systemInstruction: chatConfig.systemInstruction,
+      systemInstruction: conversationConfig.chatSystemInstruction,
       previousInteractionId,
     };
     abortControllerRef.current = new AbortController();
@@ -233,8 +233,8 @@ export default function ChatConversation({
       return;
     }
     const body: AIEvaluationRequestBody = {
-      input: chatConfig.evaluationInput,
-      systemInstruction: chatConfig.evaluationSystemInstruction,
+      input: conversationConfig.evaluationInput,
+      systemInstruction: conversationConfig.evaluationSystemInstruction,
       previousInteractionId,
     };
     abortControllerRef.current = new AbortController();

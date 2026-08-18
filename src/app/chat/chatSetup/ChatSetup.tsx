@@ -1,5 +1,5 @@
 import PageHeading from '@/components/PageHeading';
-import { type ChatConfig } from '@/lib/chatConfig';
+import { type ConversationConfig } from '@/lib/conversationConfig';
 import { type Language, LanguageLevel, LanguageLevelName } from '@/lib/language';
 import { type SupportedLanguageVoices } from '@/lib/language';
 import { type Scenario } from '@/lib/scenarios';
@@ -19,7 +19,7 @@ type ChatSetupProps = {
   onChangeScenario: (scenario: Scenario) => void;
   speechSupportIsChecked: boolean;
   supportedLanguageVoices: SupportedLanguageVoices;
-  onStartSession: (chatConfig: ChatConfig) => void;
+  onStartSession: (conversationConfig: ConversationConfig) => void;
 };
 
 export default function ChatSetup({
