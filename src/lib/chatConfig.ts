@@ -12,6 +12,8 @@ export type ChatConfig = {
   starter: Starter;
 };
 
+export const aiStartingPrompt = 'start the conversation according to the system instructions';
+
 export function getChatConfig(
   language: Language,
   languageLevel: LanguageLevel,
@@ -22,9 +24,14 @@ export function getChatConfig(
       `Language tag ${language.languageTag} is not valid. Should look like 'en' or 'en-US'`
     );
   }
+
   const baseInstruction = getBaseInstruction(language, languageLevel);
   const systemInstruction = `${baseInstruction}${scenario.instructionText}`;
-  const evaluationSystemInstruction = getEvaluationSystemInstruction(language, languageLevel);
+  const evaluationSystemInstruction = getEvaluationSystemInstruction(
+    language,
+    languageLevel,
+    aiStartingPrompt
+  );
   const evaluationInput = getEvaluationInput(language, languageLevel);
 
   return {

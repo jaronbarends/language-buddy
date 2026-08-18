@@ -134,38 +134,38 @@ durations) landed first, then a small shared component set (`Button`, `Loader`, 
   **Not fixed by this round:** no loading indicator during `waitingForEvaluation`,
   `Evaluation.module.css` still missing `.evaluationContent`, and real (non-mocked) evaluation calls
   remain unverified live — see "What's open" below.
-**Evaluation-request gating tightened; abort-ordering race fixed (2026-08-17, PR #29
-`evaluation-permission`, see decisions.md, "Evaluation permission gating"):** `canRequestEvaluation`
-now also takes `messageCount` (`state.threadItems.length`, threaded through `ControlsArea`) and
-additionally requires `messageCount > 1` — the phase-only check (`aiTurnSpeaking`/
-`readyForUserReply`) didn't distinguish "AI has replied at least once, so `previousInteractionId`
-exists" from an earlier point in either starter scenario where it doesn't yet, so "Evaluate" could
-otherwise enable too early. `ChatConversation.tsx`'s abort-in-flight-request `useEffect` was also
-reordered to run before the chat-start effect, and the reasoning for excluding
-`requestEvaluation` from `requestsShouldBeAborted` (already true in code) was written up as an
-explicit warning comment rather than left as a commented-out line. Mock chat route's response
-`id` changed from a static literal to `crypto.randomUUID()`, so `previousInteractionId` looks
-realistic during mock dev.
-**Evaluation loading indicator added; AI-pending balloon reworked into an animated thread item
-(2026-08-18, PRs #30/#31, see decisions.md):** two small features, both merged same day. **PR #30
-("evaluation loading state"):** a new `isWaitingForEvaluation(phase)` helper drives a new
-`EvaluationLoader` (in `Evaluation.tsx`, alongside the existing `Evaluation` component) rendered by
-`ThreadView.tsx` during `waitingForEvaluation` — closes the loading-indicator gap open since
-2026-08-14/08-16. **PR #31 ("balloon animation"):** supersedes the old AI-pending-balloon mechanism
-described just above under "Evaluation output is now structured" and, further up, under
-"AI-pending speech balloon (2026-08-02)" — that mechanism (a 500ms-delayed boolean rendering a
-separate `Loader`-only balloon outside `threadItems`) is gone. The pending indicator is now a real
-`ThreadItem` (`ChatMessageItem.isPending?: boolean`), pushed into `threadItems` when a wait-for-AI
-phase starts and updated in place once the reply arrives, instead of being appended as a new item —
-one balloon now visually morphs from loader-sized to message-sized rather than one element
-disappearing and a different one appearing. `SpeechBalloon`/`ThreadView` both gained a bounce/
-fade-in entrance animation (new `--duration-fast`/`--overshoot-out` tokens) with the AI balloon's
-entrance offset 500ms after the user's, for a sense of sequentiality. New tokens added at the
-settings layer: `--duration-fast`, `--overshoot-out`, `--border-width-default`, and four
-`--loader-*` size tokens used to size the pending balloon exactly to the `Loader` component's real
-dimensions (see decisions.md for the full token list). **Not touched by either PR:**
-`Evaluation.module.css`'s missing `.evaluationContent` class, and live (non-mocked) verification of
-evaluation — both still open, see "What's open" below.
+  **Evaluation-request gating tightened; abort-ordering race fixed (2026-08-17, PR #29
+  `evaluation-permission`, see decisions.md, "Evaluation permission gating"):** `canRequestEvaluation`
+  now also takes `messageCount` (`state.threadItems.length`, threaded through `ControlsArea`) and
+  additionally requires `messageCount > 1` — the phase-only check (`aiTurnSpeaking`/
+  `readyForUserReply`) didn't distinguish "AI has replied at least once, so `previousInteractionId`
+  exists" from an earlier point in either starter scenario where it doesn't yet, so "Evaluate" could
+  otherwise enable too early. `ChatConversation.tsx`'s abort-in-flight-request `useEffect` was also
+  reordered to run before the chat-start effect, and the reasoning for excluding
+  `requestEvaluation` from `requestsShouldBeAborted` (already true in code) was written up as an
+  explicit warning comment rather than left as a commented-out line. Mock chat route's response
+  `id` changed from a static literal to `crypto.randomUUID()`, so `previousInteractionId` looks
+  realistic during mock dev.
+  **Evaluation loading indicator added; AI-pending balloon reworked into an animated thread item
+  (2026-08-18, PRs #30/#31, see decisions.md):** two small features, both merged same day. **PR #30
+  ("evaluation loading state"):** a new `isWaitingForEvaluation(phase)` helper drives a new
+  `EvaluationLoader` (in `Evaluation.tsx`, alongside the existing `Evaluation` component) rendered by
+  `ThreadView.tsx` during `waitingForEvaluation` — closes the loading-indicator gap open since
+  2026-08-14/08-16. **PR #31 ("balloon animation"):** supersedes the old AI-pending-balloon mechanism
+  described just above under "Evaluation output is now structured" and, further up, under
+  "AI-pending speech balloon (2026-08-02)" — that mechanism (a 500ms-delayed boolean rendering a
+  separate `Loader`-only balloon outside `threadItems`) is gone. The pending indicator is now a real
+  `ThreadItem` (`ChatMessageItem.isPending?: boolean`), pushed into `threadItems` when a wait-for-AI
+  phase starts and updated in place once the reply arrives, instead of being appended as a new item —
+  one balloon now visually morphs from loader-sized to message-sized rather than one element
+  disappearing and a different one appearing. `SpeechBalloon`/`ThreadView` both gained a bounce/
+  fade-in entrance animation (new `--duration-fast`/`--overshoot-out` tokens) with the AI balloon's
+  entrance offset 500ms after the user's, for a sense of sequentiality. New tokens added at the
+  settings layer: `--duration-fast`, `--overshoot-out`, `--border-width-default`, and four
+  `--loader-*` size tokens used to size the pending balloon exactly to the `Loader` component's real
+  dimensions (see decisions.md for the full token list). **Not touched by either PR:**
+  `Evaluation.module.css`'s missing `.evaluationContent` class, and live (non-mocked) verification of
+  evaluation — both still open, see "What's open" below.
 
 ---
 
@@ -793,8 +793,7 @@ Two calibration-only files still remain under `spikes/language-speech-rates/`
     pass"). Not covered: a dedicated accessibility pass — remains open, not blocking evaluation.
 11. Define core data structures (session state shape, transcript shape) consistent with the state
     model — transcript must exclude the hidden opening instruction.
-12. ~~Add evaluation as a second slice once the full v0 conversation loop (steps 4–10) is solid and
-    styled~~ — first pass done, 2026-08-13–2026-08-14 (see decisions.md, "Evaluation: first working
+12. ~~Add evaluation as a second slice once the full v0 conversation loop (steps 4–10) is solid and styled~~ — first pass done, 2026-08-13–2026-08-14 (see decisions.md, "Evaluation: first working
     implementation," and step 15 below): mock-verified, plain-text output only, structured output
     following as step 16. (Earlier phrasing here framed the follow-up as "the structured
     grammar/vocabulary/nuance fields requirements.md scopes" — **corrected 2026-08-18:** there was

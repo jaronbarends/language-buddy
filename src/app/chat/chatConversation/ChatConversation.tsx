@@ -9,7 +9,7 @@ import {
   sendAIEvaluationRequest,
   type AIChatResult,
 } from '@/lib/aiService';
-import { type ChatConfig } from '@/lib/chatConfig';
+import { type ChatConfig, aiStartingPrompt } from '@/lib/chatConfig';
 import { type LanguageVoice } from '@/lib/language';
 
 import {
@@ -157,7 +157,7 @@ export default function ChatConversation({
   }
 
   async function startChatWithAI() {
-    const input = 'start the conversation according to the system instructions';
+    const input = aiStartingPrompt;
     dispatch({ type: 'AI_START_INPUT_SENT' });
 
     await sendMessageToAI(input);
