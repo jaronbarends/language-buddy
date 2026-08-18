@@ -1,4 +1,5 @@
-.evaluation {
+.evaluation,
+.evaluationLoader {
   padding-inline: var(--size-16);
   color: var(--color-text-secondary);
 }
@@ -20,4 +21,9 @@
   border-radius: var(--radius-4);
   padding-inline: var(--size-4);
   background: var(--color-bg-secondary-subtle);
+}
+
+.loaderHeading {
+  display: flex;
+  gap: var(--size-12);
 }

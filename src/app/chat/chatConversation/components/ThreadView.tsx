@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 
 import {
   isAITurnSpeaking,
+  isWaitingForEvaluation,
   shouldAutoScrollThread,
   type ThreadItem,
   type ChatPhase,
@@ -10,7 +11,7 @@ import Feedback from '@/components/Feedback';
 import { type LanguageVoice } from '@/lib/language';
 import { cancelSpeech, speakMessage } from '@/lib/textToSpeech';
 
-import Evaluation from './Evaluation';
+import Evaluation, { EvaluationLoader } from './Evaluation';
 import SpeechBalloon from './SpeechBalloon';
 
 import styles from './ThreadView.module.css';
@@ -97,6 +98,7 @@ export default function ThreadView({
         })}
 
         {showFakeBalloons && <FakeBalloons />}
+        {isWaitingForEvaluation(phase) && <EvaluationLoader />}
       </ol>
     </div>
   );

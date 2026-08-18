@@ -310,6 +310,10 @@ export function shouldRequestEvaluation(phase: ChatPhase): boolean {
   return phase.status === 'requestEvaluation';
 }
 
+export function isWaitingForEvaluation(phase: ChatPhase): boolean {
+  return phase.status === 'waitingForEvaluation';
+}
+
 export function hasError(phase: ChatPhase): phase is Extract<ChatPhase, { status: 'error' }> {
   return phase.status === 'error';
 }
