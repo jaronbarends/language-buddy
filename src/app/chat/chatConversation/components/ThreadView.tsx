@@ -1,15 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 import {
   isAITurnSpeaking,
-  isWaitingForAI,
   isWaitingForEvaluation,
   shouldAutoScrollThread,
   type ThreadItem,
   type ChatPhase,
 } from '@/app/chat/chatConversation/chatReducer';
 import Feedback from '@/components/Feedback';
-import Loader from '@/components/Loader';
 import { type LanguageVoice } from '@/lib/language';
 import { cancelSpeech, speakMessage } from '@/lib/textToSpeech';
 
@@ -34,7 +32,6 @@ export default function ThreadView({
   onAISpeechEnd,
 }: threadItemsProps) {
   const threadViewRef = useRef<HTMLDivElement>(null);
-  const [showAIPendingBalloon, setShowAIPendingBalloon] = useState<boolean>(false);
   const showFakeBalloons = false;
 
   useEffect(() => {
@@ -70,28 +67,15 @@ export default function ThreadView({
 
   useEffect(() => {
     if (shouldAutoScrollThread(phase)) {
-      threadViewRef.current?.scrollTo({
-        top: threadViewRef.current?.scrollHeight,
-        behavior: 'smooth',
-      });
+      scrollToEnd();
+      // we need to scroll again when bounce-animation is done. This is hard to get right, so call scroll multiple time
+      for (let i = 1; i <= 3; i++) {
+        setTimeout(() => {
+          scrollToEnd();
+        }, 100 * i);
+      }
     }
-  }, [phase, threadItems, showAIPendingBalloon]);
-
-  useEffect(() => {
-    if (!isWaitingForAI(phase)) {
-      return;
-    }
-
-    // timer is only for visual effect of chat flow: first user message is rendered, then ai's pending balloon
-    const timer: ReturnType<typeof setTimeout> = setTimeout(() => {
-      setShowAIPendingBalloon(true);
-    }, 500);
-
-    return () => {
-      clearTimeout(timer);
-      setShowAIPendingBalloon(false);
-    };
-  }, [phase]);
+  }, [phase, threadItems]);
 
   return (
     <div className={styles.threadView} ref={threadViewRef}>
@@ -100,7 +84,7 @@ export default function ThreadView({
         {threadItems.map((item, idx) => {
           if (item.type === 'message') {
             return (
-              <SpeechBalloon key={idx} author={item.author} tag="li">
+              <SpeechBalloon key={idx} author={item.author} tag="li" isPending={item.isPending}>
                 {item.message}
               </SpeechBalloon>
             );
@@ -114,15 +98,17 @@ export default function ThreadView({
         })}
 
         {showFakeBalloons && <FakeBalloons />}
-        {showAIPendingBalloon && (
-          <SpeechBalloon author="ai" tag="li">
-            <Loader ariaLabel="Loading ai response" />
-          </SpeechBalloon>
-        )}
         {isWaitingForEvaluation(phase) && <EvaluationLoader />}
       </ol>
     </div>
   );
+
+  function scrollToEnd() {
+    threadViewRef.current?.scrollTo({
+      top: threadViewRef.current?.scrollHeight,
+      behavior: 'smooth',
+    });
+  }
 }
 
 function FakeBalloons() {

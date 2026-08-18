@@ -28,4 +28,8 @@
   --radius-button: var(--radius-pill);
 
   --label-gap: var(--size-8);
+  --loader-dot-size: var(--size-8);
+  --loader-height: var(--size-24);
+  --loader-dot-gap: var(--size-4);
+  --loader-width: calc(3 * var(--loader-dot-size) + 2 * var(--loader-dot-gap));
 }

@@ -1,24 +1,74 @@
+@keyframes bounceIn {
+  0% {
+    scale: 0;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
 .message {
-  margin-inline: 0 auto;
+  --balloon-padding-block: var(--size-12);
+  --balloon-padding-inline: var(--size-16);
+  --balloon-border-width: var(--border-width-default);
+  --bounce-duration: var(--duration-fast);
+  --balloon-max-width: 85%;
+
+  overflow: hidden;
   width: fit-content;
-  max-width: 85%;
   padding: var(--size-12) var(--size-16);
   border-radius: var(--radius-16);
   background-color: var(--color-bg-default);
-  border: var(--border-default) var(--color-border-neutral);
+  border: var(--border-width-default) solid var(--color-border-neutral);
   font-weight: var(--font-weight-medium);
   line-height: var(--line-height-body-tight);
+  animation: bounceIn var(--bounce-duration) forwards var(--overshoot-out);
+  transition: var(--duration-fast) ease-out;
+  transition-property: width, height;
+  transition-timing-function: var(--overshoot-out), linear;
 }
 
 .messageFromAi {
   display: flex;
-  border-bottom-left-radius: var(--radius-4);
+  /* we cannot use max-width for ai message, because then the overshoot animation on its width won't work - that would obey max-width */
+  margin-inline: 0 calc(100% - var(--balloon-max-width));
+  border-top-left-radius: var(--radius-4);
+  transform-origin: top left;
+
+  &:not(:first-child) {
+    scale: 0; /* will be handled by animation */
+    /* message from ai should appear slightly after message from user to give idea of sequentiality */
+    animation-delay: 500ms;
+  }
+}
+
+.messageContent {
+  /* message content should fade in when balloon's resize is done */
+  opacity: 0;
+  animation: fadeIn var(--duration-fast) var(--bounce-duration) forwards;
 }
 
 .messageFromUser {
   margin-inline: auto 0;
+  max-width: var(--balloon-max-width);
   border-bottom-right-radius: var(--radius-4);
   background-color: var(--color-bg-secondary-subtle);
   border-color: var(--color-border-secondary);
   color: var(--color-text-secondary);
+  transform-origin: bottom right;
+}
+
+.isPending {
+  width: calc(
+    var(--loader-width) + 2 * var(--balloon-padding-inline) + 2 * var(--balloon-border-width)
+  );
+  height: calc(
+    var(--loader-height) + 2 * var(--balloon-padding-block) + 2 * var(--balloon-border-width)
+  );
 }
