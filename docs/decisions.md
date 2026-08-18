@@ -2495,7 +2495,7 @@ otherwise enable before the first AI reply.
 **Rationale:** `previousInteractionId` (used by the `messageCount`/evaluation gating above, and by
 the real multi-turn continuity mechanic) needs to look like a real, unique per-turn ID during mock
 development — a fixed string couldn't exercise that. Distinct from the later 2026-08-18
-`crypto.randomUUID()` suffix added to the mock's response *text* (see "Mock chat response text made
+`crypto.randomUUID()` suffix added to the mock's response _text_ (see "Mock chat response text made
 non-repeating" below) — this one is the interaction `id` field, added a day earlier for a different
 reason (realistic ID shape, not visually distinguishing repeated replies).
 **Status:** Done.
@@ -2530,6 +2530,7 @@ components (`Button`, `SegmentedControl`).
 optional `iconName`; when set, the option label renders via `LabelWithIcon` instead of plain text.
 `getIconByName.ts`'s `ICONS` registry gains eight new `react-icons/fa6` glyphs (`finish`,
 `evaluation`, `chat`, `microphone`, `ai`, `send`, `cancel`, `user`) to back this. Wired up in:
+
 - `ControlsArea.tsx`'s `buttonConfig` — `speak`/`send`/`cancel`/`evaluate`/`endSession` all get an
   icon (microphone/send/cancel/evaluation/finish respectively).
 - `SetupForm.tsx` — the starter `SegmentedControl` options get `ai`/`user` icons, with their labels
@@ -2643,10 +2644,10 @@ trigger-message exclusion, and "don't attribute the AI's own turns to the user")
 **Rationale:** `getBaseInstruction.ts` and `evaluationConfig.ts` had independently built near-identical
 `## Context` blocks — the ASR caveat was duplicated verbatim in both; the trigger-message exclusion
 existed only in `evaluationConfig.ts`, even though the persona should never treat that hidden message
-as user input in *any* task, not only when being evaluated. Extracting one shared function fixes that
+as user input in _any_ task, not only when being evaluated. Extracting one shared function fixes that
 gap as a side effect of deduplication, rather than as a separately-scoped feature.
 **Caught and fixed same session:** the first extraction pass had `getSharedInstructionContext`
-returning its own `## Context` heading *and* each caller hardcoding one too, producing a literal
+returning its own `## Context` heading _and_ each caller hardcoding one too, producing a literal
 duplicate heading in the prompt sent to the LLM. Fixed by moving the heading out of the shared
 function — each caller keeps its own `## Context` heading and now has the option to add
 task-specific, non-shared context under the same heading later; the shared function returns only the
@@ -2682,4 +2683,46 @@ it were the only one.
 **Rationale:** Same naming-clarity motivation as `chatSystemInstruction` above — distinguishes the
 chat-specific base instruction from the shared persona context and from evaluation's own system
 instruction builder.
+**Status:** Done.
+
+---
+
+## "Core data structures" open item closed — no new types needed (2026-08-18)
+
+**Date:** 2026-08-18
+**Decision:** No dedicated session-state type, transcript type, or new evaluation type will be
+built. The `status.md`/`backlog.md` "core data structures (session state, evaluation schema)" open
+item is closed as resolved-by-recognition, not resolved-by-building.
+**Rationale, per sub-item:**
+
+- **Session state:** nothing is persisted, and there's no plan to persist a session — runtime state
+  already lives correctly in `ChatContainer`/`ChatConversation` component state. A separate
+  `SessionState` type would have no consumer and no reason to exist.
+- **Transcript:** the transcript is a plain string, not a structured shape. The 2026-08-04-era
+  concern ("transcript must exclude the hidden opening instruction") is stale — full turn history
+  now lives in Gemini via `previousInteractionId`, and exclusion of the hidden opening instruction
+  is enforced via `systemInstruction` rules (see "Shared persona context extracted," 2026-08-18,
+  the `### What counts as the user's actual language` subsection), not by an app-side data shape.
+  There is nothing left to design.
+- **Evaluation schema:** already exists and was already done — `AIEvaluationSchema`
+  (`src/lib/aiResponse.ts`), enforced via Gemini's `response_format`, validated client-side
+  (`.safeParse`) since 2026-08-16 ("Structured evaluation output implemented"). This sub-item was
+  stale by the time it was reconsidered here.
+  **Status:** Done. Doc-only outcome — closes `status.md`'s "What's open" entry and `backlog.md`'s
+  parallel entry, if any exists there.
+
+---
+
+## Component/route boundary diagram added (2026-08-18)
+
+**Date:** 2026-08-18
+**Decision:** `docs/architecture.md` added — two Mermaid diagrams (component render tree, route/API
+boundary), dev-reference only, not a case-study artifact. Format chosen for low maintenance cost:
+plain text, diffs cleanly in git, renders natively on GitHub and in VS Code (Mermaid extension),
+lives alongside decisions.md/status.md rather than as a regenerated image.
+**Rationale:** Closes the "component/route boundary diagram" item deferred alongside "core data
+structures" — same deferral condition (v0 interaction/state design done), confirmed met 2026-08-18.
+Scoped to dev reference (not recruiter-facing) since the project owner doesn't expect major
+restructuring before the upcoming edit-message feature; format chosen to stay cheap to update after
+that lands, rather than redrawn from scratch.
 **Status:** Done.

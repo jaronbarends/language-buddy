@@ -645,13 +645,19 @@ respondAfterDelay.ts`). **Dev convenience added same round:** both mock routes n
   not a literal one). No longer open as a "what should this look like" question. **Still open:**
   whether this shape needs revisiting against requirements.md's original wording, and whether it
   holds up against the real (non-mocked) API — see below.
-- Core data structures (session state, evaluation schema) — deliberately deferred until v0
-  interaction/state design is done
-- Component/route boundary diagram — same as above
+- ~~Core data structures (session state, evaluation schema)~~ — **done 2026-08-18** (see decisions.md "Core data structures" open item closed)
+- ~~Component/route boundary diagram~~ — **done 2026-08-18** (see decisions.md, "Component/route
+  boundary diagram added"): `docs/architecture.md`, two Mermaid diagrams (component tree, route/API
+  boundary), dev-reference scope. No longer open.
 - Scenario count at v1 launch (v0 itself is settled at one hardcoded scenario — this is only about
   what ships after v0)
-- Where `systemInstruction` lives/is re-derived for the full session lifetime, now that Spike 3
-  showed it must be resent on every request rather than only at session start
+- - ~~Where `systemInstruction` lives/is re-derived for the full session lifetime~~ — **resolved**,
+    outdated as written: `chatSystemInstruction`/`evaluationSystemInstruction` live as fields on
+    `ConversationConfig` (`src/lib/conversationConfig.ts`), computed once at session start via
+    `getConversationConfig(language, languageLevel, scenario)` in `ChatSetup.tsx`. Per Spike 3's
+    finding, Gemini doesn't carry `system_instruction` across turns via `previousInteractionId`, so
+    `geminiGateway.ts` resends the relevant instruction string on every request — it isn't
+    re-derived per request, just re-sent from the value computed once. No longer open.
 - Rate-limit error shape is still doc-sourced only, not empirically confirmed (accepted gap, see
   Spike 4 scope in decisions.md)
 - ~~Turn counter / max-turns mechanism~~ — discarded 2026-08-04, not merely postponed; no longer
@@ -807,8 +813,12 @@ Two calibration-only files still remain under `spikes/language-speech-rates/`
 10. ~~Visual/UI design pass~~ — done, 2026-08-06–2026-08-09: tokens, shared component set, setup-
     screen, conversation-loop, and `ErrorArea` restyling (see decisions.md, "Visual/UI design
     pass"). Not covered: a dedicated accessibility pass — remains open, not blocking evaluation.
-11. Define core data structures (session state shape, transcript shape) consistent with the state
-    model — transcript must exclude the hidden opening instruction.
+11. ~~Core data structures (session state, evaluation schema)~~ — **closed 2026-08-18 (project
+    owner), no new types built** (see decisions.md, "'Core data structures' open item closed"): no
+    session-state type (nothing persisted, no plan to persist), no transcript type (transcript is a
+    plain string; the opening-instruction-exclusion concern this item originally named is stale —
+    handled via `previousInteractionId` + `systemInstruction` rules, not an app-side shape), no new
+    evaluation type (`AIEvaluationSchema` already existed, done since 2026-08-16). No longer open.
 12. ~~Add evaluation as a second slice once the full v0 conversation loop (steps 4–10) is solid and styled~~ — done: first pass 2026-08-13–2026-08-14 (see decisions.md, "Evaluation: first working
     implementation," and step 15 below), structured output completed 2026-08-16 (step 16), with all
     follow-up items resolved by 2026-08-18 (steps 17–18) — no open items remain from this milestone.
