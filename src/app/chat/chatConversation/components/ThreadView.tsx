@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   isAITurnSpeaking,
   isWaitingForAI,
+  isWaitingForEvaluation,
   shouldAutoScrollThread,
   type ThreadItem,
   type ChatPhase,
@@ -12,7 +13,7 @@ import Loader from '@/components/Loader';
 import { type LanguageVoice } from '@/lib/language';
 import { cancelSpeech, speakMessage } from '@/lib/textToSpeech';
 
-import Evaluation from './Evaluation';
+import Evaluation, { EvaluationLoader } from './Evaluation';
 import SpeechBalloon from './SpeechBalloon';
 
 import styles from './ThreadView.module.css';
@@ -81,6 +82,7 @@ export default function ThreadView({
       return;
     }
 
+    // timer is only for visual effect of chat flow: first user message is rendered, then ai's pending balloon
     const timer: ReturnType<typeof setTimeout> = setTimeout(() => {
       setShowAIPendingBalloon(true);
     }, 500);
@@ -117,6 +119,7 @@ export default function ThreadView({
             <Loader ariaLabel="Loading ai response" />
           </SpeechBalloon>
         )}
+        {isWaitingForEvaluation(phase) && <EvaluationLoader />}
       </ol>
     </div>
   );
