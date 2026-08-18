@@ -7,7 +7,7 @@ export type ChatMessageItem = {
   type: 'message';
   message: string;
   author: 'ai' | 'user';
-  pending?: boolean;
+  isPending?: boolean;
 };
 
 export type EvaluationItem = {
@@ -62,7 +62,7 @@ const loadingAIItem: ThreadItem = {
   type: 'message',
   message: '',
   author: 'ai',
-  pending: true,
+  isPending: true,
 };
 Object.freeze(loadingAIItem); // prevent unwanted changing of props; should always be destructured
 
@@ -113,8 +113,8 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         case 'AI_RESPONSE_RECEIVED': {
           // turn update pending item
           const updatedItems = state.threadItems.map((item) =>
-            item.type === 'message' && item.pending ?
-              { ...item, message: action.payload.message, pending: false }
+            item.type === 'message' && item.isPending ?
+              { ...item, message: action.payload.message, isPending: false }
             : item
           );
           return {
@@ -396,5 +396,5 @@ export function getChatStage(phase: ChatPhase): ChatStage {
 }
 
 function removePendingAIItems(threadItems: ThreadItem[]): ThreadItem[] {
-  return threadItems.filter((item) => item.type !== 'message' || !item.pending);
+  return threadItems.filter((item) => item.type !== 'message' || !item.isPending);
 }

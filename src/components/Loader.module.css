@@ -2,6 +2,7 @@
   display: flex;
   align-items: center;
   gap: var(--size-4);
+  height: var(--loader-height);
 
   &::after {
     /* add zero-width non-breaking space to ensure loader gets height of current line-height */

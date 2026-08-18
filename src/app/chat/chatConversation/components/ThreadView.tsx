@@ -7,7 +7,6 @@ import {
   type ChatPhase,
 } from '@/app/chat/chatConversation/chatReducer';
 import Feedback from '@/components/Feedback';
-import Loader from '@/components/Loader';
 import { type LanguageVoice } from '@/lib/language';
 import { cancelSpeech, speakMessage } from '@/lib/textToSpeech';
 
@@ -67,10 +66,13 @@ export default function ThreadView({
 
   useEffect(() => {
     if (shouldAutoScrollThread(phase)) {
-      threadViewRef.current?.scrollTo({
-        top: threadViewRef.current?.scrollHeight,
-        behavior: 'smooth',
-      });
+      scrollToEnd();
+      // we need to scroll again when bounce-animation is done. This is hard to get right, so call scroll multiple time
+      for (let i = 1; i <= 3; i++) {
+        setTimeout(() => {
+          scrollToEnd();
+        }, 100 * i);
+      }
     }
   }, [phase, threadItems]);
 
@@ -81,10 +83,8 @@ export default function ThreadView({
         {threadItems.map((item, idx) => {
           if (item.type === 'message') {
             return (
-              <SpeechBalloon key={idx} author={item.author} tag="li" pending={item.pending}>
-                {item.pending ?
-                  <Loader ariaLabel="Loading ai response" />
-                : item.message}
+              <SpeechBalloon key={idx} author={item.author} tag="li" isPending={item.isPending}>
+                {item.message}
               </SpeechBalloon>
             );
           } else {
@@ -100,6 +100,13 @@ export default function ThreadView({
       </ol>
     </div>
   );
+
+  function scrollToEnd() {
+    threadViewRef.current?.scrollTo({
+      top: threadViewRef.current?.scrollHeight,
+      behavior: 'smooth',
+    });
+  }
 }
 
 function FakeBalloons() {
