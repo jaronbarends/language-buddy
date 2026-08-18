@@ -134,6 +134,38 @@ durations) landed first, then a small shared component set (`Button`, `Loader`, 
   **Not fixed by this round:** no loading indicator during `waitingForEvaluation`,
   `Evaluation.module.css` still missing `.evaluationContent`, and real (non-mocked) evaluation calls
   remain unverified live — see "What's open" below.
+**Evaluation-request gating tightened; abort-ordering race fixed (2026-08-17, PR #29
+`evaluation-permission`, see decisions.md, "Evaluation permission gating"):** `canRequestEvaluation`
+now also takes `messageCount` (`state.threadItems.length`, threaded through `ControlsArea`) and
+additionally requires `messageCount > 1` — the phase-only check (`aiTurnSpeaking`/
+`readyForUserReply`) didn't distinguish "AI has replied at least once, so `previousInteractionId`
+exists" from an earlier point in either starter scenario where it doesn't yet, so "Evaluate" could
+otherwise enable too early. `ChatConversation.tsx`'s abort-in-flight-request `useEffect` was also
+reordered to run before the chat-start effect, and the reasoning for excluding
+`requestEvaluation` from `requestsShouldBeAborted` (already true in code) was written up as an
+explicit warning comment rather than left as a commented-out line. Mock chat route's response
+`id` changed from a static literal to `crypto.randomUUID()`, so `previousInteractionId` looks
+realistic during mock dev.
+**Evaluation loading indicator added; AI-pending balloon reworked into an animated thread item
+(2026-08-18, PRs #30/#31, see decisions.md):** two small features, both merged same day. **PR #30
+("evaluation loading state"):** a new `isWaitingForEvaluation(phase)` helper drives a new
+`EvaluationLoader` (in `Evaluation.tsx`, alongside the existing `Evaluation` component) rendered by
+`ThreadView.tsx` during `waitingForEvaluation` — closes the loading-indicator gap open since
+2026-08-14/08-16. **PR #31 ("balloon animation"):** supersedes the old AI-pending-balloon mechanism
+described just above under "Evaluation output is now structured" and, further up, under
+"AI-pending speech balloon (2026-08-02)" — that mechanism (a 500ms-delayed boolean rendering a
+separate `Loader`-only balloon outside `threadItems`) is gone. The pending indicator is now a real
+`ThreadItem` (`ChatMessageItem.isPending?: boolean`), pushed into `threadItems` when a wait-for-AI
+phase starts and updated in place once the reply arrives, instead of being appended as a new item —
+one balloon now visually morphs from loader-sized to message-sized rather than one element
+disappearing and a different one appearing. `SpeechBalloon`/`ThreadView` both gained a bounce/
+fade-in entrance animation (new `--duration-fast`/`--overshoot-out` tokens) with the AI balloon's
+entrance offset 500ms after the user's, for a sense of sequentiality. New tokens added at the
+settings layer: `--duration-fast`, `--overshoot-out`, `--border-width-default`, and four
+`--loader-*` size tokens used to size the pending balloon exactly to the `Loader` component's real
+dimensions (see decisions.md for the full token list). **Not touched by either PR:**
+`Evaluation.module.css`'s missing `.evaluationContent` class, and live (non-mocked) verification of
+evaluation — both still open, see "What's open" below.
 
 ---
 
@@ -334,10 +366,13 @@ respondAfterDelay.ts`). **Dev convenience added same round:** both mock routes n
   shared `SpeechBalloon.tsx` component (extracted from `ThreadView`'s message-bubble styling, now
   reused by both `ThreadView` and `SpeechResults`) so the in-progress transcript renders as a
   user-style chat bubble instead of a plain status `div` (see decisions.md).
-- **AI-pending speech balloon (2026-08-02):** `ThreadView.tsx` shows an ellipsis inside an
-  `author="ai"` `SpeechBalloon` while `phase.status === 'waitingForAI'`, indicating the loading
-  state while waiting for the AI response. Delayed 500ms (`setTimeout`, cleared/reset on phase
-  change) to avoid a flash on fast responses (see decisions.md).
+- **AI-pending speech balloon (2026-08-02).** **Superseded 2026-08-18, see decisions.md, "Pending AI
+  message rendered as a real (animated) thread item":** the original mechanism (a 500ms-delayed
+  `showAIPendingBalloon` boolean rendering a standalone `Loader`-only `SpeechBalloon` outside
+  `threadItems`) is gone. The pending indicator is now `ChatMessageItem.isPending`, a real
+  `ThreadItem` pushed into `threadItems` when waiting for AI starts and updated in place — not
+  replaced — once the reply arrives, with a bounce/fade-in entrance animation. See "Evaluation
+  loading indicator added; AI-pending balloon reworked" above.
 - **Real TTS wired up** (2026-07-31–2026-08-01, see decisions.md): `src/lib/textToSpeech.ts`
   exports `initSpeech(onSuccess, onFail)` (wraps `speechSynthesis.getVoices()`/the
   `voiceschanged` event — Chrome vs. Firefox differ on whether voices are available
@@ -358,8 +393,9 @@ respondAfterDelay.ts`). **Dev convenience added same round:** both mock routes n
   yet for "this language has no installed voice" (tracked in backlog.md). Two dev-only files,
   `textToSpeechTest.ts` and `speechRateAnalysis.ts`, hold the calibration tooling/raw timing data
   behind the rate table; neither is imported by any production path (see decisions.md,
-  "known dead code" note, and backlog.md for a cleanup item covering these plus the now-orphaned
-  `AIThreadItemContent.tsx`).
+  "known dead code" note, and backlog.md for a cleanup item covering these). The once-orphaned
+  `AIThreadItemContent.tsx` mentioned in earlier versions of this doc was actually deleted back on
+  2026-08-04 (see decisions.md) — corrected 2026-08-18, it isn't dead code still sitting in the tree.
 - **`SpeechRecognition` support gating (2026-08-05, see decisions.md):** `src/lib/speechRecognition.ts`
   exports `speechRecognitionIsSupported()`/`getCrossBrowserSpeechRecognition()` (SSR-safe via a
   `typeof window === 'undefined'` guard) and `useSpeechRecognitionIsSupported()` (a
@@ -625,10 +661,11 @@ respondAfterDelay.ts`). **Dev convenience added same round:** both mock routes n
 - **User-facing speech-rate control** — rate correction so far only normalizes _across voice
   engines_ to a consistent baseline speed; there's no slower/faster control exposed to the user
   (separate backlog item).
-- **Dead code from the TTS build** — `AIThreadItemContent.tsx` (orphaned once the speak trigger
-  moved to `ThreadView`'s phase-driven effect) and `textToSpeechTest.ts`/`speechRateAnalysis.ts`
-  (dev-only calibration tooling, not imported by production code) are still in the tree; a
-  cleanup decision (delete vs. keep as documented calibration method) is tracked in backlog.md.
+- **Dead code from the TTS build** — `textToSpeechTest.ts`/`speechRateAnalysis.ts` (dev-only
+  calibration tooling, not imported by production code) are still in the tree; a cleanup decision
+  (delete vs. keep as documented calibration method) is tracked in backlog.md. `AIThreadItemContent.tsx`
+  was previously listed here too, incorrectly — **corrected 2026-08-18:** it was actually deleted on
+  2026-08-04 (see decisions.md), long before this doc was last touched on this point.
 - **Dormant `intent: 'edit'` fallthrough** — `stoppingListening`'s `TRANSCRIPT_CREATED` handler
   only branches explicitly on `intent === 'send'`; any other value falls through into the
   empty-transcript branch and discards the transcript. Inert today (nothing dispatches
@@ -641,32 +678,33 @@ respondAfterDelay.ts`). **Dev convenience added same round:** both mock routes n
 - ~~Structured evaluation output (grammar/vocabulary/nuance fields)~~ — **implemented 2026-08-16**
   (see decisions.md, "Structured evaluation output implemented," and "What exists" above): a
   `comments`/`segments` Zod schema, enforced via Gemini's `response_format` and validated client-side.
-  No longer open as a build task. **Worth a direct look, not fully closed:** the shape chosen
-  (segmented comments) reads requirements.md's "grammar, vocabulary upgrades, semantic nuance"
-  as a description of feedback *style*, not a required category breakdown — confirm that's the
-  intended reading rather than three distinct fields the case study should show.
+  **Confirmed 2026-08-18 (project owner):** this shape — not three separate grammar/vocabulary/nuance
+  fields — was always the intended reading of requirements.md's phrasing; there was never an
+  intention to build a literal three-category breakdown. No longer open.
 - ~~Runtime-validation approach for LLM JSON (Zod or similar)~~ — **implemented 2026-08-16** alongside
   the above: `AIEvaluationSchema.safeParse` runs on the parsed AI response before it reaches the
   reducer, failing closed on a mismatch (see decisions.md, "TypeScript + planned runtime validation").
   No longer open.
-- **Evaluation-request loading state** — `waitingForEvaluation` currently shows no loading indicator;
-  the existing AI-pending-balloon effect in `ThreadView.tsx` only keys on the chat-turn wait phase.
-  Untouched by the 2026-08-16 structured-output round.
-- **`Evaluation.module.css` missing `.evaluationContent` class** — `Evaluation.tsx` applies it to its
-  content `<div>`, but only `.evaluation` is defined; the div currently gets no class. Untouched by
-  the 2026-08-16 structured-output round.
+- ~~Evaluation-request loading state~~ — **implemented 2026-08-18** via PR #30 (see decisions.md,
+  "Evaluation loading state"): a new `EvaluationLoader`, shown by `isWaitingForEvaluation(phase)`.
+  No longer open.
+- ~~`Evaluation.module.css` missing `.evaluationContent` class~~ — moot, **corrected 2026-08-18**: the
+  `<div className={styles.evaluationContent}>` this referred to no longer exists — `Evaluation.tsx`
+  now wraps its output in the pre-existing `styles.evaluation` div directly (see PR #30/#31-era
+  `Evaluation.tsx`). Not a fix that landed under this name; the div itself was removed at some point,
+  not tracked as its own decision. No longer open.
 - ~~Dead code: commented-out `sendMessageToAI_OLD`~~ — **deleted 2026-08-16** as part of splitting
   `sendMessageToAI`/`sendEvaluationRequestToAI` into per-role functions (see decisions.md, "Request/
   response types and routes split per role again"). No longer open.
-- **Whether real (non-mocked) evaluation calls actually work** — still only verified against the mock
-  AI route. Two compounding unknowns now, not one: whether Gemini's carried-over interaction history
-  (via `previousInteractionId`) gives the model enough context to evaluate the user's turns from a
-  short "give feedback" prompt alone (flagged 2026-08-14), and whether `response_format`'s JSON-schema
-  constraint reliably produces schema-conformant output from `gemini-3.1-flash-lite` (new as of
-  2026-08-16) — see decisions.md, "Known risk, still open."
-- **Whether dropping "Stop chat" (2026-08-14) was intentional** — see decisions.md, "'Stop chat'
-  superseded by the `ChatStage` refactor." Worth a direct answer from the project owner: keep it
-  dropped, or add it back into `buttonsByStage.aiTurnFlow` alongside "Evaluate"?
+- ~~Whether real (non-mocked) evaluation calls actually work~~ — **confirmed 2026-08-18 (project
+  owner):** yes. Both previously-open unknowns are resolved — Gemini's carried-over interaction
+  history gives the model enough context to evaluate the user's turns, and `response_format`
+  reliably produces schema-conformant output from `gemini-3.1-flash-lite` (see decisions.md, "Known
+  risk, still open"). No longer open.
+- ~~Whether dropping "Stop chat" (2026-08-14) was intentional~~ — **confirmed 2026-08-18 (project
+  owner):** yes, intentional — it stays dropped, not added back into `buttonsByStage.aiTurnFlow` (see
+  decisions.md, "'Stop chat' superseded by the `ChatStage` refactor"). No longer open; also closes
+  the corresponding backlog.md item.
 
 ## Infra note (2026-08-04–08-05, Next.js 16 → 15 downgrade — merged)
 
@@ -757,9 +795,11 @@ Two calibration-only files still remain under `spikes/language-speech-rates/`
     model — transcript must exclude the hidden opening instruction.
 12. ~~Add evaluation as a second slice once the full v0 conversation loop (steps 4–10) is solid and
     styled~~ — first pass done, 2026-08-13–2026-08-14 (see decisions.md, "Evaluation: first working
-    implementation," and step 15 below): mock-verified, plain-text output only, not yet the
-    structured grammar/vocabulary/nuance fields requirements.md scopes — that part remains open (see
-    "What's open").
+    implementation," and step 15 below): mock-verified, plain-text output only, structured output
+    following as step 16. (Earlier phrasing here framed the follow-up as "the structured
+    grammar/vocabulary/nuance fields requirements.md scopes" — **corrected 2026-08-18:** there was
+    never an intention to build three literal category fields; requirements.md's phrase described
+    feedback content, not a required schema shape. See step 17's confirmation.)
 13. Revisit scenario count for v1, predefined-scenario-starter mode, and turn counter / max-turns,
     once v0 exists.
 14. ~~Bring back "Stop chat"; make ending a session a dispatched action again~~ — done, 2026-08-12
@@ -787,11 +827,17 @@ Two calibration-only files still remain under `spikes/language-speech-rates/`
     Gemini-call logic factored into `src/lib/geminiGateway.ts`) — see decisions.md, "Request/response
     types and routes split per role again," which supersedes step 15's route-generalization note
     above. `sendMessageToAI_OLD` dead code deleted.
-17. Not yet done, carried forward from step 16: a loading indicator for `waitingForEvaluation`, the
-    missing `.evaluationContent` CSS class, and live (non-mocked) verification that both the
-    carried-over-interaction-history assumption and `response_format`'s schema conformance actually
-    hold against the real Gemini API — see "What's open" and decisions.md, "Known risk, still open."
-    Also worth a direct confirmation: whether the `comments`/`segments` shape chosen for structured
-    output is the intended reading of requirements.md's "grammar, vocabulary upgrades, semantic
-    nuance" framing, or whether that framing implies three distinct categories the schema should
-    name explicitly.
+17. Carried forward from step 16, all now resolved: ~~a loading indicator for
+    `waitingForEvaluation`~~ (done 2026-08-18, PR #30 — see step 18); ~~the missing
+    `.evaluationContent` CSS class~~ (moot — the div it applied to no longer exists, corrected
+    2026-08-18, see "What's open"); ~~live (non-mocked) verification that the
+    carried-over-interaction-history assumption and `response_format`'s schema conformance hold
+    against the real Gemini API~~ (confirmed 2026-08-18, project owner — both hold); ~~confirmation
+    of whether the `comments`/`segments` shape is the intended reading of requirements.md's "grammar,
+    vocabulary upgrades, semantic nuance" framing~~ (confirmed 2026-08-18, project owner — yes, this
+    shape is intended; no literal three-category breakdown was ever planned). See decisions.md for
+    each.
+18. ~~Add an evaluation-loading indicator; rework the AI-pending balloon~~ — done, 2026-08-18, PRs
+    #30/#31 (see decisions.md, "Evaluation loading indicator; balloon animation & pending-message
+    rework"). Everything else carried forward from step 17 is now resolved too (see step 17 and
+    "What's open") — no open items remain from the evaluation feature at this point.

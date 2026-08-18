@@ -1053,7 +1053,13 @@ commit as the AI-message renderer (in place of inline JSX), anticipating a per-m
 button (`languageVoice` was already threaded into it). It was replaced by inline rendering again in
 the very next commit ("working TTS; still too fast on iOs") once the speak trigger moved to a
 `phase`-driven `useEffect` in `ThreadView` instead of a per-message button — the component is no
-longer imported anywhere. Left in the tree, not deleted. Flagged in backlog.md for removal.
+longer imported anywhere.
+**Status:** Superseded 2026-08-04 (commit `248341d`/`ac263e8`, "fix linting errors; remove obsolete
+AIThreadItemContent" — part of the lint-fix cleanup on the `nextjs-downgrade` branch, merged to
+`main` 2026-08-05, see status.md's "Infra note"). The file is actually deleted, not merely unused —
+status.md and backlog.md describing it as still-present dead code were stale until corrected
+2026-08-18. `textToSpeechTest.ts`/`speechRateAnalysis.ts` remain the only dead-code items still open
+from the TTS build.
 
 ### Speech-rate pairing table: derivation method and edge-case handling finalized
 
@@ -2057,8 +2063,11 @@ evaluation from here" option (see the 2026-08-12 entries and backlog.md, "Add ev
 exists — evaluation instead got its own always-available secondary button in `aiTurnFlow`, which
 supersedes that plan more directly than originally scoped, but wasn't a deliberate choice between the
 two designs.
-**Status:** Done (i.e., this is what's actually in the tree) — but see Rationale: the "why" behind
-dropping "Stop chat" itself is not established, only the mechanical outcome.
+**Status:** Confirmed 2026-08-18 (project owner) — dropping "Stop chat" was intentional; it stays
+dropped, not added back into `buttonsByStage.aiTurnFlow`. This resolves the open question posed in
+the Rationale above and closes backlog.md's "Decide whether 'Stop chat' should come back" item. The
+"why" behind the original 2026-08-14 change still isn't separately documented — only the day-of
+mechanical outcome above and this retroactive confirmation that the outcome is the wanted one.
 
 ---
 
@@ -2243,10 +2252,13 @@ Segment-typed comments let the UI style "what you said" vs. "what you probably m
 (`Evaluation.tsx`/`Evaluation.module.css` — see below) without the model having to sort feedback into
 three buckets that may not apply evenly to every remark. This resolves requirements.md's "exact
 fields/depth of the structured evaluation output" open item, but with a different shape than that
-line originally implied — worth a deliberate look before treating it as a closed requirements.md
-checkbox (requirements.md itself is not edited here, per this project's doc-workflow rule).
-**Status:** Done, mock-verified. Not yet confirmed against the real Gemini API (see "Known risk,
-still open" below).
+line's wording might suggest at a glance (requirements.md itself is not edited here, per this
+project's doc-workflow rule).
+**Status:** Done. **Confirmed 2026-08-18 (project owner):** requirements.md's "grammar, vocabulary
+upgrades, semantic nuance" phrase was never intended as a literal three-field schema requirement —
+the `comments`/`segments` shape (`text`/`userInput`/`suggestion`) is the intended final shape, not a
+placeholder pending a grammar/vocabulary/nuance breakdown. Also confirmed working against the real
+(non-mocked) Gemini API — see "Known risk, still open" below, itself now resolved.
 
 ### Gemini's structured-output feature (`response_format`) enforces the schema server-side
 
@@ -2351,7 +2363,13 @@ Two compounding unknowns remain unconfirmed against the live Gemini API:
 - Whether `response_format`'s JSON-schema constraint reliably produces schema-conformant output from
   `gemini-3.1-flash-lite` specifically — `AIEvaluationSchema.safeParse` fails closed if not (see
   above), but a live test hasn't been run to see how often, if ever, that failure path actually fires.
-  **Status:** Open — tracked in backlog.md and status.md's "What's open."
+
+**Status:** Resolved 2026-08-18 (confirmed by project owner) — real, non-mocked evaluation calls
+against the live Gemini API work: carried-over interaction history gives the model enough context to
+evaluate the user's turns, and `response_format` reliably produces schema-conformant
+`comments`/`segments` output from `gemini-3.1-flash-lite`. No live-triggered failure of the
+`AIEvaluationSchema.safeParse` fail-closed path has been observed. No longer open — see status.md and
+backlog.md.
 
 ## Evaluation & chat prompt refinement (2026-08-16)
 
@@ -2439,12 +2457,49 @@ wording gives the model the actual reason (TTS) instead of a bare format ban, an
 landmine.
 **Status:** Done.
 
-## Do not add option to request evaluation while waiting for AI reply
+## Evaluation permission gating (PR #29, `evaluation-permission`, 2026-08-17)
+
+### Do not add option to request evaluation while waiting for AI reply
 
 **Date:** 2026-08-17
 **Decision:** Do not make it possible to request evaluation while waiting for AI chat reply. Accept the fact that not being able to request in this phase is annoying (you have to wait for a reply, when you probably already know you want to request the evaluation the moment you send your last message.)
 **Rationale:** The `previousInteractionId` is only updated when `sendMessageToAI` is completed. When we abort that request, and the `previousInteractionId` is not updated, the last message won't be part of the evaluation.
+**Status:** Done. Implemented as a code comment/ordering fix, not new logic: `requestEvaluation` was
+already excluded from `requestsShouldBeAborted`'s abort list (see `chatReducer.ts`) — this PR
+replaces a stale `// phase.status === 'requestEvaluation' ||` commented-out line with an explicit
+`WARNING` comment explaining why it must stay excluded, and reorders `ChatConversation.tsx`'s
+abort-`useEffect` to run before the chat-start effect ("make sure this useEffect runs before
+starting any new requests"), removing a possible race rather than changing behavior.
+
+### `canRequestEvaluation` also requires at least one user message (`messageCount` param)
+
+**Date:** 2026-08-17
+**Decision:** `canRequestEvaluation(phase, messageCount)` gains a required `messageCount` param
+(`state.threadItems.length`), threaded through `ControlsArea`'s `messageCount` prop from
+`ChatConversation`. In addition to the existing phase check
+(`aiTurnSpeaking`/`readyForUserReply`), the function now also requires `messageCount > 1`.
+**Rationale:** Evaluation needs a valid `previousInteractionId`, which only exists once the AI has
+replied at least once. Two starter scenarios both need at least 2 thread items before that's
+guaranteed: if the AI opens, the user's first message is item #2; if the user opens, the user's
+message is item #1 but `previousInteractionId` isn't available until the AI's reply — item #2 —
+comes back. A phase-only check (`aiTurnSpeaking`/`readyForUserReply`) doesn't distinguish these from
+an earlier point where a `previousInteractionId` doesn't exist yet, so the "Evaluate" button could
+otherwise enable before the first AI reply.
 **Status:** Done.
+
+### Mock chat route returns a real per-request ID (`crypto.randomUUID()`), not a static string
+
+**Date:** 2026-08-17
+**Decision:** `src/app/api/aiMock/chat/route.ts`'s mock success responses return
+`id: crypto.randomUUID()` instead of the hardcoded literal `id: 'mock response.id'`.
+**Rationale:** `previousInteractionId` (used by the `messageCount`/evaluation gating above, and by
+the real multi-turn continuity mechanic) needs to look like a real, unique per-turn ID during mock
+development — a fixed string couldn't exercise that. Distinct from the later 2026-08-18
+`crypto.randomUUID()` suffix added to the mock's response *text* (see "Mock chat response text made
+non-repeating" below) — this one is the interaction `id` field, added a day earlier for a different
+reason (realistic ID shape, not visually distinguishing repeated replies).
+**Status:** Done.
+
 ---
 
 ## Icons added to buttons (2026-08-17)
@@ -2496,3 +2551,76 @@ selectors shared the rule.
 **Rationale:** Visual bug fix noticed along the way — a disabled button shouldn't look pressed-in —
 unrelated to the icon work itself, just shipped in the same branch.
 **Status:** Done.
+
+---
+
+## Evaluation loading indicator; balloon animation & pending-message rework (2026-08-18)
+
+### Evaluation loading state (PR #30, `evaluation-loading-state`)
+
+**Date:** 2026-08-18
+**Decision:** New `isWaitingForEvaluation(phase)` helper in `chatReducer.ts`. `ThreadView.tsx`
+renders a new `EvaluationLoader` (exported from `Evaluation.tsx`, alongside the existing
+`Evaluation` component) whenever `isWaitingForEvaluation(phase)` is true — a heading ("Evaluating
+chat") plus the existing shared `Loader` component, styled via two new classes in
+`Evaluation.module.css` (`.evaluationLoader`, `.loaderHeading`).
+**Rationale:** Closes the "no loading indicator during `waitingForEvaluation`" gap flagged since
+2026-08-14/08-16 (see status.md, "What's open"). Reuses the existing shared `Loader` component
+rather than introducing a new one.
+**Status:** Done — merged to `main` via PR #30 (`45adea3`).
+
+### Pending AI message rendered as a real (animated) thread item, not a separate timed overlay (PR #31, `balloon-animation`)
+
+**Date:** 2026-08-18
+**Decision:** The AI-pending indicator — previously a 500ms-delayed `showAIPendingBalloon` boolean
+in `ThreadView.tsx`, rendering a standalone `Loader`-only `SpeechBalloon` outside `threadItems` —
+is replaced. `ChatMessageItem` gains an `isPending?: boolean` field; a frozen placeholder object
+(`loadingAIItem`) is pushed straight into `threadItems` whenever a wait-for-AI phase starts
+(`AI_START_INPUT_SENT`, and right after a user reply is sent), then updated in place — not appended
+as a new item — once `AI_RESPONSE_RECEIVED` arrives (`threadItems.map`, matching on `isPending`). A
+new `removePendingAIItems` helper strips any leftover pending item from `threadItems` on
+`ERROR`/`END_SESSION`, so an aborted request can't leave a permanent loader balloon sitting in the
+thread. `SpeechBalloon.tsx` gains an `isPending` prop: when set, it renders `Loader` in place of
+`children` and applies fixed loader-sized `width`/`height` via a new `.isPending` class.
+**Rationale:** The old approach kept the loading indicator and the eventual message as two
+unrelated renders — a `Loader`-only balloon shown/hidden by a timer, then a wholly separate
+`ThreadItem` appended once the reply arrived, with an artificial 500ms delay existing only to
+sequence "user balloon appears, then AI-pending balloon appears" by guesswork rather than real
+state. Modeling the pending state as a field on the same `ThreadItem` that later holds the real
+message lets one balloon smoothly resize/morph from loader-sized to message-sized (see the
+animation entry below) instead of one element disappearing and a different one appearing.
+**Status:** Done — merged to `main` via PR #31 (`2c237e7`).
+
+### New bounce/fade-in animation for speech balloons; new animation/border/size design tokens
+
+**Date:** 2026-08-18
+**Decision:** `SpeechBalloon.module.css` adds a `bounceIn` keyframe (scale 0 → 1) driving each
+balloon's entrance, and a `fadeIn` keyframe for the message content, timed to start only once the
+bounce finishes — so the balloon's shape settles before its text appears. The AI balloon's entrance
+is delayed 500ms relative to the user's (`animation-delay`), to give an impression of sequentiality
+between the two. Balloon width/height also get a CSS `transition` (not just the entrance
+`animation`), so the pending (loader-sized) balloon smoothly resizes into its final message-sized
+dimensions once content arrives — enabled by `interpolate-size: allow-keywords` (new, root-level,
+`reset.css`), which is what makes transitioning to/from a `fit-content` size possible at all.
+New design tokens: `--duration-fast` (0.3s, `animation.css`) alongside the existing
+`--duration-instant`/`--duration-near-instant`; `--overshoot-out` (`animation.css`), a
+hand-authored `linear()` easing curve giving the bounce its overshoot; `--border-width-default`
+(`borders.css`), factored out of the existing `--border-default` shorthand so
+`SpeechBalloon.module.css` can reuse just the width half in a size calculation;
+`--loader-dot-size`/`--loader-height`/`--loader-dot-gap`/`--loader-width` (`sizes.css`), so the
+pending balloon's fixed width/height can be computed from the `Loader` component's actual
+dimensions rather than a guessed value.
+**Rationale:** Visual-polish pass riding along with the pending-message rework above, sharing the
+same `Loader`-sizing tokens that rework needed anyway to size the pending balloon precisely.
+**Status:** Done. New values were added at the settings-token layer, not hardcoded in component
+CSS, per the project's closed-token-scale rule (CLAUDE.md).
+
+### Mock chat response text made non-repeating (`crypto.randomUUID()` suffix)
+
+**Date:** 2026-08-18
+**Decision:** `src/app/api/aiMock/chat/route.ts`'s success-scenario response text now appends
+`crypto.randomUUID()`.
+**Rationale:** Dev-only convenience for testing the pending-item update logic and its animation —
+without it, every mock AI reply was identical text, making it hard to visually confirm the pending
+balloon was actually being replaced/updated rather than just re-rendering the same content.
+**Status:** Done. Mock-only change; no effect on real Gemini responses.

@@ -31,33 +31,35 @@ planned runtime validation").
 **Done 2026-08-16** (branch `structured-evaluation-output`, see decisions.md, "Structured evaluation
 output implemented"): `AIEvaluationSchema` — `comments` made of typed `segments`
 (`text`/`userInput`/`suggestion`) — enforced via Gemini's `response_format` and validated client-side
-via Zod. **Not literally grammar/vocabulary/nuance fields** — worth confirming with the project owner
-whether this segmented-comment shape satisfies requirements.md's framing or whether three named
-categories are still wanted (see status.md, "Next step," step 17).
+via Zod. **Not literally grammar/vocabulary/nuance fields** — **confirmed 2026-08-18 (project
+owner):** this segmented-comment shape is the intended final shape; there was never an intention to
+build three named grammar/vocabulary/nuance category fields. No longer open.
 
 ### Fix known gaps from the evaluation first pass
 
 **Added:** 2026-08-14 (see decisions.md, "Known gaps in this first pass," and status.md, "What's
 open"):
 
-- No loading indicator while an evaluation request is in flight (`waitingForEvaluation`) — **still
-  open**, untouched by the 2026-08-16 structured-output round
-- `Evaluation.module.css` is missing the `.evaluationContent` class `Evaluation.tsx` applies — **still
-  open**, untouched by the 2026-08-16 round
+- ~~No loading indicator while an evaluation request is in flight (`waitingForEvaluation`)~~ —
+  **done 2026-08-18**, PR #30 (see decisions.md, "Evaluation loading state," and status.md)
+- ~~`Evaluation.module.css` is missing the `.evaluationContent` class `Evaluation.tsx` applies~~ —
+  **moot, corrected 2026-08-18**: the `<div>` this class applied to no longer exists in
+  `Evaluation.tsx`. No longer open.
 - ~~Delete the commented-out `sendMessageToAI_OLD` in `ChatConversation.tsx`~~ — **done 2026-08-16**,
   deleted as part of splitting `sendMessageToAI`/`sendEvaluationRequestToAI` into per-role functions
   (see decisions.md)
-- Confirm real (non-mocked) evaluation calls actually work — **still open, now two unknowns**: the
-  carried-over-interaction-history assumption (flagged 2026-08-14), and, new since 2026-08-16, whether
-  Gemini's `response_format` reliably returns schema-conformant JSON from `gemini-3.1-flash-lite` (see
-  decisions.md, "Known risk, still open")
+- ~~Confirm real (non-mocked) evaluation calls actually work~~ — **confirmed 2026-08-18 (project
+  owner)**: yes, both unknowns hold — carried-over interaction history gives enough context, and
+  `response_format` reliably returns schema-conformant JSON from `gemini-3.1-flash-lite` (see
+  decisions.md, "Known risk, still open"). No longer open.
 
-### Decide whether "Stop chat" should come back
+### ~~Decide whether "Stop chat" should come back~~
 
 **Added:** 2026-08-14 (see decisions.md, "'Stop chat' superseded by the `ChatStage` refactor").
 "Stop chat" (added 2026-08-12) was dropped two days later as a side effect of the `ChatStage`
 refactor, not a deliberate decision — worth a direct answer: leave it dropped, or add it back into
 `buttonsByStage.aiTurnFlow` alongside "Evaluate"?
+**Resolved 2026-08-18 (project owner):** leave it dropped — the drop was intentional. No longer open.
 
 ### Mock LLM responses during dev
 
