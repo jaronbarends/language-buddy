@@ -1,6 +1,6 @@
 # Project status
 
-**Last updated:** 2026-08-16
+**Last updated:** 2026-08-18
 **Current phase:** Early build. Concept locked (scenario-library-based conversational sparring
 partner, Norwegian, multi-turn sessions + async structured evaluation). MVP scoping in progress;
 Spikes 1–4 all complete. AI provider decided (Gemini). State machine now runs the full happy path
@@ -166,6 +166,20 @@ durations) landed first, then a small shared component set (`Button`, `Loader`, 
   dimensions (see decisions.md for the full token list). **Not touched by either PR:**
   `Evaluation.module.css`'s missing `.evaluationContent` class, and live (non-mocked) verification of
   evaluation — both still open, see "What's open" below.
+  **Persona context deduplicated; `chatConfig`/`systemInstruction` renamed (2026-08-18, see
+  decisions.md):** the persona-level `## Context` block `getBaseInstruction.ts` and
+  `evaluationConfig.ts` each independently built (duplicating the ASR transcription-error caveat
+  verbatim) is now one shared `getSharedInstructionContext.ts`, called by both. This also fixes a real
+  gap, not just dedup: the hidden `aiStartingPrompt` trigger-message exclusion previously existed only
+  in `evaluationConfig.ts` — it now applies to the live chat system instruction too. A duplicate
+  `## Context` heading bug introduced mid-extraction (heading emitted both by the shared function and
+  by each caller) was caught and fixed same session — the shared function now returns only the bullet
+  content, not the heading, so each caller's own `## Context` heading also stays free to hold
+  non-shared context later. Separately, `src/lib/chatConfig.ts` → `conversationConfig.ts`
+  (`ChatConfig`/`getChatConfig` → `ConversationConfig`/`getConversationConfig`, all `chatConfig` vars
+  renamed to `conversationConfig` at every call site), `getBaseInstruction.ts` →
+  `getChatBaseInstruction.ts`, and `ConversationConfig.systemInstruction` → `chatSystemInstruction`
+  (mirroring `evaluationSystemInstruction`).
 
 ---
 
@@ -454,17 +468,19 @@ respondAfterDelay.ts`). **Dev convenience added same round:** both mock routes n
 - **`DevHelper` gated behind `NEXT_PUBLIC_SHOW_DEV_HELPER` (2026-08-02):**
   `ChatConversation.tsx` only renders `DevHelper` when that env var is set, instead of always
   rendering it.
-- `ChatConversation.tsx` receives a `chatConfig` prop (`ChatConfig`, from `src/lib/chatConfig.ts`)
-  built via `getChatConfig(language, scenario, languageLevel)` — built in `ChatSetup.tsx` now, not
-  `page.tsx` (see "Setup screen" bullet above; still only the two freeform-chat scenarios, not the
-  scenario library, per decisions.md, 2026-07-28/07-30).
+- `ChatConversation.tsx` receives a `conversationConfig` prop (`ConversationConfig`, from
+  `src/lib/conversationConfig.ts` — renamed 2026-08-18 from `chatConfig`/`ChatConfig`, see
+  decisions.md) built via `getConversationConfig(language, languageLevel, scenario)` — built in
+  `ChatSetup.tsx` now, not `page.tsx` (see "Setup screen" bullet above; still only the two
+  freeform-chat scenarios, not the scenario library, per decisions.md, 2026-07-28/07-30).
 - **Language level picker (2026-08-10, see decisions.md):** `language.ts` exports
   `LanguageLevelName`/`LanguageLevel`/`languageLevels`/`getLanguageLevelByName`. `languageLevels`
   holds two entries — Beginner (`A1/A2`), Intermediate (`B1/B2`); Expert (`C1/C2`) was drafted then
   deliberately left out. `ChatContainer` owns `level` state (default: Intermediate), passed as
   `selectedLevel`/`onChangeLevel` through `ChatSetup` → `SetupForm`, rendered as a
-  `SegmentedControl`. `level.cefrLevel` flows into `getChatConfig` → `getBaseInstruction`, which
-  writes it directly into the AI's system instruction.
+  `SegmentedControl`. `level.cefrLevel` flows into `getConversationConfig` → `getChatBaseInstruction`
+  (renamed 2026-08-18 from `getChatConfig`/`getBaseInstruction`, see decisions.md), which writes it
+  directly into the AI's system instruction.
 
 ## What's decided
 
@@ -793,9 +809,10 @@ Two calibration-only files still remain under `spikes/language-speech-rates/`
     pass"). Not covered: a dedicated accessibility pass — remains open, not blocking evaluation.
 11. Define core data structures (session state shape, transcript shape) consistent with the state
     model — transcript must exclude the hidden opening instruction.
-12. ~~Add evaluation as a second slice once the full v0 conversation loop (steps 4–10) is solid and styled~~ — first pass done, 2026-08-13–2026-08-14 (see decisions.md, "Evaluation: first working
-    implementation," and step 15 below): mock-verified, plain-text output only, structured output
-    following as step 16. (Earlier phrasing here framed the follow-up as "the structured
+12. ~~Add evaluation as a second slice once the full v0 conversation loop (steps 4–10) is solid and styled~~ — done: first pass 2026-08-13–2026-08-14 (see decisions.md, "Evaluation: first working
+    implementation," and step 15 below), structured output completed 2026-08-16 (step 16), with all
+    follow-up items resolved by 2026-08-18 (steps 17–18) — no open items remain from this milestone.
+    (Earlier phrasing here framed the follow-up as "the structured
     grammar/vocabulary/nuance fields requirements.md scopes" — **corrected 2026-08-18:** there was
     never an intention to build three literal category fields; requirements.md's phrase described
     feedback content, not a required schema shape. See step 17's confirmation.)

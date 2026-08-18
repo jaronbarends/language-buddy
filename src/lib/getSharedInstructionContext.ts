@@ -11,8 +11,6 @@ export function getSharedInstructionContext(
   const cefrLevel = level.cefrLevel;
 
   const sharedContext = `
-## Context
-
 - The user speaks ${languageTag} at CEFR level ${cefrLevel}
 - The user speaks English at CEFR level ${englishCEFRLevel}
 - The input text is gathered by the Web SpeechRecognition API. When you encounter illogical words, consider the possibility that this may be a transcription error.

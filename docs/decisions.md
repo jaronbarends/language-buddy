@@ -2624,3 +2624,62 @@ CSS, per the project's closed-token-scale rule (CLAUDE.md).
 without it, every mock AI reply was identical text, making it hard to visually confirm the pending
 balloon was actually being replaced/updated rather than just re-rendering the same content.
 **Status:** Done. Mock-only change; no effect on real Gemini responses.
+
+---
+
+## Shared persona context extracted; `chatConfig`/`systemInstruction` renamed (2026-08-18)
+
+### Persona `## Context` block deduplicated into `getSharedInstructionContext.ts`
+
+**Date:** 2026-08-18
+**Decision:** A new `getSharedInstructionContext(language, level, aiStartingPrompt)`
+(`src/lib/getSharedInstructionContext.ts`) returns the persona-level context bullets — target-language
+CEFR level, `englishCEFRLevel` (moved here, still `B2/C1`), the ASR transcription-error caveat, and a
+`### What counts as the user's actual language` subsection (the hidden `aiStartingPrompt`
+trigger-message exclusion, and "don't attribute the AI's own turns to the user"). Both
+`getChatBaseInstruction.ts` (renamed from `getBaseInstruction.ts`, see below) and
+`evaluationConfig.ts`'s `getEvaluationSystemInstruction` call it and wrap its output in their own
+`## Context` heading.
+**Rationale:** `getBaseInstruction.ts` and `evaluationConfig.ts` had independently built near-identical
+`## Context` blocks — the ASR caveat was duplicated verbatim in both; the trigger-message exclusion
+existed only in `evaluationConfig.ts`, even though the persona should never treat that hidden message
+as user input in *any* task, not only when being evaluated. Extracting one shared function fixes that
+gap as a side effect of deduplication, rather than as a separately-scoped feature.
+**Caught and fixed same session:** the first extraction pass had `getSharedInstructionContext`
+returning its own `## Context` heading *and* each caller hardcoding one too, producing a literal
+duplicate heading in the prompt sent to the LLM. Fixed by moving the heading out of the shared
+function — each caller keeps its own `## Context` heading and now has the option to add
+task-specific, non-shared context under the same heading later; the shared function returns only the
+bullet content.
+**Status:** Done. Verified via `tsc --noEmit` and `eslint` on all touched files.
+
+### `chatConfig.ts` renamed to `conversationConfig.ts`; `ChatConfig`/`getChatConfig` renamed to `ConversationConfig`/`getConversationConfig`
+
+**Date:** 2026-08-18
+**Decision:** `src/lib/chatConfig.ts` → `src/lib/conversationConfig.ts`; the `ChatConfig` type →
+`ConversationConfig`; `getChatConfig` → `getConversationConfig`. Every `chatConfig`-named
+variable/prop/destructure at every call site (`ChatContainer.tsx`, `ChatSetup.tsx`, `SetupForm.tsx`,
+`ChatConversation.tsx`) renamed to `conversationConfig` to match.
+**Rationale:** Naming cleanup — "chat" was the narrower, older term; "conversation" is the term the
+rest of the project (component/folder names, `ChatConversation`'s own domain) already converges on.
+**Status:** Done.
+
+### `ConversationConfig.systemInstruction` renamed to `chatSystemInstruction`
+
+**Date:** 2026-08-18
+**Decision:** The `systemInstruction` field on `ConversationConfig` is renamed to
+`chatSystemInstruction`.
+**Rationale:** Mirrors the existing `evaluationSystemInstruction` field naming — `ConversationConfig`
+holds two system instructions (chat, evaluation); the unprefixed `systemInstruction` name read as if
+it were the only one.
+**Status:** Done.
+
+### `getBaseInstruction.ts` renamed to `getChatBaseInstruction.ts`
+
+**Date:** 2026-08-18
+**Decision:** `src/lib/getBaseInstruction.ts` → `src/lib/getChatBaseInstruction.ts`; the exported
+`getBaseInstruction` function → `getChatBaseInstruction`.
+**Rationale:** Same naming-clarity motivation as `chatSystemInstruction` above — distinguishes the
+chat-specific base instruction from the shared persona context and from evaluation's own system
+instruction builder.
+**Status:** Done.
