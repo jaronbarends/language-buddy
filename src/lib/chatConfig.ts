@@ -25,7 +25,7 @@ export function getChatConfig(
     );
   }
 
-  const baseInstruction = getBaseInstruction(language, languageLevel);
+  const baseInstruction = getBaseInstruction(language, languageLevel, aiStartingPrompt);
   const systemInstruction = `${baseInstruction}${scenario.instructionText}`;
   const evaluationSystemInstruction = getEvaluationSystemInstruction(
     language,

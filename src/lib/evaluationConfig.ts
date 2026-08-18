@@ -1,6 +1,5 @@
+import { englishCEFRLevel, getSharedInstructionContext } from '@/lib/getSharedInstructionContext';
 import type { Language, LanguageLevel } from '@/lib/language';
-
-const englishCEFRLevel = `B2/C1`;
 
 export function getEvaluationSystemInstruction(
   language: Language,
@@ -8,7 +7,7 @@ export function getEvaluationSystemInstruction(
   aiStartingPrompt: string
 ): string {
   const languageTag = language.languageTag;
-  const cefrLevel = level.cefrLevel;
+  const sharedInstructionContext = getSharedInstructionContext(language, level, aiStartingPrompt);
 
   // instruction: general instruction on the persona, that will hold true for all tasks this persona should do
   // e.g. if we would later add a prompt to ask for book recommendations, everything in instruction should still stand
@@ -22,18 +21,9 @@ export function getEvaluationSystemInstruction(
 
 - Speak informally and warmly, like a friendly acquaintance — not formal or distant
 
-
 ## Context
 
-- The user speaks ${languageTag} at CEFR level ${cefrLevel}
-- The user speaks English at CEFR level ${englishCEFRLevel}
-
-### What counts as the user's actual language
-
-- The input text is gathered by the Web SpeechRecognition API. When you encounter illogical words, consider the possibility that this may be a transcription error.
-- This chat may open with a hidden system-generated trigger message (not authored by the learner) used to prompt the AI persona to start the scenario. If present, it will read exactly: "${aiStartingPrompt}". Never treat this message as language produced by the user, and never refer to it in any way.
-- Only treat the learner's own messages as their language production. Do not attribute anything you (the AI) said earlier in the conversation to the learner.
-`;
+${sharedInstructionContext}`;
 
   return instruction;
 }

@@ -1,8 +1,14 @@
+import { getSharedInstructionContext } from '@/lib/getSharedInstructionContext';
 import type { Language, LanguageLevel } from '@/lib/language';
 
-export function getBaseInstruction(language: Language, level: LanguageLevel): string {
+export function getBaseInstruction(
+  language: Language,
+  level: LanguageLevel,
+  aiStartingPrompt: string
+): string {
   const languageTag = language.languageTag;
   const cefrLevel = level.cefrLevel;
+  const sharedInstructionContext = getSharedInstructionContext(language, level, aiStartingPrompt);
   const baseInstruction = `
 ## Role/persona
 
@@ -17,7 +23,7 @@ export function getBaseInstruction(language: Language, level: LanguageLevel): st
 
 ## Context
 
-- The input text is gathered by the Web SpeechRecognition API. When you encounter illogical words, consider the possibility that this may be a transcription error.
+${sharedInstructionContext}
 
 ## Constraints
 
