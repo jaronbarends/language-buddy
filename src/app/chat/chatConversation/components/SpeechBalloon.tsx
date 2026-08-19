@@ -18,12 +18,12 @@ export default function SpeechBalloon({
   isPending,
   children,
 }: SpeechBalloonProps) {
-  const authorClassName = author === 'ai' ? styles.messageFromAi : styles.messageFromUser;
+  const authorClassName = author === 'ai' ? styles.aiBalloon : styles.userBalloon;
   return (
-    <Tag className={clsx(styles.message, authorClassName, isPending && styles.isPending)}>
+    <Tag className={clsx(styles.balloon, authorClassName, isPending && styles.isPending)}>
       {isPending ?
         <Loader ariaLabel="Loading ai response" />
-      : <span className={styles.messageContent}>{children}</span>}
+      : <span className={styles.message}>{children}</span>}
     </Tag>
   );
 }

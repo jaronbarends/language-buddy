@@ -31,6 +31,10 @@ export type ChatPhase =
   | { status: 'listening' }
   | { status: 'stoppingListening'; intent: StopIntent }
   | { status: 'cancellingListening' }
+  | { status: 'editingUserReply'; transcript: string }
+  | { status: 'stopEditingToSend' }
+  | { status: 'editingCancelled'; transcript: string }
+  | { status: 'waitingForUserSubmit'; transcript: string }
   | { status: 'sendingUserReply'; transcript: string }
   | { status: 'requestEvaluation' }
   | { status: 'waitingForEvaluation' }
@@ -38,7 +42,14 @@ export type ChatPhase =
   | { status: 'sessionEndRequested' }
   | { status: 'error'; error: AIError };
 
-export type ChatStage = 'aiTurnFlow' | 'userTurnFlow' | 'evaluation' | 'error' | 'sessionEnded';
+export type ChatStage =
+  | 'aiTurnFlow'
+  | 'userTurnFlow'
+  | 'userEdit'
+  | 'waitingForUserSubmit'
+  | 'evaluation'
+  | 'error'
+  | 'sessionEnded';
 
 export type ChatAction =
   | { type: 'AI_START_INPUT_SENT' }
@@ -51,6 +62,11 @@ export type ChatAction =
   | { type: 'LISTENING_CANCELLED' }
   | { type: 'TRANSCRIPT_CREATED'; payload: { transcript: string } }
   | { type: 'TRANSCRIPT_EMPTY' }
+  | { type: 'STOP_EDITING_TO_SEND' }
+  // TBD can we also use this for sending msg after cancel, eg SEND_MESSAGE?
+  // or should we re-use TRANSCRIPT_CREATED for edited message?
+  | { type: 'SEND_EDITED_MESSAGE'; payload: { transcript: string } }
+  | { type: 'EDIT_CANCELLED' }
   | { type: 'USER_MESSAGE_SENT'; payload: { message: string } }
   | { type: 'REQUEST_EVALUATION' }
   | { type: 'EVALUATION_REQUEST_SENT' }
@@ -180,9 +196,20 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
               phase: { status: 'sendingUserReply', transcript: action.payload.transcript },
             };
           }
-          // to be used for edit
+          if (state.phase.intent === 'edit') {
+            return {
+              threadItems: state.threadItems,
+              phase: { status: 'editingUserReply', transcript: action.payload.transcript },
+            };
+          }
           return state;
         case 'TRANSCRIPT_EMPTY':
+          // if (state.phase.intent === 'edit') {
+          //   return {
+          //     threadItems: state.threadItems,
+          //     phase: { status: 'editingUserReply', transcript: '' },
+          //   };
+          // }
           return {
             threadItems: state.threadItems,
             phase: { status: 'readyForUserReply' },
@@ -200,6 +227,44 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         default:
           return state;
       }
+    case 'editingUserReply':
+      // TODO
+      switch (action.type) {
+        case 'TRANSCRIPT_CREATED':
+          return {
+            threadItems: state.threadItems,
+            phase: { status: 'sendingUserReply', transcript: action.payload.transcript },
+          };
+        case 'TRANSCRIPT_EMPTY':
+          return {
+            threadItems: state.threadItems,
+            phase: { status: 'readyForUserReply' },
+          };
+        case 'EDIT_CANCELLED':
+          return {
+            threadItems: state.threadItems,
+            phase: { status: 'editingCancelled', transcript: state.phase.transcript },
+          };
+      }
+      return state;
+    case 'stopEditingToSend':
+      // TODO: remove
+      // switch (action.type) {
+      //   case 'TRANSCRIPT_CREATED':
+      //     return {
+      //       threadItems: state.threadItems,
+      //       phase: { status: 'sendingUserReply', transcript: action.payload.transcript },
+      //     };
+      //   case 'TRANSCRIPT_EMPTY':
+      //     return {
+      //       threadItems: state.threadItems,
+      //       phase: { status: 'readyForUserReply' },
+      //     };
+      // }
+      return state;
+    case 'editingCancelled':
+      // TODO
+      return state;
     case 'sendingUserReply':
       switch (action.type) {
         case 'USER_MESSAGE_SENT': {
@@ -216,6 +281,9 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         default:
           return state;
       }
+    case 'waitingForUserSubmit':
+      // TODO
+      return state;
     case 'requestEvaluation':
       switch (action.type) {
         case 'EVALUATION_REQUEST_SENT':
@@ -299,6 +367,10 @@ export function listeningShouldBeCancelled(phase: ChatPhase): boolean {
   return phase.status === 'cancellingListening';
 }
 
+export function messageCanBeEdited(phase: ChatPhase): boolean {
+  return phase.status === 'editingUserReply';
+}
+
 export function shouldSendReply(
   // reply is actually ready to be sent
   phase: ChatPhase
@@ -349,7 +421,13 @@ export function requestsShouldBeAborted(phase: ChatPhase): boolean {
 // derived state functions: thread view ui
 
 export function shouldShowRecognitionPreview(phase: ChatPhase): boolean {
-  const allowedStatuses = ['listening', 'stoppingListening', 'sendingUserReply'];
+  const allowedStatuses = [
+    'listening',
+    'stoppingListening',
+    'sendingUserReply',
+    'editingUserReply',
+    'editingCancelled',
+  ];
   return allowedStatuses.includes(phase.status);
 }
 
@@ -382,6 +460,12 @@ export function getChatStage(phase: ChatPhase): ChatStage {
     case 'cancellingListening':
     case 'sendingUserReply':
       return 'userTurnFlow';
+    case 'editingUserReply':
+    case 'stopEditingToSend':
+      return 'userEdit';
+    case 'editingCancelled':
+    case 'waitingForUserSubmit':
+      return 'waitingForUserSubmit';
     case 'evaluation':
       return 'evaluation';
     case 'error':

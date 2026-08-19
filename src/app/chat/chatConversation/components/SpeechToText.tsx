@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useImperativeHandle, type Ref } from 'react';
 
 import {
   canSpeak,
@@ -14,11 +14,16 @@ import { getCrossBrowserSpeechRecognition } from '@/lib/speechRecognition';
 import MockSTT, { type MockSTTHandle } from './MockSTT';
 import SpeechResults from './SpeechResults';
 
+export type MsgEditorHandle = {
+  getEditedMessage: () => string;
+};
+
 type SpeechToTextProps = {
   phase: ChatPhase;
   onTranscriptCreated: (transcript: string) => void;
   onListeningCancelled: () => void;
   languageTag: string;
+  editorRef: Ref<MsgEditorHandle>;
 };
 
 export default function SpeechToText({
@@ -26,6 +31,7 @@ export default function SpeechToText({
   onTranscriptCreated,
   onListeningCancelled,
   languageTag,
+  editorRef,
 }: SpeechToTextProps) {
   const recognitionRef = useRef<SpeechRecognition | undefined>(null);
   const recognitionShouldBeActiveRef = useRef<boolean>(false);
@@ -35,6 +41,9 @@ export default function SpeechToText({
   const liveTranscriptRef = useRef<string>('');
   const [liveTranscript, setLiveTranscript] = useState<string>('');
   const mockRef = useRef<MockSTTHandle>(null);
+
+  const editedMessageRef = useRef<string>('');
+  const [editedMessage, setEditedMessage] = useState<string>('');
 
   const shouldShowMockSTT =
     process.env.NEXT_PUBLIC_USE_MOCK_STT === 'true' && userIsInInputFlow(phase);
@@ -80,10 +89,23 @@ export default function SpeechToText({
     }
   }, [phase]);
 
+  useImperativeHandle(editorRef, () => {
+    return {
+      getEditedMessage() {
+        return editedMessageRef.current ?? '';
+      },
+    };
+  });
+
   return (
     <>
-      <SpeechResults liveTranscript={liveTranscript} phase={phase} />
-      {shouldShowMockSTT && <MockSTT ref={mockRef} phase={phase} />}
+      <SpeechResults
+        liveTranscript={liveTranscript}
+        phase={phase}
+        editedMessage={editedMessage}
+        onMessageChange={handleMessageChange}
+      />
+      {shouldShowMockSTT && <MockSTT mockRef={mockRef} phase={phase} />}
     </>
   );
 
@@ -168,5 +190,10 @@ export default function SpeechToText({
   function setLiveTranscriptByRef(transcript: string) {
     liveTranscriptRef.current = transcript;
     setLiveTranscript(liveTranscriptRef.current);
+  }
+
+  function handleMessageChange(message: string) {
+    editedMessageRef.current = message;
+    setEditedMessage(editedMessageRef.current);
   }
 }

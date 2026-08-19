@@ -13,12 +13,13 @@
   }
 }
 
-.message {
+.balloon {
   --balloon-padding-block: var(--size-12);
   --balloon-padding-inline: var(--size-16);
   --balloon-border-width: var(--border-width-default);
   --bounce-duration: var(--duration-fast);
   --balloon-max-width: 85%;
+  --line-height-balloon: var(--line-height-body-tight);
 
   overflow: hidden;
   width: fit-content;
@@ -27,14 +28,14 @@
   background-color: var(--color-bg-default);
   border: var(--border-width-default) solid var(--color-border-neutral);
   font-weight: var(--font-weight-medium);
-  line-height: var(--line-height-body-tight);
+  line-height: var(--line-height-balloon);
   animation: bounceIn var(--bounce-duration) forwards var(--overshoot-out);
   transition: var(--duration-fast) ease-out;
   transition-property: width, height;
   transition-timing-function: var(--overshoot-out), linear;
 }
 
-.messageFromAi {
+.aiBalloon {
   display: flex;
   /* we cannot use max-width for ai message, because then the overshoot animation on its width won't work - that would obey max-width */
   margin-inline: 0 calc(100% - var(--balloon-max-width));
@@ -48,13 +49,15 @@
   }
 }
 
-.messageContent {
+.message {
+  display: block;
+  min-height: calc(1em * var(--line-height-balloon));
   /* message content should fade in when balloon's resize is done */
   opacity: 0;
   animation: fadeIn var(--duration-fast) var(--bounce-duration) forwards;
 }
 
-.messageFromUser {
+.userBalloon {
   margin-inline: auto 0;
   max-width: var(--balloon-max-width);
   border-bottom-right-radius: var(--radius-4);
