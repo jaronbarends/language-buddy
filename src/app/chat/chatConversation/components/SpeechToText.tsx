@@ -94,6 +94,7 @@ export default function SpeechToText({
       <SpeechResults
         liveTranscript={liveTranscript}
         phase={phase}
+        languageTag={languageTag}
         onMessageChange={handleMessageChange}
       />
     </>

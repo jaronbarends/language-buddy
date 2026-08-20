@@ -107,6 +107,7 @@ export default function ChatConversation({
           phase={state.phase}
           threadItems={state.threadItems}
           languageVoice={languageVoice}
+          languageTag={conversationConfig.language.languageTag}
           openingHint={openingHint}
           onAISpeechEnd={handleAISpeechEnd}
         />

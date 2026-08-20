@@ -16,10 +16,11 @@ import SpeechBalloon from './SpeechBalloon';
 
 import styles from './ThreadView.module.css';
 
-type threadItemsProps = {
+type ThreadViewProps = {
   phase: ChatPhase;
   threadItems: ThreadItem[];
   languageVoice: LanguageVoice;
+  languageTag: string;
   openingHint: string | undefined;
   onAISpeechEnd: () => void;
 };
@@ -28,9 +29,10 @@ export default function ThreadView({
   phase,
   threadItems,
   languageVoice,
+  languageTag,
   openingHint,
   onAISpeechEnd,
-}: threadItemsProps) {
+}: ThreadViewProps) {
   const threadViewRef = useRef<HTMLDivElement>(null);
   const showFakeBalloons = false;
 
@@ -80,7 +82,7 @@ export default function ThreadView({
   return (
     <div className={styles.threadView} ref={threadViewRef}>
       {openingHint && <Feedback type="info">{openingHint}</Feedback>}
-      <ol className={styles.threadItems}>
+      <ol className={styles.threadItems} lang={languageTag}>
         {threadItems.map((item, idx) => {
           if (item.type === 'message') {
             return (
@@ -91,7 +93,7 @@ export default function ThreadView({
           } else {
             return (
               <li key={idx}>
-                <Evaluation evaluation={item.evaluation} />
+                <Evaluation evaluation={item.evaluation} languageTag={languageTag} />
               </li>
             );
           }

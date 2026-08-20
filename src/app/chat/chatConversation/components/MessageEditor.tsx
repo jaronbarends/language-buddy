@@ -4,10 +4,15 @@ import styles from './MessageEditor.module.css';
 
 type MessageEditorProps = {
   initialValue: string;
+  languageTag: string;
   onMessageChange: (message: string) => void;
 };
 
-export default function MessageEditor({ initialValue, onMessageChange }: MessageEditorProps) {
+export default function MessageEditor({
+  initialValue,
+  languageTag,
+  onMessageChange,
+}: MessageEditorProps) {
   const editorElmRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -22,6 +27,8 @@ export default function MessageEditor({ initialValue, onMessageChange }: Message
       className={styles.editor}
       onInput={handleMessageChange}
       contentEditable
+      lang={languageTag}
+      spellCheck="true"
       ref={editorElmRef}
     />
   );
