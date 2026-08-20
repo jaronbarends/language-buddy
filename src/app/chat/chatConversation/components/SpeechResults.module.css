@@ -3,9 +3,7 @@
 }
 
 .balloonContent {
-  display: grid;
-  grid-template-areas: 'indicator transcript';
-  grid-template-columns: auto 1fr;
+  display: flex;
   gap: var(--size-8);
 }
 
@@ -24,7 +22,7 @@
   --size: var(--size-12);
 
   position: relative;
-  grid-area: indicator;
+  flex: 0 0 auto;
   margin-top: 0.3em;
   width: var(--size);
   height: var(--size);
@@ -49,7 +47,4 @@
   &::after {
     animation: none;
   }
-}
-.transcript {
-  grid-area: transcript;
 }

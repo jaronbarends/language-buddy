@@ -31,14 +31,24 @@ export type ChatPhase =
   | { status: 'listening' }
   | { status: 'stoppingListening'; intent: StopIntent }
   | { status: 'cancellingListening' }
-  | { status: 'sendingUserReply'; transcript: string }
+  | { status: 'editingUserReply'; userMessage: string }
+  | { status: 'editingCancelled'; userMessage: string }
+  | { status: 'sendingUserReply'; userMessage: string }
   | { status: 'requestEvaluation' }
   | { status: 'waitingForEvaluation' }
   | { status: 'evaluation' }
   | { status: 'sessionEndRequested' }
   | { status: 'error'; error: AIError };
 
-export type ChatStage = 'aiTurnFlow' | 'userTurnFlow' | 'evaluation' | 'error' | 'sessionEnded';
+// stage consists of one or more ChatPhases, where same set of buttons is needed
+export type ChatStage =
+  | 'aiTurnStage'
+  | 'userTurnStage'
+  | 'userEditStage'
+  | 'editCancelledStage'
+  | 'evaluationStage'
+  | 'errorStage'
+  | 'sessionEnded';
 
 export type ChatAction =
   | { type: 'AI_START_INPUT_SENT' }
@@ -49,8 +59,14 @@ export type ChatAction =
   | { type: 'STOP_LISTENING'; payload: { intent: StopIntent } }
   | { type: 'CANCEL_LISTENING' }
   | { type: 'LISTENING_CANCELLED' }
-  | { type: 'TRANSCRIPT_CREATED'; payload: { transcript: string } }
+  | { type: 'TRANSCRIPT_CREATED'; payload: { userMessage: string } }
   | { type: 'TRANSCRIPT_EMPTY' }
+  | { type: 'SEND_EDITED_MESSAGE'; payload: { userMessage: string } }
+  | { type: 'EDITED_MESSAGE_EMPTY' }
+  | { type: 'EDIT_CANCELLED' }
+  | { type: 'SEND_UNEDITED_MESSAGE' }
+  | { type: 'EDIT_AGAIN' }
+  | { type: 'CANCEL_IDLE' }
   | { type: 'USER_MESSAGE_SENT'; payload: { message: string } }
   | { type: 'REQUEST_EVALUATION' }
   | { type: 'EVALUATION_REQUEST_SENT' }
@@ -177,12 +193,23 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
           if (state.phase.intent === 'send') {
             return {
               threadItems: state.threadItems,
-              phase: { status: 'sendingUserReply', transcript: action.payload.transcript },
+              phase: { status: 'sendingUserReply', userMessage: action.payload.userMessage },
             };
           }
-          // to be used for edit
+          if (state.phase.intent === 'edit') {
+            return {
+              threadItems: state.threadItems,
+              phase: { status: 'editingUserReply', userMessage: action.payload.userMessage },
+            };
+          }
           return state;
         case 'TRANSCRIPT_EMPTY':
+          if (state.phase.intent === 'edit') {
+            return {
+              threadItems: state.threadItems,
+              phase: { status: 'editingUserReply', userMessage: '' },
+            };
+          }
           return {
             threadItems: state.threadItems,
             phase: { status: 'readyForUserReply' },
@@ -200,6 +227,51 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         default:
           return state;
       }
+    case 'editingUserReply':
+      switch (action.type) {
+        case 'SEND_EDITED_MESSAGE':
+          return {
+            threadItems: state.threadItems,
+            phase: { status: 'sendingUserReply', userMessage: action.payload.userMessage },
+          };
+        case 'EDITED_MESSAGE_EMPTY':
+          return {
+            threadItems: state.threadItems,
+            phase: { status: 'readyForUserReply' },
+          };
+        case 'EDIT_CANCELLED':
+          if (state.phase.userMessage === '') {
+            // editing was started without any speech input; we don't want to end up with an empty balloonnow
+            return {
+              threadItems: state.threadItems,
+              phase: { status: 'readyForUserReply' },
+            };
+          }
+          return {
+            threadItems: state.threadItems,
+            phase: { status: 'editingCancelled', userMessage: state.phase.userMessage },
+          };
+      }
+      return state;
+    case 'editingCancelled':
+      switch (action.type) {
+        case 'SEND_UNEDITED_MESSAGE':
+          return {
+            threadItems: state.threadItems,
+            phase: { status: 'sendingUserReply', userMessage: state.phase.userMessage },
+          };
+        case 'EDIT_AGAIN':
+          return {
+            threadItems: state.threadItems,
+            phase: { status: 'editingUserReply', userMessage: state.phase.userMessage },
+          };
+        case 'CANCEL_IDLE':
+          return {
+            threadItems: state.threadItems,
+            phase: { status: 'readyForUserReply' },
+          };
+      }
+      return state;
     case 'sendingUserReply':
       switch (action.type) {
         case 'USER_MESSAGE_SENT': {
@@ -299,6 +371,16 @@ export function listeningShouldBeCancelled(phase: ChatPhase): boolean {
   return phase.status === 'cancellingListening';
 }
 
+export function messageCanBeEdited(
+  phase: ChatPhase
+): phase is Extract<ChatPhase, { status: 'editingUserReply' }> {
+  return phase.status === 'editingUserReply';
+}
+
+export function canSendUneditedMessage(phase: ChatPhase): boolean {
+  return phase.status === 'editingCancelled';
+}
+
 export function shouldSendReply(
   // reply is actually ready to be sent
   phase: ChatPhase
@@ -337,6 +419,10 @@ export function canRequestCancel(phase: ChatPhase): boolean {
   return phase.status === 'listening';
 }
 
+export function canRequestEdit(phase: ChatPhase): boolean {
+  return phase.status === 'listening';
+}
+
 // derived state functions: behavior
 
 export function requestsShouldBeAborted(phase: ChatPhase): boolean {
@@ -349,7 +435,13 @@ export function requestsShouldBeAborted(phase: ChatPhase): boolean {
 // derived state functions: thread view ui
 
 export function shouldShowRecognitionPreview(phase: ChatPhase): boolean {
-  const allowedStatuses = ['listening', 'stoppingListening', 'sendingUserReply'];
+  const allowedStatuses = [
+    'listening',
+    'stoppingListening',
+    'sendingUserReply',
+    'editingUserReply',
+    'editingCancelled',
+  ];
   return allowedStatuses.includes(phase.status);
 }
 
@@ -364,7 +456,7 @@ export function shouldAutoScrollThread(phase: ChatPhase): boolean {
 // derived state functions: stages
 
 export function userIsInInputFlow(phase: ChatPhase): boolean {
-  return getChatStage(phase) === 'userTurnFlow';
+  return getChatStage(phase) === 'userTurnStage';
 }
 
 export function getChatStage(phase: ChatPhase): ChatStage {
@@ -376,16 +468,20 @@ export function getChatStage(phase: ChatPhase): ChatStage {
     case 'readyForUserStart':
     case 'requestEvaluation':
     case 'waitingForEvaluation':
-      return 'aiTurnFlow';
+      return 'aiTurnStage';
     case 'listening':
     case 'stoppingListening':
     case 'cancellingListening':
     case 'sendingUserReply':
-      return 'userTurnFlow';
+      return 'userTurnStage';
+    case 'editingUserReply':
+      return 'userEditStage';
+    case 'editingCancelled':
+      return 'editCancelledStage';
     case 'evaluation':
-      return 'evaluation';
+      return 'evaluationStage';
     case 'error':
-      return 'error';
+      return 'errorStage';
     case 'sessionEndRequested':
       return 'sessionEnded';
     default: {

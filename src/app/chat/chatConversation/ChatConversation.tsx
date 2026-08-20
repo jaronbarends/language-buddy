@@ -24,7 +24,7 @@ import {
 import ControlsArea from './components/ControlsArea';
 import DevHelper from './components/DevHelper';
 import ErrorArea from './components/ErrorArea';
-import SpeechToText from './components/SpeechToText';
+import SpeechToText, { MsgEditorHandle } from './components/SpeechToText';
 import ThreadView from './components/ThreadView';
 
 import styles from './ChatConversation.module.css';
@@ -49,6 +49,7 @@ export default function ChatConversation({
   const hasStartedRef = useRef<boolean>(false);
   const requestIdRef = useRef<number>(0);
   const startChatRef = useRef<() => void>(() => {});
+  const editorRef = useRef<MsgEditorHandle>(null);
 
   // Keep up to date via this effect (not useCallback) so startChat always uses
   // the latest conversationConfig/startChatWithAI/startChatWithUser. We don't want those as
@@ -115,13 +116,20 @@ export default function ChatConversation({
           onTranscriptCreated={handleTranscriptCreated}
           onListeningCancelled={handleListeningCancelled}
           languageTag={conversationConfig.language.languageTag}
+          editorRef={editorRef}
         />
         <ControlsArea
           phase={state.phase}
           messageCount={state.threadItems.length}
           onStartListening={handleStartListening}
-          onSendRequested={handleSendRequested}
+          onStopListeningToSend={handleStopListeningToSend}
+          onStopListeningToEdit={handleStopListeningToEdit}
           onCancelListening={handleCancelListening}
+          onStopEditingToSend={handleStopEditingToSend}
+          onCancelEditing={handleCancelEditing}
+          onSendAfterEditCancelled={handleSendAfterEditCancelled}
+          onEditAfterEditCancelled={handleEditAfterEditCancelled}
+          onCancelAfterEditCancelled={handleCancelAfterEditCancelled}
           onEvaluationRequested={handleEvaluationRequest}
           onEndSessionRequested={handleEndSessionRequest}
         />
@@ -136,8 +144,12 @@ export default function ChatConversation({
     startListening();
   }
 
-  function handleSendRequested() {
+  function handleStopListeningToSend() {
     dispatch({ type: 'STOP_LISTENING', payload: { intent: 'send' } });
+  }
+
+  function handleStopListeningToEdit() {
+    dispatch({ type: 'STOP_LISTENING', payload: { intent: 'edit' } });
   }
 
   function handleTranscriptCreated(transcript: string) {
@@ -145,7 +157,7 @@ export default function ChatConversation({
       dispatch({ type: 'TRANSCRIPT_EMPTY' });
       return;
     }
-    dispatch({ type: 'TRANSCRIPT_CREATED', payload: { transcript } });
+    dispatch({ type: 'TRANSCRIPT_CREATED', payload: { userMessage: transcript } });
   }
 
   function handleCancelListening() {
@@ -155,6 +167,33 @@ export default function ChatConversation({
   function handleListeningCancelled() {
     dispatch({ type: 'LISTENING_CANCELLED' });
   }
+
+  function handleCancelEditing() {
+    dispatch({ type: 'EDIT_CANCELLED' });
+  }
+
+  function handleStopEditingToSend() {
+    const editedMessage = editorRef.current?.getEditedMessage() ?? '';
+    if (editedMessage === '') {
+      dispatch({ type: 'EDITED_MESSAGE_EMPTY' });
+      return;
+    }
+    dispatch({ type: 'SEND_EDITED_MESSAGE', payload: { userMessage: editedMessage } });
+  }
+
+  function handleSendAfterEditCancelled() {
+    dispatch({ type: 'SEND_UNEDITED_MESSAGE' });
+  }
+
+  function handleEditAfterEditCancelled() {
+    dispatch({ type: 'EDIT_AGAIN' });
+  }
+
+  function handleCancelAfterEditCancelled() {
+    dispatch({ type: 'CANCEL_IDLE' });
+  }
+
+  // end handlers
 
   async function startChatWithAI() {
     const input = aiStartingPrompt;
@@ -176,7 +215,7 @@ export default function ChatConversation({
       return;
     }
 
-    const input = state.phase.transcript;
+    const input = state.phase.userMessage;
     dispatch({ type: 'USER_MESSAGE_SENT', payload: { message: input } });
 
     await sendMessageToAI(input);

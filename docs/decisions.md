@@ -2726,3 +2726,159 @@ Scoped to dev reference (not recruiter-facing) since the project owner doesn't e
 restructuring before the upcoming edit-message feature; format chosen to stay cheap to update after
 that lands, rather than redrawn from scratch.
 **Status:** Done.
+
+### STT transcript edit capability: design decided (closes the 2026-08-04 reopened item)
+
+**Date:** 2026-08-19
+**Decision:** Build the STT transcript edit capability. Hand-edit the transcript text directly
+(not re-run STT) — this answers the "hand-edit vs. re-run STT" question left open by the
+2026-08-04 reopening.
+
+Two new phases, `editingUserReply` and `editingCancelled`, both carrying `transcript` on the
+phase object (same convention as `sendingUserReply`):
+
+- **`editingUserReply`** — entered from `stoppingListening` via the existing `TRANSCRIPT_CREATED`
+  action when `intent === 'edit'` (closes the known fallthrough gap documented 2026-08-04, where
+  any non-`'send'` intent silently fell through to `TRANSCRIPT_EMPTY`). `phase.transcript` holds
+  the original STT output and is never mutated by keystrokes — the live edited draft lives in
+  local component state on whatever component owns the textarea, not on the phase or on
+  `SpeechToText`'s `liveTranscriptRef`. Deliberately keeping recognition output and manual edits
+  as separate state, rather than routing edits through `liveTranscriptRef`, since that ref is
+  scoped to actual recognition results.
+  - `EDIT_SUBMITTED; payload: { transcript }` (the edited draft) → `sendingUserReply`.
+  - `EDIT_CANCELLED` (no payload — reads `state.phase.transcript`) → `editingCancelled`.
+- **`editingCancelled`** — the user backed out of editing without submitting. Carries the
+  original transcript forward unchanged. Exists specifically so cancelling an edit requires a
+  deliberate second Send click rather than auto-sending: `sendingUserReply` is not a resting
+  phase, it triggers the actual send via `shouldSendReply`/`ChatConversation`'s effect, so
+  transitioning `EDIT_CANCELLED` straight into `sendingUserReply` would have sent the unedited
+  transcript immediately.
+  - A yet-to-be-named confirm action (candidates: `TRANSCRIPT_CONFIRMED`,
+    `EDIT_TRANSCRIPT_SENT`) → `sendingUserReply`, reading `state.phase.transcript`.
+  - Cancel here (abandon the whole turn, not just the edit) → `readyForUserReply`, consistent
+    with Cancel's meaning elsewhere in the input flow.
+
+**Button handling:** the `send` button's handler becomes phase-dependent — `listening` still
+dispatches `STOP_LISTENING`, `editingCancelled` dispatches the new confirm action instead. This is
+a deliberate, explicit exception to `buttonConfig` handlers otherwise being static per button,
+precedented by the existing `speak`-label override for `isReadyForUserStart`.
+
+**Rationale:** Hands-on testing shows STT is inaccurate often enough that sending unedited
+transcripts is a real, frequent problem, not an edge case — this supersedes the 2026-07-19
+"not needed for MVP" judgment, which was scoped around STT accuracy at that time, not around
+whether a correction step would ever be needed. Reuses the `STOP_LISTENING`/`intent` seam
+deliberately left in place by the 2026-08-04 `Send`/`Cancel` redesign for this exact purpose.
+Two phases (`editingUserReply`/`editingCancelled`) rather than one, so that "currently editing"
+and "edit cancelled, awaiting deliberate send" stay distinguishable states rather than collapsing
+edit-cancellation into an existing phase whose entry already triggers a side effect.
+
+**Open, not yet decided (at design time):**
+
+- Name for the `editingCancelled` → `sendingUserReply` confirm action.
+- Whether `editingCancelled` gets its own `ChatStage` or is bucketed into `userTurnFlow` (button
+  set is identical to `userTurnFlow`'s Send/Cancel, only the `send` handler differs).
+- Full `editingUserReply` button/stage shape (submit-edit / cancel-edit controls) not yet detailed.
+
+**Status:** Superseded by "STT transcript edit capability: implemented" below — all three open
+questions above were resolved during implementation, one of them differently than planned.
+
+### STT transcript edit capability: implemented (branch `edit-message`)
+
+**Date:** 2026-08-19–2026-08-20 (commits `ca33279`…`d6bf3a3`)
+**Decision:** Built per the design above, with several resolutions and divergences caught during
+implementation:
+
+- **Confirm-action naming resolved:** `editingCancelled` → `sendingUserReply` is `SEND_UNEDITED_MESSAGE`
+  (not `TRANSCRIPT_CONFIRMED`/`EDIT_TRANSCRIPT_SENT` as drafted); Cancel-from-`editingCancelled` is
+  `CANCEL_IDLE` → `readyForUserReply`.
+- **New action not in the original design:** `EDIT_AGAIN` (`editingCancelled` → back to
+  `editingUserReply`) — `editingCancelled`'s button row ended up three-wide (Send/Edit/Cancel), not
+  the two-wide Send/Cancel the design assumed.
+- **`editingCancelled` got its own `ChatStage`** (`editCancelledStage`), resolving that open question
+  — not bucketed into `userTurnStage`. The three pre-existing stage names were renamed with a `Stage`
+  suffix for consistency with the two new ones: `aiTurnFlow`→`aiTurnStage`, `userTurnFlow`→
+  `userTurnStage`, `evaluation`→`evaluationStage`, `error`→`errorStage`.
+- **Button-handler design changed:** the plan called for the `send` button's handler to become
+  phase-dependent (an explicit exception to otherwise-static `buttonConfig` handlers, precedented by
+  the `speak` label override). What was actually built instead gives each phase its own `ButtonId`
+  (`sendWhenListening`, `sendWhenEditing`, `sendAfterEditCancelled`, similarly `edit`/`cancelEdit`/
+  `editAfterEditCancelled`/`cancelAfterEditCancelled`) each with its own static handler in
+  `buttonConfig` — avoids the special-cased handler the design anticipated, at the cost of more
+  `ButtonId` variants.
+- **Edit-submit reuses the existing `TRANSCRIPT_CREATED` action**, not a new `EDIT_SUBMITTED` action
+  as drafted — `ChatConversation.tsx`'s `handleStopEditingToSend` dispatches `TRANSCRIPT_CREATED` with
+  the edited text, landing in the same `editingUserReply` reducer branch that also still handles real
+  `TRANSCRIPT_CREATED`/`TRANSCRIPT_EMPTY` from `SpeechToText`. **Consequence, not caught before this
+  branch was handed off for docs review:** a `SEND_EDITED_MESSAGE` action was added to the `ChatAction`
+  union but is never dispatched anywhere — dead code.
+- **Entry point into editing:** `listening`'s button row (`userTurnStage`) gained a third button,
+  "Edit" (`canRequestEdit`, gated the same as `canRequestCancel` — `phase.status === 'listening'`),
+  dispatching `STOP_LISTENING` with `intent: 'edit'` instead of `'send'`. Not detailed in the original
+  design. `editingUserReply`'s own button row keeps a disabled "Edit" button "for consistency" per an
+  inline code comment, rather than omitting it.
+- **New component `MessageEditor.tsx`:** a `contentEditable` `<div>` (not a `<textarea>` — commit
+  `d6bf3a3` switched from an initially-built textarea specifically so the editable element inherits
+  `SpeechBalloon`'s existing message styling directly, rather than needing textarea-specific overrides).
+  Remounted via `key={phase.transcript}` in `SpeechResults.tsx` whenever the phase's transcript value
+  changes, so the DOM element's initial content always matches `initialValue` without a controlled-value
+  re-sync effect. Edited text is read out via an imperative handle (`MsgEditorHandle.getEditedMessage`)
+  threaded `ChatConversation` → `SpeechToText` → (ref) so `ChatConversation` can read the latest edit on
+  Send without it living in reducer state per keystroke.
+- **`SpeechBalloon` styling reworked** to host the editable div: CSS classes renamed
+  (`.message`→`.balloon`, `.messageContent`→`.message`, `.messageFromAi`→`.aiBalloon`,
+  `.messageFromUser`→`.userBalloon`), a `:has(:focus-visible)` rule added so the balloon itself shows
+  the design system's focus outline when the contentEditable child is focused, and a `min-height` added
+  to `.message` so the balloon doesn't collapse to zero height while the editable div is empty.
+
+**Follow-up fixes (2026-08-20, same branch):**
+
+- **Empty-edit-bypasses-the-guard, fixed properly** — rather than reusing `TRANSCRIPT_CREATED`/
+  `TRANSCRIPT_EMPTY` (which was the bug: `handleStopEditingToSend` dispatched `TRANSCRIPT_CREATED`
+  unconditionally, with no empty check), `editingUserReply` now has its own dedicated action pair:
+  `SEND_EDITED_MESSAGE; payload: { transcript }` → `sendingUserReply`, and a new
+  `EDITED_MESSAGE_EMPTY` (no payload) → `readyForUserReply` — mirroring the `TRANSCRIPT_CREATED`/
+  `TRANSCRIPT_EMPTY` pattern used for real STT results, but scoped to the edit-submit path.
+  `handleStopEditingToSend` now checks `editedMessage === ''` before choosing which to dispatch,
+  honoring the 2026-07-29 "silent retry, not an error" empty-transcript decision on this path too.
+- **`SEND_EDITED_MESSAGE` dead code resolved** — it's now the action actually dispatched on submit
+  (see above); no longer unused.
+- **Naming-convention drift fixed** — `handleSendAfterEditCancelled`/`handleEditAfterEditCancelled`/
+  `handleCancelAfterEditCancelled` in `ChatConversation.tsx` and the matching
+  `onSendAfterEditCancelled`/`onEditAfterEditCancelled`/`onCancelAfterEditCancelled` props on
+  `ControlsArea` now follow CLAUDE.md's `handleX`/`onX` capitalization rule.
+- **Debug leftover removed** — the `console.log('go get')` in `SpeechToText.tsx`'s
+  `getEditedMessage()` is deleted.
+
+**Further follow-up (2026-08-20, same branch):**
+
+- **`SpeechResults.module.css` cleanup done** — the commented-out grid layout rules (left over from
+  `.balloonContent`'s switch to flex) are deleted, along with the now-unused `.transcript` class and
+  its `className` on the live-transcript `<div>` in `SpeechResults.tsx`. No open cleanup items remain
+  from this branch.
+- **`ChatPhase`'s `transcript` field renamed to `userMessage`** (and the matching action payload
+  fields) — see "`ChatPhase`'s `transcript` field renamed to `userMessage`" below.
+
+**Status:** Implemented on branch `edit-message`, not yet merged to `main`. All known gaps from this
+feature are now resolved.
+
+### `ChatPhase`'s `transcript` field renamed to `userMessage`
+
+**Date:** 2026-08-20 (branch `edit-message`)
+**Decision:** Renamed the `transcript` field carried on three `ChatPhase` union members
+(`editingUserReply`, `editingCancelled`, `sendingUserReply`) to `userMessage`. Renamed the matching
+payload field on the two actions that write into it — `TRANSCRIPT_CREATED; payload: { transcript }`
+and `SEND_EDITED_MESSAGE; payload: { transcript }` — to `payload: { userMessage }`. All reducer
+branches and consumer call sites (`ChatConversation.tsx`'s dispatch calls and
+`state.phase.userMessage` read in `sendUserMessage`; `SpeechResults.tsx`'s `MessageEditor`
+`key`/`initialValue` props) updated to match.
+**Rationale:** Once STT output can be hand-edited (see "STT transcript edit capability:
+implemented" above), the value held on `sendingUserReply`/`editingUserReply`/`editingCancelled` is
+no longer necessarily a literal transcript of speech — it may be the user's edited text. `userMessage`
+names what the field actually represents by the time it's sent, regardless of whether it came from
+STT untouched or was hand-edited.
+**Deliberately left unchanged:** `SpeechToText.tsx`/`MockSTT.tsx`'s local `transcript`/
+`liveTranscript` variables, the `TRANSCRIPT_CREATED`/`TRANSCRIPT_EMPTY` action *names* (only their
+payload/phase field is renamed), and `onTranscriptCreated`/`handleTranscriptCreated`. These describe
+the raw speech-recognition output itself, which is still accurately called a transcript — only the
+value once it lands on `ChatPhase` (where editing can change it) needed the rename.
+**Status:** Done.

@@ -9,15 +9,15 @@ export type MockSTTHandle = {
 };
 
 type MockSTTProps = {
-  ref: Ref<MockSTTHandle>;
+  mockRef: Ref<MockSTTHandle>;
   phase: ChatPhase;
 };
 
-export default function MockSTT({ ref, phase }: MockSTTProps) {
+export default function MockSTT({ mockRef, phase }: MockSTTProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const transcriptRef = useRef<string>('');
   const [transcript, setTranscript] = useState<string>('');
-  useImperativeHandle(ref, () => {
+  useImperativeHandle(mockRef, () => {
     return {
       getMockValue() {
         return transcriptRef.current ?? '';
