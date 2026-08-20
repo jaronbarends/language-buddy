@@ -2652,7 +2652,10 @@ duplicate heading in the prompt sent to the LLM. Fixed by moving the heading out
 function — each caller keeps its own `## Context` heading and now has the option to add
 task-specific, non-shared context under the same heading later; the shared function returns only the
 bullet content.
-**Status:** Done. Verified via `tsc --noEmit` and `eslint` on all touched files.
+**Status:** Done. Verified via `tsc --noEmit` and `eslint` on all touched files. **Superseded
+2026-08-20** — see "Shared constraints added alongside shared context" near the end of this log:
+`getSharedInstructionContext.ts` is renamed to `getSharedInstructions.ts` and gains a second shared
+field, `constraints`, alongside `context`.
 
 ### `chatConfig.ts` renamed to `conversationConfig.ts`; `ChatConfig`/`getChatConfig` renamed to `ConversationConfig`/`getConversationConfig`
 
@@ -2961,4 +2964,50 @@ inconsistent.
 automatically on entering edit mode. Noted as a known, unfixable UX gap (worth naming in the case
 study) rather than a backlog item — there is no clean solution short of a custom on-screen keyboard,
 which would be disproportionate.
+**Status:** Done.
+
+---
+
+## Shared constraints added alongside shared context (2026-08-20, branch `add-shared-constraints`)
+
+### `getSharedInstructionContext.ts` renamed to `getSharedInstructions.ts`; now returns `{ context, constraints }`
+
+**Date:** 2026-08-20
+**Decision:** `src/lib/getSharedInstructionContext.ts` is renamed to `src/lib/getSharedInstructions.ts`.
+Its single function (`getSharedInstructionContext`, returning a string) becomes `getSharedInstructions`,
+returning a new `SharedInstructions` type: `{ context: string; constraints: string }`. `context` holds
+exactly what the old function returned (target-language/English CEFR levels, the ASR transcription-error
+caveat, the `aiStartingPrompt` exclusion subsection); `constraints` is a new shared bullet list, currently
+holding one rule: always refer to the user's input as spoken, not written (e.g. "what you said," not
+"what you wrote") — relevant to both the live chat persona and the evaluator, since both work from
+Web SpeechRecognition transcripts, not typed text. `getChatBaseInstruction.ts` and `evaluationConfig.ts`
+both now consume `sharedInstructions.constraints` inside their own `## Constraints` sections, the same
+way they already consumed `sharedInstructions.context` inside their own `## Context` sections.
+**Rationale:** Supersedes the 2026-08-18 "Persona `## Context` block deduplicated" decision above —
+that entry only covered shared context, not shared constraints, and chat/evaluation had no way to share
+a constraint at the time. Mirrors the existing `## Context` pattern (shared function returns bullet
+content only, not the heading, so each caller's own heading stays free to add non-shared content) rather
+than inventing a different shape for constraints.
+**Verified:** `tsc --noEmit` and `eslint` clean on all four touched files
+(`getSharedInstructions.ts`, `getChatBaseInstruction.ts`, `evaluationConfig.ts`,
+`conversationConfig.ts`); confirmed by tracing the interpolated template strings that the
+context-only change (before any constraint content was added) was whitespace-only versus the prior
+`getSharedInstructionContext` output, and that the shared constraint now appears in both the chat
+system instruction and the evaluation input's `## Constraints` sections.
+**Status:** Done.
+
+### `evaluationConfig.ts` restructured around `getEvaluationConfig`
+
+**Date:** 2026-08-20
+**Decision:** `evaluationConfig.ts`'s two previously-separate exports, `getEvaluationSystemInstruction`
+and `getEvaluationInput`, are now private helpers (`getSystemInstruction`/`getEvaluationInput`) called
+from one new exported function, `getEvaluationConfig(language, level, aiStartingPrompt)`, which calls
+`getSharedInstructions` once and returns `{ systemInstruction, input }` (a new `EvaluationConfig` type).
+`conversationConfig.ts`'s `getConversationConfig` calls `getEvaluationConfig` once and destructures both
+fields from the result, instead of calling two separate functions that each independently called
+`getSharedInstructionContext`/`getSharedInstructions`.
+**Rationale:** `getSharedInstructions` needs calling once per config build, not once per field — calling
+it twice (once per old exported function) would have computed the same shared context/constraints
+strings redundantly. Bundling both fields behind one call mirrors how `getChatBaseInstruction` already
+only needs one `getSharedInstructions` call for its single output string.
 **Status:** Done.
