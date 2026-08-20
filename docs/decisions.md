@@ -2901,3 +2901,36 @@ no longer holds `mockRef`/`shouldShowMockSTT`, and `handleEnd` now passes
 reaches that path without first checking a mock fallback; no reducer changes needed. The
 `getEditedMessage`/edit-message flow is unrelated and untouched.
 **Status:** Done. See status.md.
+
+## `lang` attribute added to distinguish English UI from practice-language content (2026-08-20)
+
+### `lang` attributes on speech/thread/evaluation elements, branch `lang-attr`
+
+**Date:** 2026-08-20 (branch `lang-attr`, commit `b755cbb`)
+**Decision:** Closes the "add lang attribute to speech output elements" backlog item (open since the
+2026-08-06–2026-08-09 visual/UI design pass, see "Known gaps after this pass" above). `languageTag`
+(the practice language's BCP-47 tag, e.g. `nb-NO`) is now threaded down from `conversationConfig` —
+`ChatConversation` → `ThreadView` (new `languageTag` prop) and `ChatConversation` → `SpeechToText` →
+`SpeechResults` (new `languageTag` prop on both). Four elements get a `lang` attribute:
+
+- `ThreadView`'s `<ol className={styles.threadItems}>` — `lang={languageTag}`, since thread items
+  are almost entirely practice-language content (AI replies, sent user messages).
+- `SpeechResults`' `<div className={styles.speechResults}>` — `lang={languageTag}`, for the live STT
+  preview balloon.
+- `SpeechResults`' "Listening…" placeholder `<span>` — `lang="en"`, overriding the practice-language
+  tag inherited from its parent, since this string is app UI text, not practice-language content.
+- `Evaluation`'s root `<div className={styles.evaluation}>` — `lang="en"` (evaluation commentary
+  itself is written in English), with a new per-`<span>` override back to `languageTag` on segments
+  where `isPracticeLanguage(segment)` (`segment.type === 'userInput' || 'suggestion'`) — quoted user
+  input and suggested replacements are practice-language text embedded inside the English commentary,
+  so only those segments get the practice-language tag; plain `'text'` segments stay under the
+  ambient `lang="en"`.
+
+**Rationale:** Screen readers select pronunciation/voice per the nearest ancestor `lang` attribute;
+without this, practice-language text (e.g. Norwegian) would be read with the browser's default
+(likely English) pronunciation rules, and vice versa for the English evaluation commentary. Setting
+`lang` at the container level with targeted overrides on nested UI-text or practice-language spans
+avoids repeating the attribute on every individual message/segment.
+**Not addressed by this change:** `aria-live` on output elements (the other half of the same backlog
+"Known gaps after this pass" note) remains open — see backlog.md.
+**Status:** Done. Implemented on branch `lang-attr`, not yet merged to `main`.

@@ -70,7 +70,10 @@ wired to the mock for all UI dev.
 
 ## Medium priority
 
-- add lang attribute to speech output elements
+- ~~add lang attribute to speech output elements~~ — **done 2026-08-20**, branch `lang-attr` (see
+  decisions.md, "`lang` attribute added to distinguish English UI from practice-language content,"
+  and status.md). `aria-live` (the other half of the same "Known gaps after this pass" note) remains
+  open.
 - ~~add Edit option~~ — **implemented 2026-08-19–2026-08-20**, branch `edit-message`, not yet merged
   (see decisions.md, "STT transcript edit capability: implemented," and status.md). All known gaps
   from this feature were fixed same-branch on 2026-08-20 — see status.md, "What's open."
@@ -136,7 +139,8 @@ rather than dropping it.
   decisions.md)
 - use generation_config.thinking_level: "low" for genAI (https://ai.google.dev/gemini-api/docs/text-generation) in regular chat; omit it in evaluation
 - add cancel option to listening phase; call recognition.abort()
-- add lang attribute to speech output elements
+- ~~add lang attribute to speech output elements~~ — **done 2026-08-20**, see entry under "Medium
+  priority" above.
 - once real scenarios exist in the `scenarios` array alongside the two freeform-chat `Scenario`
   objects, nothing distinguishes "this is a freeform-chat mode" from "this is a real scenario" at the
   type level — a `category`-type field may be needed (see decisions.md, 2026-07-30)

@@ -58,8 +58,9 @@ durations) landed first, then a small shared component set (`Button`, `Loader`, 
   deleted as no-longer-needed (see decisions.md). **Completed:** all of the above, including
   `ErrorArea`. **Remaining or broken work:** no
   accessibility pass beyond what individual new components picked up incidentally (see decisions.md,
-  "Known gaps after this pass"). **Next step:** a dedicated accessibility pass (lang attribute,
-  aria-live) remains backlog, not scheduled.
+  "Known gaps after this pass"). **Next step:** a dedicated accessibility pass (aria-live) remains
+  backlog, not scheduled — the `lang` attribute half of this gap was closed 2026-08-20 (branch
+  `lang-attr`, see above and decisions.md).
   **`Starter` type consolidated into `scenarios.ts` (2026-08-09, see decisions.md):** the duplicate
   `aiHasFirstTurn: boolean` (on `Scenario`/`ChatConfig`) and locally-declared `Starter` type (in
   `SetupForm.tsx`) tracked the same datapoint; `Scenario.starter: Starter` is now the single source,
@@ -203,6 +204,17 @@ own `SEND_EDITED_MESSAGE`/`EDITED_MESSAGE_EMPTY` action pair, mirroring the real
 `SpeechToText.tsx` and the non-conforming `handlesendAfterEditCancelled`-style handler/prop names
 were also fixed same-branch. **All known gaps from this feature are resolved; implemented on branch
 `edit-message`, not yet merged to `main`** — see "What's open" below.
+**`lang` attribute added to distinguish English UI from practice-language content (2026-08-20,
+branch `lang-attr`, see decisions.md, "`lang` attribute added to distinguish English UI from
+practice-language content"):** closes half of the accessibility gap open since the 2026-08-06–
+2026-08-09 visual/UI design pass. `languageTag` is now threaded `ChatConversation` → `ThreadView`
+and `ChatConversation` → `SpeechToText` → `SpeechResults` as a new prop on each. Four elements get a
+`lang` attribute: `ThreadView`'s thread-item list and `SpeechResults`' root both get
+`lang={languageTag}`; `SpeechResults`' "Listening…" placeholder gets `lang="en"` (it's UI text, not
+practice-language content); `Evaluation`'s root gets `lang="en"` (commentary is English) with a new
+`isPracticeLanguage(segment)` check overriding individual `userInput`/`suggestion` segments back to
+`languageTag`. `aria-live` — the other half of the same gap — remains open (see backlog.md).
+Implemented on branch `lang-attr`, not yet merged to `main`.
 
 ---
 
@@ -487,7 +499,9 @@ respondAfterDelay.ts`). **Dev convenience added same round:** both mock routes n
   - **`ErrorArea` now uses `Feedback` too (2026-08-09)** — see decisions.md. `ErrorArea.module.css`
     was deleted as no-longer-needed.
   - **Not done by this pass:** no dedicated accessibility pass — see decisions.md, "Known gaps after
-    this pass," and backlog.md's `lang` attribute / `aria-live` items, both still open.
+    this pass," and backlog.md's `lang` attribute / `aria-live` items. **Update 2026-08-20:** the
+    `lang` attribute item is done (branch `lang-attr`, see above and decisions.md); `aria-live`
+    remains open.
 - **`DevHelper` gated behind `NEXT_PUBLIC_SHOW_DEV_HELPER` (2026-08-02):**
   `ChatConversation.tsx` only renders `DevHelper` when that env var is set, instead of always
   rendering it.

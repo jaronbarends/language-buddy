@@ -15,12 +15,14 @@ import styles from './SpeechResults.module.css';
 type SpeechResultsProps = {
   liveTranscript: string;
   phase: ChatPhase;
+  languageTag: string;
   onMessageChange: (message: string) => void;
 };
 
 export default function SpeechResults({
   liveTranscript,
   phase,
+  languageTag,
   onMessageChange,
 }: SpeechResultsProps) {
   if (!shouldShowRecognitionPreview(phase)) {
@@ -29,11 +31,11 @@ export default function SpeechResults({
 
   const suffix =
     !isListening(phase) ? ''
-    : liveTranscript === '' ? <span>Listening&hellip;</span>
+    : liveTranscript === '' ? <span lang="en">Listening&hellip;</span>
     : <span>&hellip;</span>;
 
   return (
-    <div className={styles.speechResults}>
+    <div className={styles.speechResults} lang={languageTag}>
       <SpeechBalloon author="user" tag="div">
         <div className={styles.balloonContent}>
           {userIsInInputFlow(phase) && <ListeningIndicator phase={phase} />}
@@ -42,6 +44,7 @@ export default function SpeechResults({
               key={phase.userMessage}
               onMessageChange={onMessageChange}
               initialValue={phase.userMessage}
+              languageTag={languageTag}
             />
           : <div role="status" aria-live="polite" aria-atomic="true">
               {phase.status === 'sendingUserReply' ? phase.userMessage : liveTranscript}

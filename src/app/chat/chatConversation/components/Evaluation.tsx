@@ -3,15 +3,24 @@ import { type AIEvaluation, type Segment } from '@/lib/aiResponse';
 
 import styles from './Evaluation.module.css';
 
-export default function Evaluation({ evaluation }: { evaluation: AIEvaluation }) {
+type EvaluationProps = {
+  evaluation: AIEvaluation;
+  languageTag: string;
+};
+
+export default function Evaluation({ evaluation, languageTag }: EvaluationProps) {
   return (
-    <div className={styles.evaluation}>
+    <div className={styles.evaluation} lang="en">
       <h1>Evaluation</h1>
       <ol className={styles.comments}>
         {evaluation.comments.map((comment, commentIdx) => (
           <li key={commentIdx}>
             {comment.segments.map((segment, segmentIdx) => (
-              <span key={segmentIdx} className={getClassName(segment)}>
+              <span
+                key={segmentIdx}
+                className={getClassName(segment)}
+                lang={isPracticeLanguage(segment) ? languageTag : undefined}
+              >
                 {segment.text}{' '}
               </span>
             ))}
@@ -20,6 +29,10 @@ export default function Evaluation({ evaluation }: { evaluation: AIEvaluation })
       </ol>
     </div>
   );
+
+  function isPracticeLanguage(segment: Segment) {
+    return segment.type === 'userInput' || segment.type === 'suggestion';
+  }
 }
 
 export function EvaluationLoader() {
