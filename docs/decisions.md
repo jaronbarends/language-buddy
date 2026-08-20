@@ -2882,3 +2882,22 @@ payload/phase field is renamed), and `onTranscriptCreated`/`handleTranscriptCrea
 the raw speech-recognition output itself, which is still accurately called a transcript — only the
 value once it lands on `ChatPhase` (where editing can change it) needed the rename.
 **Status:** Done.
+
+## `MockSTT` removed (2026-08-20)
+
+### Dev-only typed-textarea STT fallback deleted
+
+**Date:** 2026-08-20
+**Decision:** Deleted `MockSTT.tsx` and `MockSTT.module.css` (the env-var-gated dev convenience
+that let a developer type a transcript into a textarea instead of speaking, read as a fallback by
+`SpeechToText.tsx`'s `handleEnd` only when the real recognition transcript came back empty — see
+"STT integration implemented" above, 2026-07-29). `SpeechToText.tsx` no longer imports `MockSTT`,
+no longer holds `mockRef`/`shouldShowMockSTT`, and `handleEnd` now passes
+`liveTranscriptRef.current` straight to `onTranscriptCreated` without the fallback read. The
+`NEXT_PUBLIC_USE_MOCK_STT` env var is removed from `.env`.
+**Rationale:** Requested directly — no longer needed as a dev convenience at this stage.
+**Deliberately left unchanged:** `TRANSCRIPT_EMPTY` handling in `chatReducer.ts`/
+`ChatConversation.tsx` (the silent-retry-on-empty-transcript path) — an empty transcript now simply
+reaches that path without first checking a mock fallback; no reducer changes needed. The
+`getEditedMessage`/edit-message flow is unrelated and untouched.
+**Status:** Done. See status.md.

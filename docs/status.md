@@ -496,6 +496,11 @@ respondAfterDelay.ts`). **Dev convenience added same round:** both mock routes n
   decisions.md) built via `getConversationConfig(language, languageLevel, scenario)` — built in
   `ChatSetup.tsx` now, not `page.tsx` (see "Setup screen" bullet above; still only the two
   freeform-chat scenarios, not the scenario library, per decisions.md, 2026-07-28/07-30).
+- **`MockSTT` removed (2026-08-20, see decisions.md):** the dev-only typed-textarea fallback
+  (`MockSTT.tsx`/`MockSTT.module.css`, gated behind `NEXT_PUBLIC_USE_MOCK_STT`) is deleted, along
+  with the env var and `SpeechToText.tsx`'s fallback read of it in `handleEnd`. `TRANSCRIPT_EMPTY`
+  handling is unaffected — an empty real-STT transcript now goes straight to the silent-retry path
+  instead of first checking `MockSTT`'s textarea.
 - **Language level picker (2026-08-10, see decisions.md):** `language.ts` exports
   `LanguageLevelName`/`LanguageLevel`/`languageLevels`/`getLanguageLevelByName`. `languageLevels`
   holds two entries — Beginner (`A1/A2`), Intermediate (`B1/B2`); Expert (`C1/C2`) was drafted then
@@ -798,7 +803,8 @@ Two calibration-only files still remain under `spikes/language-speech-rates/`
 6. ~~Wire real STT input, replacing the `MockTTS` textarea~~ — done: `SpeechToText` component,
    `stoppingListening` → `sendingUserReply` phases (renamed 2026-08-04, see step 9), transcript
    displayed read-only before send, plus empty-transcript handling (`TRANSCRIPT_EMPTY`) and
-   `MockSTT` as a dev-only fallback (see decisions.md, 2026-07-29). `listeningTimedOut` was
+   `MockSTT` as a dev-only fallback (see decisions.md, 2026-07-29; `MockSTT` itself later removed
+   2026-08-20, see decisions.md and the "What exists" bullet above). `listeningTimedOut` was
    superseded outright rather than built (see step 9) — the stop/send split it was meant to reuse
    is now shared with `Cancel`'s `cancellingListening` phase instead.
 7. ~~Build the setup screen extraction~~ — done: `languages.ts`, the two freeform-chat `Scenario`

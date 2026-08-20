@@ -6,12 +6,10 @@ import {
   isWaitingForAI,
   listeningShouldBeStopped,
   listeningShouldBeCancelled,
-  userIsInInputFlow,
   type ChatPhase,
 } from '@/app/chat/chatConversation/chatReducer';
 import { getCrossBrowserSpeechRecognition } from '@/lib/speechRecognition';
 
-import MockSTT, { type MockSTTHandle } from './MockSTT';
 import SpeechResults from './SpeechResults';
 
 export type MsgEditorHandle = {
@@ -40,11 +38,7 @@ export default function SpeechToText({
   // always update ref before setting liveTranscript
   const liveTranscriptRef = useRef<string>('');
   const [liveTranscript, setLiveTranscript] = useState<string>('');
-  const mockRef = useRef<MockSTTHandle>(null);
   const editedMessageRef = useRef<string>('');
-
-  const shouldShowMockSTT =
-    process.env.NEXT_PUBLIC_USE_MOCK_STT === 'true' && userIsInInputFlow(phase);
 
   useEffect(() => {
     recognitionRef.current = initSpeechRecognition(languageTag);
@@ -102,7 +96,6 @@ export default function SpeechToText({
         phase={phase}
         onMessageChange={handleMessageChange}
       />
-      {shouldShowMockSTT && <MockSTT mockRef={mockRef} phase={phase} />}
     </>
   );
 
@@ -169,11 +162,7 @@ export default function SpeechToText({
       if (stopReasonRef.current === 'cancel') {
         onListeningCancelled();
       } else {
-        let transcript = liveTranscriptRef.current;
-        if (transcript === '') {
-          transcript = mockRef.current?.getMockValue() ?? '';
-        }
-        onTranscriptCreated(transcript);
+        onTranscriptCreated(liveTranscriptRef.current);
       }
     }
   }

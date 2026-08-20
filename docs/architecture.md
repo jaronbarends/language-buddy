@@ -34,7 +34,6 @@ graph TD
   ThreadView --> Evaluation["Evaluation.tsx (incl. EvaluationLoader)"]
 
   SpeechToText --> SpeechResults["SpeechResults.tsx (live transcript preview during 'listening')"]
-  SpeechToText -.->|"env-var gated dev tool: type instead of speak"| MockSTT["MockSTT.tsx"]
 
   Setup -.->|"onStartSession(conversationConfig)"| Container
   Conversation -.->|"onEndSession()"| Container
