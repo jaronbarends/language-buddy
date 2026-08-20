@@ -31,9 +31,9 @@ export type ChatPhase =
   | { status: 'listening' }
   | { status: 'stoppingListening'; intent: StopIntent }
   | { status: 'cancellingListening' }
-  | { status: 'editingUserReply'; transcript: string }
-  | { status: 'editingCancelled'; transcript: string }
-  | { status: 'sendingUserReply'; transcript: string }
+  | { status: 'editingUserReply'; userMessage: string }
+  | { status: 'editingCancelled'; userMessage: string }
+  | { status: 'sendingUserReply'; userMessage: string }
   | { status: 'requestEvaluation' }
   | { status: 'waitingForEvaluation' }
   | { status: 'evaluation' }
@@ -59,9 +59,10 @@ export type ChatAction =
   | { type: 'STOP_LISTENING'; payload: { intent: StopIntent } }
   | { type: 'CANCEL_LISTENING' }
   | { type: 'LISTENING_CANCELLED' }
-  | { type: 'TRANSCRIPT_CREATED'; payload: { transcript: string } }
+  | { type: 'TRANSCRIPT_CREATED'; payload: { userMessage: string } }
   | { type: 'TRANSCRIPT_EMPTY' }
-  | { type: 'SEND_EDITED_MESSAGE'; payload: { transcript: string } }
+  | { type: 'SEND_EDITED_MESSAGE'; payload: { userMessage: string } }
+  | { type: 'EDITED_MESSAGE_EMPTY' }
   | { type: 'EDIT_CANCELLED' }
   | { type: 'SEND_UNEDITED_MESSAGE' }
   | { type: 'EDIT_AGAIN' }
@@ -192,13 +193,13 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
           if (state.phase.intent === 'send') {
             return {
               threadItems: state.threadItems,
-              phase: { status: 'sendingUserReply', transcript: action.payload.transcript },
+              phase: { status: 'sendingUserReply', userMessage: action.payload.userMessage },
             };
           }
           if (state.phase.intent === 'edit') {
             return {
               threadItems: state.threadItems,
-              phase: { status: 'editingUserReply', transcript: action.payload.transcript },
+              phase: { status: 'editingUserReply', userMessage: action.payload.userMessage },
             };
           }
           return state;
@@ -206,7 +207,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
           if (state.phase.intent === 'edit') {
             return {
               threadItems: state.threadItems,
-              phase: { status: 'editingUserReply', transcript: '' },
+              phase: { status: 'editingUserReply', userMessage: '' },
             };
           }
           return {
@@ -228,18 +229,18 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       }
     case 'editingUserReply':
       switch (action.type) {
-        case 'TRANSCRIPT_CREATED':
+        case 'SEND_EDITED_MESSAGE':
           return {
             threadItems: state.threadItems,
-            phase: { status: 'sendingUserReply', transcript: action.payload.transcript },
+            phase: { status: 'sendingUserReply', userMessage: action.payload.userMessage },
           };
-        case 'TRANSCRIPT_EMPTY':
+        case 'EDITED_MESSAGE_EMPTY':
           return {
             threadItems: state.threadItems,
             phase: { status: 'readyForUserReply' },
           };
         case 'EDIT_CANCELLED':
-          if (state.phase.transcript === '') {
+          if (state.phase.userMessage === '') {
             // editing was started without any speech input; we don't want to end up with an empty balloonnow
             return {
               threadItems: state.threadItems,
@@ -248,7 +249,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
           }
           return {
             threadItems: state.threadItems,
-            phase: { status: 'editingCancelled', transcript: state.phase.transcript },
+            phase: { status: 'editingCancelled', userMessage: state.phase.userMessage },
           };
       }
       return state;
@@ -257,12 +258,12 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         case 'SEND_UNEDITED_MESSAGE':
           return {
             threadItems: state.threadItems,
-            phase: { status: 'sendingUserReply', transcript: state.phase.transcript },
+            phase: { status: 'sendingUserReply', userMessage: state.phase.userMessage },
           };
         case 'EDIT_AGAIN':
           return {
             threadItems: state.threadItems,
-            phase: { status: 'editingUserReply', transcript: state.phase.transcript },
+            phase: { status: 'editingUserReply', userMessage: state.phase.userMessage },
           };
         case 'CANCEL_IDLE':
           return {

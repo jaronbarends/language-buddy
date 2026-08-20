@@ -1,6 +1,7 @@
 .editor {
   background: transparent;
   border: none;
+  min-width: 1em;
 
   &:focus-visible {
     /* outline is set on speechballoon */

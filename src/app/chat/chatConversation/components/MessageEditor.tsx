@@ -12,7 +12,7 @@ export default function MessageEditor({ initialValue, onMessageChange }: Message
 
   useEffect(() => {
     initEditor();
-    // run once on mount; parent remounts this component via `key` when the transcript changes
+    // run once on mount; parent remounts this component via `key` when the userMessage changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -47,6 +47,6 @@ export default function MessageEditor({ initialValue, onMessageChange }: Message
     }
     window?.getSelection()?.selectAllChildren(editorElm);
     window?.getSelection()?.collapseToEnd();
-    editorElm.focus();
+    // editorElm.focus();
   }
 }

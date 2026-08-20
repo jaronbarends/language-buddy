@@ -39,11 +39,11 @@ export default function SpeechResults({
           {userIsInInputFlow(phase) && <ListeningIndicator phase={phase} />}
           {messageCanBeEdited(phase) ?
             <MessageEditor
-              key={phase.transcript}
+              key={phase.userMessage}
               onMessageChange={onMessageChange}
-              initialValue={phase.transcript}
+              initialValue={phase.userMessage}
             />
-          : <div className={styles.transcript} role="status" aria-live="polite" aria-atomic="true">
+          : <div role="status" aria-live="polite" aria-atomic="true">
               {liveTranscript}
               {suffix}
             </div>

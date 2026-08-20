@@ -127,9 +127,9 @@ export default function ChatConversation({
           onCancelListening={handleCancelListening}
           onStopEditingToSend={handleStopEditingToSend}
           onCancelEditing={handleCancelEditing}
-          onsendAfterEditCancelled={handlesendAfterEditCancelled}
-          oneditAfterEditCancelled={handleeditAfterEditCancelled}
-          oncancelAfterEditCancelled={handlecancelAfterEditCancelled}
+          onSendAfterEditCancelled={handleSendAfterEditCancelled}
+          onEditAfterEditCancelled={handleEditAfterEditCancelled}
+          onCancelAfterEditCancelled={handleCancelAfterEditCancelled}
           onEvaluationRequested={handleEvaluationRequest}
           onEndSessionRequested={handleEndSessionRequest}
         />
@@ -157,7 +157,7 @@ export default function ChatConversation({
       dispatch({ type: 'TRANSCRIPT_EMPTY' });
       return;
     }
-    dispatch({ type: 'TRANSCRIPT_CREATED', payload: { transcript } });
+    dispatch({ type: 'TRANSCRIPT_CREATED', payload: { userMessage: transcript } });
   }
 
   function handleCancelListening() {
@@ -174,18 +174,22 @@ export default function ChatConversation({
 
   function handleStopEditingToSend() {
     const editedMessage = editorRef.current?.getEditedMessage() ?? '';
-    dispatch({ type: 'TRANSCRIPT_CREATED', payload: { transcript: editedMessage } });
+    if (editedMessage === '') {
+      dispatch({ type: 'EDITED_MESSAGE_EMPTY' });
+      return;
+    }
+    dispatch({ type: 'SEND_EDITED_MESSAGE', payload: { userMessage: editedMessage } });
   }
 
-  function handlesendAfterEditCancelled() {
+  function handleSendAfterEditCancelled() {
     dispatch({ type: 'SEND_UNEDITED_MESSAGE' });
   }
 
-  function handleeditAfterEditCancelled() {
+  function handleEditAfterEditCancelled() {
     dispatch({ type: 'EDIT_AGAIN' });
   }
 
-  function handlecancelAfterEditCancelled() {
+  function handleCancelAfterEditCancelled() {
     dispatch({ type: 'CANCEL_IDLE' });
   }
 
@@ -211,7 +215,7 @@ export default function ChatConversation({
       return;
     }
 
-    const input = state.phase.transcript;
+    const input = state.phase.userMessage;
     dispatch({ type: 'USER_MESSAGE_SENT', payload: { message: input } });
 
     await sendMessageToAI(input);

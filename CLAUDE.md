@@ -68,6 +68,10 @@ When asked to "update the docs" after completing a feature:
 
 Do not modify `requirements.md` unless explicitly asked.
 
+If reviewing the diff turns up dead code (unused exports, unreachable branches, leftover debug
+lines, etc.), do not just document it as dead code — ask what to do with it (fix it, leave it and
+track it, or ignore it) before writing the docs.
+
 ---
 
 ## After every session

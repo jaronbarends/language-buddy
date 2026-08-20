@@ -25,9 +25,9 @@ type ControlsAreaProps = {
   onCancelListening: () => void;
   onCancelEditing: () => void;
   onStopEditingToSend: () => void;
-  onsendAfterEditCancelled: () => void;
-  oneditAfterEditCancelled: () => void;
-  oncancelAfterEditCancelled: () => void;
+  onSendAfterEditCancelled: () => void;
+  onEditAfterEditCancelled: () => void;
+  onCancelAfterEditCancelled: () => void;
 };
 
 type ButtonPriority = 'primary' | 'secondary' | 'tertiary';
@@ -70,9 +70,9 @@ export default function ControlsArea({
   onEvaluationRequested,
   onEndSessionRequested,
   onStopEditingToSend,
-  onsendAfterEditCancelled,
-  oneditAfterEditCancelled,
-  oncancelAfterEditCancelled,
+  onSendAfterEditCancelled,
+  onEditAfterEditCancelled,
+  onCancelAfterEditCancelled,
 }: ControlsAreaProps) {
   const buttonConfig: Record<
     ButtonId,
@@ -84,12 +84,12 @@ export default function ControlsArea({
     edit: { label: 'Edit', iconName: 'edit', onClick: onStopListeningToEdit },
     sendWhenEditing: { label: 'Send', iconName: 'send', onClick: onStopEditingToSend },
     cancelEdit: { label: 'Cancel edit', iconName: 'cancel', onClick: onCancelEditing },
-    sendAfterEditCancelled: { label: 'Send', iconName: 'send', onClick: onsendAfterEditCancelled },
-    editAfterEditCancelled: { label: 'Edit', iconName: 'edit', onClick: oneditAfterEditCancelled },
+    sendAfterEditCancelled: { label: 'Send', iconName: 'send', onClick: onSendAfterEditCancelled },
+    editAfterEditCancelled: { label: 'Edit', iconName: 'edit', onClick: onEditAfterEditCancelled },
     cancelAfterEditCancelled: {
       label: 'Cancel',
       iconName: 'cancel',
-      onClick: oncancelAfterEditCancelled,
+      onClick: onCancelAfterEditCancelled,
     },
     evaluate: { label: 'Evaluate', iconName: 'evaluation', onClick: onEvaluationRequested },
     endSession: { label: 'End session', iconName: 'finish', onClick: onEndSessionRequested },

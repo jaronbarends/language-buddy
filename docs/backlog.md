@@ -71,7 +71,9 @@ wired to the mock for all UI dev.
 ## Medium priority
 
 - add lang attribute to speech output elements
-- add Edit option
+- ~~add Edit option~~ — **implemented 2026-08-19–2026-08-20**, branch `edit-message`, not yet merged
+  (see decisions.md, "STT transcript edit capability: implemented," and status.md). A few gaps are
+  tracked to fix before merge — see status.md, "What's open."
 - ~~add icons to buttons~~ — **done 2026-08-17**, branch `button-icons` (see decisions.md, "Icons
   added to buttons," and status.md)
 
@@ -148,16 +150,14 @@ rather than dropping it.
   imported by any production path — decide whether to delete, or keep/relocate as documentation of
   how `speechRatePairings` was derived
 - reveal ai text while being spoken. we can only approximate this. Divide text into words, then based on speech rate estimate total speaking time, use interval for showing words. create extra ChatAction ABORT_SPEECH and status abortingSpeech. that should reveal all text and dispatch AI_FINISHED_SPEAKING. ABORT_SPEECH can also be used in cleanup of useEffect that starts speech, and when we have no languageVoice. Maybe we need to add next chatAction to ABORT_SPEECH's payload to determine if it should go to user's turn, or end conversation.
-- **STT transcript edit capability** (reopened 2026-08-04, see decisions.md) — build `Send`/`Cancel`
-  first; Edit adds a third `listening`-phase action later, reusing the `STOP_LISTENING`
-  `{ intent: 'edit' }` seam left for it. Real design surface not yet worked through: hand-edit text
-  vs. re-run STT, and whether it reverses the 2026-07-19 read-only-transcript precedent.
-  **Known landmine to fix when this is built:** `chatReducer.ts`'s `stoppingListening` case only
-  has an explicit `TRANSCRIPT_CREATED` branch for `intent === 'send'`; any other `intent` value
-  (i.e. `'edit'`, once dispatched) falls through with no `break`/`return` into the
-  `TRANSCRIPT_EMPTY` branch and silently discards the transcript instead of routing to an edit UI.
-  Inert today since nothing dispatches `intent: 'edit'` yet (see decisions.md, "Reply-phase UX
-  redesign implemented").
+- ~~**STT transcript edit capability**~~ (reopened 2026-08-04) — **implemented 2026-08-19–2026-08-20**,
+  branch `edit-message`, not yet merged: hand-edit text chosen over re-running STT, via a new
+  `editingUserReply`/`editingCancelled` phase pair and a `contentEditable`-based `MessageEditor`
+  component (see decisions.md, "STT transcript edit capability: implemented," and status.md). The
+  known landmine noted here (the `stoppingListening`/`TRANSCRIPT_CREATED` fallthrough for non-`'send'`
+  intents) is fixed. New gaps opened by the implementation itself — an empty edit bypassing the
+  empty-transcript guard, some dead code, and a naming-convention slip — are tracked in status.md,
+  "What's open," to close before merging. No longer an open idea.
 
 ## Icebox
 

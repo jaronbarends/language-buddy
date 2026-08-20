@@ -1,6 +1,6 @@
 # Project status
 
-**Last updated:** 2026-08-18
+**Last updated:** 2026-08-20
 **Current phase:** Early build. Concept locked (scenario-library-based conversational sparring
 partner, Norwegian, multi-turn sessions + async structured evaluation). MVP scoping in progress;
 Spikes 1–4 all complete. AI provider decided (Gemini). State machine now runs the full happy path
@@ -180,6 +180,27 @@ durations) landed first, then a small shared component set (`Button`, `Loader`, 
   renamed to `conversationConfig` at every call site), `getBaseInstruction.ts` →
   `getChatBaseInstruction.ts`, and `ConversationConfig.systemInstruction` → `chatSystemInstruction`
   (mirroring `evaluationSystemInstruction`).
+**STT transcript edit capability implemented (2026-08-19–2026-08-20, branch `edit-message`, see
+decisions.md, "STT transcript edit capability: implemented"):** closes the backlog item reopened
+2026-08-04. Two new phases, `editingUserReply`/`editingCancelled` (both carrying `transcript`), and
+a third button — "Edit" — added to the `listening` phase alongside Send/Cancel, dispatching
+`STOP_LISTENING` with `intent: 'edit'` (closing the dormant-`intent: 'edit'`-fallthrough gap tracked
+since 2026-08-04). Editing itself happens inline in the recognition-preview speech balloon via a new
+`MessageEditor.tsx` — a `contentEditable` `<div>` (switched from an initial `<textarea>` mid-build so
+it inherits `SpeechBalloon`'s styling directly), read via an imperative handle threaded
+`ChatConversation` → `SpeechToText` → `MessageEditor`. Cancelling an edit lands on a third phase,
+`editingCancelled`, requiring one more deliberate action (Send/Edit again/Cancel) rather than
+auto-sending the original transcript. `ChatStage` gained two new stages
+(`userEditStage`/`editCancelledStage`) and the four pre-existing stage names were renamed with a
+`Stage` suffix (`aiTurnFlow`→`aiTurnStage`, etc.) for consistency. **Implementation diverged from the
+2026-08-19 design in several ways — see decisions.md for the full list** — the most consequential
+being that the edit-submit path reuses the existing `TRANSCRIPT_CREATED` action rather than the
+planned `EDIT_SUBMITTED`, leaving a `SEND_EDITED_MESSAGE` action defined but never dispatched (dead
+code), and that path also skips the empty-transcript guard the real-STT path has, so clearing the
+edit box and hitting Send currently sends an empty message. Also left over from this branch: a
+`console.log` debug line in `SpeechToText.tsx`, and several new handler/prop names
+(`handlesendAfterEditCancelled` and siblings) that don't follow the project's `handleX`/`onX`
+capitalization convention. **Not yet fixed, not yet merged to `main`** — see "What's open" below.
 
 ---
 
@@ -688,11 +709,18 @@ respondAfterDelay.ts`). **Dev convenience added same round:** both mock routes n
   (delete vs. keep as documented calibration method) is tracked in backlog.md. `AIThreadItemContent.tsx`
   was previously listed here too, incorrectly — **corrected 2026-08-18:** it was actually deleted on
   2026-08-04 (see decisions.md), long before this doc was last touched on this point.
-- **Dormant `intent: 'edit'` fallthrough** — `stoppingListening`'s `TRANSCRIPT_CREATED` handler
-  only branches explicitly on `intent === 'send'`; any other value falls through into the
-  empty-transcript branch and discards the transcript. Inert today (nothing dispatches
-  `intent: 'edit'` yet) but needs an explicit branch once Edit is built (see decisions.md,
-  "Reply-phase UX redesign implemented", and the STT-edit item in backlog.md).
+- ~~Dormant `intent: 'edit'` fallthrough~~ — **closed 2026-08-19–2026-08-20**, branch `edit-message`:
+  `stoppingListening`'s `TRANSCRIPT_CREATED` handler now has an explicit `intent === 'edit'` branch
+  (see decisions.md, "STT transcript edit capability: implemented"). No longer open.
+- ~~Empty-edit bypasses the empty-transcript guard~~ — **fixed 2026-08-20**, branch `edit-message`:
+  `editingUserReply` now has its own `SEND_EDITED_MESSAGE`/`EDITED_MESSAGE_EMPTY` action pair, with
+  `handleStopEditingToSend` checking for an empty edit before choosing which to dispatch (see
+  decisions.md, "STT transcript edit capability: implemented," follow-up fixes). No longer open.
+- ~~Cleanup left from the edit-message branch~~ — **fully fixed 2026-08-20**: `SEND_EDITED_MESSAGE`
+  dead code is now the live edit-submit action, the `console.log` debug line is removed, the
+  `handleX`/`onX` naming drift is fixed, and the commented-out old grid CSS in
+  `SpeechResults.module.css` (plus the now-unused `.transcript` class) is deleted (see decisions.md).
+  No longer open.
 - ~~Request-evaluation option from `chatStopped`~~ — moot as of 2026-08-14: `chatStopped` no longer
   exists (see decisions.md, "'Stop chat' superseded by the `ChatStage` refactor"), and evaluation
   shipped with its own always-available button instead of being gated behind a stop/end step. No
@@ -867,3 +895,14 @@ Two calibration-only files still remain under `spikes/language-speech-rates/`
     #30/#31 (see decisions.md, "Evaluation loading indicator; balloon animation & pending-message
     rework"). Everything else carried forward from step 17 is now resolved too (see step 17 and
     "What's open") — no open items remain from the evaluation feature at this point.
+19. ~~Build the STT transcript edit capability~~ — implemented 2026-08-19–2026-08-20 on branch
+    `edit-message`, not yet merged (see decisions.md, "STT transcript edit capability: implemented"):
+    `editingUserReply`/`editingCancelled` phases, an "Edit" button added to the `listening` stage, and
+    a new `MessageEditor.tsx` contentEditable component. Closes the "Dormant `intent: 'edit'`
+    fallthrough" item that had been open since 2026-08-04. Follow-up fixes same day closed the
+    empty-edit guard gap, the dead `SEND_EDITED_MESSAGE` action, the stray `console.log`, the
+    handler/prop naming drift, and the commented-out grid CSS in `SpeechResults.module.css` (see
+    decisions.md). `ChatPhase`'s `transcript` field (and the matching action payload fields) was also
+    renamed to `userMessage`, since the value can now be hand-edited and isn't necessarily a literal
+    transcript anymore (see decisions.md, "`ChatPhase`'s `transcript` field renamed to
+    `userMessage`"). No open items remain from this feature.
