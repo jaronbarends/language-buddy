@@ -37,7 +37,7 @@ export default function Evaluation({ evaluation, languageTag }: EvaluationProps)
 
 export function EvaluationLoader() {
   return (
-    <div className={styles.evaluationLoader}>
+    <div className={styles.evaluationLoader} lang="en">
       <h1 className={styles.loaderHeading}>
         Evaluating chat <Loader ariaLabel="Loading evaluation" />
       </h1>

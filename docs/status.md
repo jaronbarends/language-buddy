@@ -208,13 +208,21 @@ were also fixed same-branch. **All known gaps from this feature are resolved; im
 branch `lang-attr`, see decisions.md, "`lang` attribute added to distinguish English UI from
 practice-language content"):** closes half of the accessibility gap open since the 2026-08-06–
 2026-08-09 visual/UI design pass. `languageTag` is now threaded `ChatConversation` → `ThreadView`
-and `ChatConversation` → `SpeechToText` → `SpeechResults` as a new prop on each. Four elements get a
-`lang` attribute: `ThreadView`'s thread-item list and `SpeechResults`' root both get
-`lang={languageTag}`; `SpeechResults`' "Listening…" placeholder gets `lang="en"` (it's UI text, not
-practice-language content); `Evaluation`'s root gets `lang="en"` (commentary is English) with a new
+and `ChatConversation` → `SpeechToText` → `SpeechResults` → `MessageEditor` as a new prop on each.
+Six elements get a `lang` attribute: `ThreadView`'s thread-item list, `SpeechResults`' root, and
+`MessageEditor`'s `contentEditable` edit field all get `lang={languageTag}`; `SpeechResults`'
+"Listening…" placeholder gets `lang="en"` (it's UI text, not practice-language content);
+`Evaluation`'s root gets `lang="en"` (commentary is English) with a new
 `isPracticeLanguage(segment)` check overriding individual `userInput`/`suggestion` segments back to
-`languageTag`. `aria-live` — the other half of the same gap — remains open (see backlog.md).
-Implemented on branch `lang-attr`, not yet merged to `main`.
+`languageTag`; `EvaluationLoader`'s root also gets `lang="en"`, same reasoning. `aria-live` — the
+other half of the same gap — remains open (see backlog.md). Implemented on branch `lang-attr`, not
+yet merged to `main`.
+**`spellcheck="true"` added to `MessageEditor`'s edit field (2026-08-20, see decisions.md,
+"`spellcheck` enabled on message editor"):** set explicitly (was relying on browser default) as the
+one lever, alongside `lang`, that plausibly affects Safari's inline spellcheck/autocorrect for the
+practice language — unverified across iOS versions. iOS does not switch the on-screen keyboard
+language based on `lang`, and no fix for that exists short of a custom on-screen keyboard; noted as
+a known unfixable UX gap, not a backlog item.
 
 ---
 

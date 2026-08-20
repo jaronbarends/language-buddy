@@ -28,6 +28,7 @@ export default function MessageEditor({
       onInput={handleMessageChange}
       contentEditable
       lang={languageTag}
+      spellCheck="true"
       ref={editorElmRef}
     />
   );

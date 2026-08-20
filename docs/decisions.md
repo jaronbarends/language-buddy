@@ -2877,7 +2877,7 @@ no longer necessarily a literal transcript of speech — it may be the user's ed
 names what the field actually represents by the time it's sent, regardless of whether it came from
 STT untouched or was hand-edited.
 **Deliberately left unchanged:** `SpeechToText.tsx`/`MockSTT.tsx`'s local `transcript`/
-`liveTranscript` variables, the `TRANSCRIPT_CREATED`/`TRANSCRIPT_EMPTY` action *names* (only their
+`liveTranscript` variables, the `TRANSCRIPT_CREATED`/`TRANSCRIPT_EMPTY` action _names_ (only their
 payload/phase field is renamed), and `onTranscriptCreated`/`handleTranscriptCreated`. These describe
 the raw speech-recognition output itself, which is still accurately called a transcript — only the
 value once it lands on `ChatPhase` (where editing can change it) needed the rename.
@@ -2906,12 +2906,13 @@ reaches that path without first checking a mock fallback; no reducer changes nee
 
 ### `lang` attributes on speech/thread/evaluation elements, branch `lang-attr`
 
-**Date:** 2026-08-20 (branch `lang-attr`, commit `b755cbb`)
+**Date:** 2026-08-20 (branch `lang-attr`, commit `3155e8d`)
 **Decision:** Closes the "add lang attribute to speech output elements" backlog item (open since the
 2026-08-06–2026-08-09 visual/UI design pass, see "Known gaps after this pass" above). `languageTag`
 (the practice language's BCP-47 tag, e.g. `nb-NO`) is now threaded down from `conversationConfig` —
 `ChatConversation` → `ThreadView` (new `languageTag` prop) and `ChatConversation` → `SpeechToText` →
-`SpeechResults` (new `languageTag` prop on both). Four elements get a `lang` attribute:
+`SpeechResults` (new `languageTag` prop on both) → `MessageEditor` (new `languageTag` prop, passed
+through by `SpeechResults`). Six elements get a `lang` attribute:
 
 - `ThreadView`'s `<ol className={styles.threadItems}>` — `lang={languageTag}`, since thread items
   are almost entirely practice-language content (AI replies, sent user messages).
@@ -2919,12 +2920,17 @@ reaches that path without first checking a mock fallback; no reducer changes nee
   preview balloon.
 - `SpeechResults`' "Listening…" placeholder `<span>` — `lang="en"`, overriding the practice-language
   tag inherited from its parent, since this string is app UI text, not practice-language content.
+- `MessageEditor`'s `contentEditable` `<div>` — `lang={languageTag}`, so the in-place edit field
+  (rendered inside `SpeechResults`' balloon when editing a transcript) carries the same
+  practice-language tag as the rest of the recognition preview.
 - `Evaluation`'s root `<div className={styles.evaluation}>` — `lang="en"` (evaluation commentary
   itself is written in English), with a new per-`<span>` override back to `languageTag` on segments
   where `isPracticeLanguage(segment)` (`segment.type === 'userInput' || 'suggestion'`) — quoted user
   input and suggested replacements are practice-language text embedded inside the English commentary,
   so only those segments get the practice-language tag; plain `'text'` segments stay under the
   ambient `lang="en"`.
+- `EvaluationLoader`'s root `<div className={styles.evaluationLoader}>` — `lang="en"`, matching
+  `Evaluation`'s own root: its "Evaluating chat" heading is UI text, not practice-language content.
 
 **Rationale:** Screen readers select pronunciation/voice per the nearest ancestor `lang` attribute;
 without this, practice-language text (e.g. Norwegian) would be read with the browser's default
@@ -2934,3 +2940,25 @@ avoids repeating the attribute on every individual message/segment.
 **Not addressed by this change:** `aria-live` on output elements (the other half of the same backlog
 "Known gaps after this pass" note) remains open — see backlog.md.
 **Status:** Done. Implemented on branch `lang-attr`, not yet merged to `main`.
+
+## `spellcheck` enabled on message editor (2026-08-20)
+
+### `spellcheck="true"` added to `MessageEditor`'s contentEditable field
+
+**Date:** 2026-08-20
+**Decision:** `MessageEditor`'s `contentEditable` `<div>` (the in-place transcript edit field, not a
+textarea — see "STT transcript edit capability: implemented" above) now has `spellCheck="true"`
+explicitly set (previously relying on default browser behavior).
+**Rationale:** Investigated iOS keyboard-language switching for the practice-language `lang`
+attribute added earlier the same day (see "`lang` attribute added..." above) — iOS Safari does not
+switch the on-screen keyboard language based on `lang`; that's controlled solely by the user's
+installed keyboards in system Settings, with no web API to select it programmatically. `spellcheck`
+combined with `lang` on the element is the one lever that _does_ plausibly affect Safari's inline
+spellcheck/autocorrect suggestions for the practice language, so it's set explicitly rather than left
+to browser defaults — though this hasn't been spiked/verified across iOS versions and may prove
+inconsistent.
+**Not addressed by this change:** No way was found to make iOS open the correct language keyboard
+automatically on entering edit mode. Noted as a known, unfixable UX gap (worth naming in the case
+study) rather than a backlog item — there is no clean solution short of a custom on-screen keyboard,
+which would be disproportionate.
+**Status:** Done.
