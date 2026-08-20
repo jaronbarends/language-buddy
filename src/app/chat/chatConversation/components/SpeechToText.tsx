@@ -90,6 +90,7 @@ export default function SpeechToText({
   useImperativeHandle(editorRef, () => {
     return {
       getEditedMessage() {
+        console.log('go get');
         return editedMessageRef.current ?? '';
       },
     };
@@ -191,6 +192,5 @@ export default function SpeechToText({
 
   function handleMessageChange(message: string) {
     editedMessageRef.current = message;
-    // setEditedMessage(editedMessageRef.current);
   }
 }

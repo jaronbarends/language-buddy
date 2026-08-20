@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type ChangeEvent } from 'react';
+import { useRef, useEffect, type InputEvent } from 'react';
 
 import styles from './MessageEditor.module.css';
 
@@ -8,35 +8,45 @@ type MessageEditorProps = {
 };
 
 export default function MessageEditor({ initialValue, onMessageChange }: MessageEditorProps) {
-  const [message, setMessage] = useState<string>(initialValue);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editorElmRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    moveCaretToEnd();
-  });
+    initEditor();
+    // run once on mount; parent remounts this component via `key` when the transcript changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
-    <textarea
+    /* use div instead of textarea to make sure we get same styling */
+    <div
       className={styles.editor}
-      value={message}
-      onChange={handleMessageChange}
-
-      ref={textareaRef}
-    ></textarea>
+      onInput={handleMessageChange}
+      contentEditable
+      ref={editorElmRef}
+    />
   );
 
-  function handleMessageChange(evt: ChangeEvent<HTMLTextAreaElement>): void {
-    setMessage(evt.currentTarget.value);
-    onMessageChange(evt.currentTarget.value);
+  function handleMessageChange(evt: InputEvent<HTMLDivElement>): void {
+    onMessageChange(evt.currentTarget.textContent);
+  }
+
+  function initEditor() {
+    const editorElm = editorElmRef.current;
+    if (!editorElm) {
+      return;
+    }
+    editorElm.textContent = initialValue;
+    onMessageChange(initialValue);
+    moveCaretToEnd();
   }
 
   function moveCaretToEnd() {
-    const textarea = textareaRef.current;
-    if (!textarea) {
+    const editorElm = editorElmRef.current;
+    if (!editorElm) {
       return;
     }
-    const len = textarea.value.length;
-    textarea.setSelectionRange(len, len);
-    textarea.focus();
+    window?.getSelection()?.selectAllChildren(editorElm);
+    window?.getSelection()?.collapseToEnd();
+    editorElm.focus();
   }
 }
