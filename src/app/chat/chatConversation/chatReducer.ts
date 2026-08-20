@@ -33,7 +33,6 @@ export type ChatPhase =
   | { status: 'cancellingListening' }
   | { status: 'editingUserReply'; transcript: string }
   | { status: 'editingCancelled'; transcript: string }
-  | { status: 'waitingForUserSubmit'; transcript: string }
   | { status: 'sendingUserReply'; transcript: string }
   | { status: 'requestEvaluation' }
   | { status: 'waitingForEvaluation' }
@@ -41,14 +40,14 @@ export type ChatPhase =
   | { status: 'sessionEndRequested' }
   | { status: 'error'; error: AIError };
 
+// stage consists of one or more ChatPhases, where same set of buttons is needed
 export type ChatStage =
-  | 'aiTurnFlow'
-  | 'userTurnFlow'
-  | 'userEdit'
-  // TODO: DIT IS ALLEEN MAAR BIJ EDIT CANCELLED
-  | 'waitingForUserSubmit'
-  | 'evaluation'
-  | 'error'
+  | 'aiTurnStage'
+  | 'userTurnStage'
+  | 'userEditStage'
+  | 'editCancelledStage'
+  | 'evaluationStage'
+  | 'errorStage'
   | 'sessionEnded';
 
 export type ChatAction =
@@ -62,12 +61,11 @@ export type ChatAction =
   | { type: 'LISTENING_CANCELLED' }
   | { type: 'TRANSCRIPT_CREATED'; payload: { transcript: string } }
   | { type: 'TRANSCRIPT_EMPTY' }
-  // TBD can we also use this for sending msg after cancel, eg SEND_MESSAGE?
-  // or should we re-use TRANSCRIPT_CREATED for edited message?
   | { type: 'SEND_EDITED_MESSAGE'; payload: { transcript: string } }
   | { type: 'EDIT_CANCELLED' }
   | { type: 'SEND_UNEDITED_MESSAGE' }
   | { type: 'EDIT_AGAIN' }
+  | { type: 'CANCEL_IDLE' }
   | { type: 'USER_MESSAGE_SENT'; payload: { message: string } }
   | { type: 'REQUEST_EVALUATION' }
   | { type: 'EVALUATION_REQUEST_SENT' }
@@ -205,12 +203,12 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
           }
           return state;
         case 'TRANSCRIPT_EMPTY':
-          // if (state.phase.intent === 'edit') {
-          //   return {
-          //     threadItems: state.threadItems,
-          //     phase: { status: 'editingUserReply', transcript: '' },
-          //   };
-          // }
+          if (state.phase.intent === 'edit') {
+            return {
+              threadItems: state.threadItems,
+              phase: { status: 'editingUserReply', transcript: '' },
+            };
+          }
           return {
             threadItems: state.threadItems,
             phase: { status: 'readyForUserReply' },
@@ -241,6 +239,13 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
             phase: { status: 'readyForUserReply' },
           };
         case 'EDIT_CANCELLED':
+          if (state.phase.transcript === '') {
+            // editing was started without any speech input; we don't want to end up with an empty balloonnow
+            return {
+              threadItems: state.threadItems,
+              phase: { status: 'readyForUserReply' },
+            };
+          }
           return {
             threadItems: state.threadItems,
             phase: { status: 'editingCancelled', transcript: state.phase.transcript },
@@ -248,7 +253,6 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       }
       return state;
     case 'editingCancelled':
-      // TODO
       switch (action.type) {
         case 'SEND_UNEDITED_MESSAGE':
           return {
@@ -256,10 +260,14 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
             phase: { status: 'sendingUserReply', transcript: state.phase.transcript },
           };
         case 'EDIT_AGAIN':
-          console.log('edit again');
           return {
             threadItems: state.threadItems,
             phase: { status: 'editingUserReply', transcript: state.phase.transcript },
+          };
+        case 'CANCEL_IDLE':
+          return {
+            threadItems: state.threadItems,
+            phase: { status: 'readyForUserReply' },
           };
       }
       return state;
@@ -279,9 +287,6 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         default:
           return state;
       }
-    case 'waitingForUserSubmit':
-      // TODO
-      return state;
     case 'requestEvaluation':
       switch (action.type) {
         case 'EVALUATION_REQUEST_SENT':
@@ -413,6 +418,10 @@ export function canRequestCancel(phase: ChatPhase): boolean {
   return phase.status === 'listening';
 }
 
+export function canRequestEdit(phase: ChatPhase): boolean {
+  return phase.status === 'listening';
+}
+
 // derived state functions: behavior
 
 export function requestsShouldBeAborted(phase: ChatPhase): boolean {
@@ -446,7 +455,7 @@ export function shouldAutoScrollThread(phase: ChatPhase): boolean {
 // derived state functions: stages
 
 export function userIsInInputFlow(phase: ChatPhase): boolean {
-  return getChatStage(phase) === 'userTurnFlow';
+  return getChatStage(phase) === 'userTurnStage';
 }
 
 export function getChatStage(phase: ChatPhase): ChatStage {
@@ -458,21 +467,20 @@ export function getChatStage(phase: ChatPhase): ChatStage {
     case 'readyForUserStart':
     case 'requestEvaluation':
     case 'waitingForEvaluation':
-      return 'aiTurnFlow';
+      return 'aiTurnStage';
     case 'listening':
     case 'stoppingListening':
     case 'cancellingListening':
     case 'sendingUserReply':
-      return 'userTurnFlow';
+      return 'userTurnStage';
     case 'editingUserReply':
-      return 'userEdit';
+      return 'userEditStage';
     case 'editingCancelled':
-    case 'waitingForUserSubmit':
-      return 'waitingForUserSubmit';
+      return 'editCancelledStage';
     case 'evaluation':
-      return 'evaluation';
+      return 'evaluationStage';
     case 'error':
-      return 'error';
+      return 'errorStage';
     case 'sessionEndRequested':
       return 'sessionEnded';
     default: {

@@ -127,8 +127,9 @@ export default function ChatConversation({
           onCancelListening={handleCancelListening}
           onStopEditingToSend={handleStopEditingToSend}
           onCancelEditing={handleCancelEditing}
-          onSendIdle={handleSendIdle}
-          onEditAgain={handleEditAgain}
+          onsendAfterEditCancelled={handlesendAfterEditCancelled}
+          oneditAfterEditCancelled={handleeditAfterEditCancelled}
+          oncancelAfterEditCancelled={handlecancelAfterEditCancelled}
           onEvaluationRequested={handleEvaluationRequest}
           onEndSessionRequested={handleEndSessionRequest}
         />
@@ -176,12 +177,16 @@ export default function ChatConversation({
     dispatch({ type: 'TRANSCRIPT_CREATED', payload: { transcript: editedMessage } });
   }
 
-  function handleSendIdle() {
+  function handlesendAfterEditCancelled() {
     dispatch({ type: 'SEND_UNEDITED_MESSAGE' });
   }
 
-  function handleEditAgain() {
+  function handleeditAfterEditCancelled() {
     dispatch({ type: 'EDIT_AGAIN' });
+  }
+
+  function handlecancelAfterEditCancelled() {
+    dispatch({ type: 'CANCEL_IDLE' });
   }
 
   // end handlers
