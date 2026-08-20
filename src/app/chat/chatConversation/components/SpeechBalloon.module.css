@@ -31,12 +31,13 @@
   line-height: var(--line-height-balloon);
   animation: bounceIn var(--bounce-duration) forwards var(--overshoot-out);
   transition: var(--duration-fast) ease-out;
-  transition-property: width, height;
+  transition-property: width, height, background-color;
   transition-timing-function: var(--overshoot-out), linear;
 
   &:has(:focus-visible) {
     outline: var(--focus-outline);
     outline-offset: var(--focus-outline-offset);
+    background-color: var(--color-bg-default);
   }
 }
 
@@ -79,8 +80,4 @@
   height: calc(
     var(--loader-height) + 2 * var(--balloon-padding-block) + 2 * var(--balloon-border-width)
   );
-}
-
-.isInEditMode {
-  background-color: var(--color-bg-default);
 }

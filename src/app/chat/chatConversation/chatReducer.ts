@@ -45,6 +45,7 @@ export type ChatStage =
   | 'aiTurnFlow'
   | 'userTurnFlow'
   | 'userEdit'
+  // TODO: DIT IS ALLEEN MAAR BIJ EDIT CANCELLED
   | 'waitingForUserSubmit'
   | 'evaluation'
   | 'error'
@@ -65,6 +66,8 @@ export type ChatAction =
   // or should we re-use TRANSCRIPT_CREATED for edited message?
   | { type: 'SEND_EDITED_MESSAGE'; payload: { transcript: string } }
   | { type: 'EDIT_CANCELLED' }
+  | { type: 'SEND_UNEDITED_MESSAGE' }
+  | { type: 'EDIT_AGAIN' }
   | { type: 'USER_MESSAGE_SENT'; payload: { message: string } }
   | { type: 'REQUEST_EVALUATION' }
   | { type: 'EVALUATION_REQUEST_SENT' }
@@ -246,6 +249,19 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       return state;
     case 'editingCancelled':
       // TODO
+      switch (action.type) {
+        case 'SEND_UNEDITED_MESSAGE':
+          return {
+            threadItems: state.threadItems,
+            phase: { status: 'sendingUserReply', transcript: state.phase.transcript },
+          };
+        case 'EDIT_AGAIN':
+          console.log('edit again');
+          return {
+            threadItems: state.threadItems,
+            phase: { status: 'editingUserReply', transcript: state.phase.transcript },
+          };
+      }
       return state;
     case 'sendingUserReply':
       switch (action.type) {
@@ -353,6 +369,10 @@ export function messageCanBeEdited(
   phase: ChatPhase
 ): phase is Extract<ChatPhase, { status: 'editingUserReply' }> {
   return phase.status === 'editingUserReply';
+}
+
+export function canSendUneditedMessage(phase: ChatPhase): boolean {
+  return phase.status === 'editingCancelled';
 }
 
 export function shouldSendReply(

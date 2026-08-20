@@ -25,6 +25,7 @@ type ControlsAreaProps = {
   onCancelEditing: () => void;
   onStopEditingToSend: () => void;
   onSendIdle: () => void;
+  onEditAgain: () => void;
 };
 
 type ButtonPriority = 'primary' | 'secondary' | 'tertiary';
@@ -36,6 +37,7 @@ type ButtonId =
   | 'sendEditing'
   | 'cancelEdit'
   | 'sendIdle'
+  | 'editAgain'
   | 'evaluate'
   | 'endSession';
 
@@ -44,7 +46,7 @@ const buttonsByStage: Record<ChatStage, Partial<Record<ButtonPriority, ButtonId>
   aiTurnFlow: { primary: 'speak', secondary: 'evaluate', tertiary: 'endSession' },
   userTurnFlow: { primary: 'sendListening', secondary: 'edit', tertiary: 'cancel' },
   userEdit: { primary: 'sendEditing', secondary: 'cancelEdit' },
-  waitingForUserSubmit: { primary: 'sendIdle', secondary: 'edit', tertiary: 'cancel' },
+  waitingForUserSubmit: { primary: 'sendIdle', secondary: 'editAgain', tertiary: 'cancel' },
   evaluation: { primary: 'endSession' },
   error: { primary: 'endSession' },
   sessionEnded: {},
@@ -62,6 +64,7 @@ export default function ControlsArea({
   onEndSessionRequested,
   onStopEditingToSend,
   onSendIdle,
+  onEditAgain,
 }: ControlsAreaProps) {
   const buttonConfig: Record<
     ButtonId,
@@ -74,6 +77,7 @@ export default function ControlsArea({
     sendEditing: { label: 'Send edit', iconName: 'send', onClick: onStopEditingToSend },
     cancelEdit: { label: 'Cancel edit', iconName: 'cancel', onClick: onCancelEditing },
     sendIdle: { label: 'Send', iconName: 'send', onClick: onSendIdle },
+    editAgain: { label: 'Edit toch maar weer', iconName: 'edit', onClick: onEditAgain },
     evaluate: { label: 'Evaluate', iconName: 'evaluation', onClick: onEvaluationRequested },
     endSession: { label: 'End session', iconName: 'finish', onClick: onEndSessionRequested },
   };

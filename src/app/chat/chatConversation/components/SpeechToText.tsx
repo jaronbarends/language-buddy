@@ -41,9 +41,7 @@ export default function SpeechToText({
   const liveTranscriptRef = useRef<string>('');
   const [liveTranscript, setLiveTranscript] = useState<string>('');
   const mockRef = useRef<MockSTTHandle>(null);
-
   const editedMessageRef = useRef<string>('');
-  const [editedMessage, setEditedMessage] = useState<string>('');
 
   const shouldShowMockSTT =
     process.env.NEXT_PUBLIC_USE_MOCK_STT === 'true' && userIsInInputFlow(phase);

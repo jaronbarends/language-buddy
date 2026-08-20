@@ -128,6 +128,7 @@ export default function ChatConversation({
           onStopEditingToSend={handleStopEditingToSend}
           onCancelEditing={handleCancelEditing}
           onSendIdle={handleSendIdle}
+          onEditAgain={handleEditAgain}
           onEvaluationRequested={handleEvaluationRequest}
           onEndSessionRequested={handleEndSessionRequest}
         />
@@ -176,7 +177,11 @@ export default function ChatConversation({
   }
 
   function handleSendIdle() {
-    // call send message
+    dispatch({ type: 'SEND_UNEDITED_MESSAGE' });
+  }
+
+  function handleEditAgain() {
+    dispatch({ type: 'EDIT_AGAIN' });
   }
 
   // end handlers
