@@ -32,7 +32,6 @@ export type ChatPhase =
   | { status: 'stoppingListening'; intent: StopIntent }
   | { status: 'cancellingListening' }
   | { status: 'editingUserReply'; transcript: string }
-  | { status: 'stopEditingToSend' }
   | { status: 'editingCancelled'; transcript: string }
   | { status: 'waitingForUserSubmit'; transcript: string }
   | { status: 'sendingUserReply'; transcript: string }
@@ -62,7 +61,6 @@ export type ChatAction =
   | { type: 'LISTENING_CANCELLED' }
   | { type: 'TRANSCRIPT_CREATED'; payload: { transcript: string } }
   | { type: 'TRANSCRIPT_EMPTY' }
-  | { type: 'STOP_EDITING_TO_SEND' }
   // TBD can we also use this for sending msg after cancel, eg SEND_MESSAGE?
   // or should we re-use TRANSCRIPT_CREATED for edited message?
   | { type: 'SEND_EDITED_MESSAGE'; payload: { transcript: string } }
@@ -228,7 +226,6 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
           return state;
       }
     case 'editingUserReply':
-      // TODO
       switch (action.type) {
         case 'TRANSCRIPT_CREATED':
           return {
@@ -246,21 +243,6 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
             phase: { status: 'editingCancelled', transcript: state.phase.transcript },
           };
       }
-      return state;
-    case 'stopEditingToSend':
-      // TODO: remove
-      // switch (action.type) {
-      //   case 'TRANSCRIPT_CREATED':
-      //     return {
-      //       threadItems: state.threadItems,
-      //       phase: { status: 'sendingUserReply', transcript: action.payload.transcript },
-      //     };
-      //   case 'TRANSCRIPT_EMPTY':
-      //     return {
-      //       threadItems: state.threadItems,
-      //       phase: { status: 'readyForUserReply' },
-      //     };
-      // }
       return state;
     case 'editingCancelled':
       // TODO
@@ -367,7 +349,9 @@ export function listeningShouldBeCancelled(phase: ChatPhase): boolean {
   return phase.status === 'cancellingListening';
 }
 
-export function messageCanBeEdited(phase: ChatPhase): boolean {
+export function messageCanBeEdited(
+  phase: ChatPhase
+): phase is Extract<ChatPhase, { status: 'editingUserReply' }> {
   return phase.status === 'editingUserReply';
 }
 
@@ -461,7 +445,6 @@ export function getChatStage(phase: ChatPhase): ChatStage {
     case 'sendingUserReply':
       return 'userTurnFlow';
     case 'editingUserReply':
-    case 'stopEditingToSend':
       return 'userEdit';
     case 'editingCancelled':
     case 'waitingForUserSubmit':

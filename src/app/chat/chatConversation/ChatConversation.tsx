@@ -171,9 +171,7 @@ export default function ChatConversation({
   }
 
   function handleStopEditingToSend() {
-    const editedMessage = editorRef.current?.getEditedMessage();
-    console.log('changed message: ', editedMessage);
-    // dispatch({ type: 'STOP_EDITING_TO_SEND' });
+    const editedMessage = editorRef.current?.getEditedMessage() ?? '';
     dispatch({ type: 'TRANSCRIPT_CREATED', payload: { transcript: editedMessage } });
   }
 

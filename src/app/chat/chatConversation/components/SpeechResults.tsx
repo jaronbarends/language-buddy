@@ -1,8 +1,13 @@
 import { clsx } from 'clsx';
-import { type ChangeEvent } from 'react';
 
-import { isListening, userIsInInputFlow, messageCanBeEdited } from '../chatReducer';
+import {
+  isListening,
+  userIsInInputFlow,
+  messageCanBeEdited,
+  shouldShowRecognitionPreview,
+} from '../chatReducer';
 import { type ChatPhase } from '../chatReducer';
+import MessageEditor from './MessageEditor';
 import SpeechBalloon from './SpeechBalloon';
 
 import styles from './SpeechResults.module.css';
@@ -10,16 +15,18 @@ import styles from './SpeechResults.module.css';
 type SpeechResultsProps = {
   liveTranscript: string;
   phase: ChatPhase;
-  editedMessage: string;
   onMessageChange: (message: string) => void;
 };
 
 export default function SpeechResults({
   liveTranscript,
   phase,
-  editedMessage,
   onMessageChange,
 }: SpeechResultsProps) {
+  if (!shouldShowRecognitionPreview(phase)) {
+    return null;
+  }
+
   const suffix =
     !isListening(phase) ? ''
     : liveTranscript === '' ? <span>Listening&hellip;</span>
@@ -31,7 +38,11 @@ export default function SpeechResults({
         <div className={styles.balloonContent}>
           {userIsInInputFlow(phase) && <ListeningIndicator phase={phase} />}
           {messageCanBeEdited(phase) ?
-            <textarea onChange={handleMessageChange} value={editedMessage}></textarea>
+            <MessageEditor
+              key={phase.transcript}
+              onMessageChange={onMessageChange}
+              initialValue={phase.transcript}
+            />
           : <div className={styles.transcript} role="status" aria-live="polite" aria-atomic="true">
               {liveTranscript}
               {suffix}
@@ -41,10 +52,6 @@ export default function SpeechResults({
       </SpeechBalloon>
     </div>
   );
-
-  function handleMessageChange(evt: ChangeEvent<HTMLTextAreaElement>) {
-    onMessageChange(evt.currentTarget.value);
-  }
 }
 
 function ListeningIndicator({ phase }: { phase: ChatPhase }) {

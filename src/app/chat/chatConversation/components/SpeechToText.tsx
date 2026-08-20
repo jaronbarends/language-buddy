@@ -102,7 +102,6 @@ export default function SpeechToText({
       <SpeechResults
         liveTranscript={liveTranscript}
         phase={phase}
-        editedMessage={editedMessage}
         onMessageChange={handleMessageChange}
       />
       {shouldShowMockSTT && <MockSTT mockRef={mockRef} phase={phase} />}
@@ -194,6 +193,6 @@ export default function SpeechToText({
 
   function handleMessageChange(message: string) {
     editedMessageRef.current = message;
-    setEditedMessage(editedMessageRef.current);
+    // setEditedMessage(editedMessageRef.current);
   }
 }

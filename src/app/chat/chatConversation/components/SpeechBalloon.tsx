@@ -9,6 +9,7 @@ export type SpeechBalloonProps = {
   author: 'ai' | 'user';
   tag: keyof JSX.IntrinsicElements;
   isPending?: boolean;
+  isInEditMode?: boolean;
   children?: ReactNode;
 };
 

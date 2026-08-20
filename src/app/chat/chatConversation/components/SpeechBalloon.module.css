@@ -33,6 +33,11 @@
   transition: var(--duration-fast) ease-out;
   transition-property: width, height;
   transition-timing-function: var(--overshoot-out), linear;
+
+  &:has(:focus-visible) {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+  }
 }
 
 .aiBalloon {
@@ -74,4 +79,8 @@
   height: calc(
     var(--loader-height) + 2 * var(--balloon-padding-block) + 2 * var(--balloon-border-width)
   );
+}
+
+.isInEditMode {
+  background-color: var(--color-bg-default);
 }
