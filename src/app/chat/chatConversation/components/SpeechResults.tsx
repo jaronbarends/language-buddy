@@ -44,7 +44,7 @@ export default function SpeechResults({
               initialValue={phase.userMessage}
             />
           : <div role="status" aria-live="polite" aria-atomic="true">
-              {liveTranscript}
+              {phase.status === 'sendingUserReply' ? phase.userMessage : liveTranscript}
               {suffix}
             </div>
           }

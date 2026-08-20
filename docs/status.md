@@ -182,25 +182,27 @@ durations) landed first, then a small shared component set (`Button`, `Loader`, 
   (mirroring `evaluationSystemInstruction`).
 **STT transcript edit capability implemented (2026-08-19–2026-08-20, branch `edit-message`, see
 decisions.md, "STT transcript edit capability: implemented"):** closes the backlog item reopened
-2026-08-04. Two new phases, `editingUserReply`/`editingCancelled` (both carrying `transcript`), and
-a third button — "Edit" — added to the `listening` phase alongside Send/Cancel, dispatching
-`STOP_LISTENING` with `intent: 'edit'` (closing the dormant-`intent: 'edit'`-fallthrough gap tracked
-since 2026-08-04). Editing itself happens inline in the recognition-preview speech balloon via a new
-`MessageEditor.tsx` — a `contentEditable` `<div>` (switched from an initial `<textarea>` mid-build so
-it inherits `SpeechBalloon`'s styling directly), read via an imperative handle threaded
-`ChatConversation` → `SpeechToText` → `MessageEditor`. Cancelling an edit lands on a third phase,
-`editingCancelled`, requiring one more deliberate action (Send/Edit again/Cancel) rather than
-auto-sending the original transcript. `ChatStage` gained two new stages
+2026-08-04. Two new phases, `editingUserReply`/`editingCancelled` (both carrying `userMessage` —
+renamed from `transcript`, see decisions.md, "`ChatPhase`'s `transcript` field renamed to
+`userMessage`"), and a third button — "Edit" — added to the `listening` phase alongside Send/Cancel,
+dispatching `STOP_LISTENING` with `intent: 'edit'` (closing the dormant-`intent: 'edit'`-fallthrough
+gap tracked since 2026-08-04). Editing itself happens inline in the recognition-preview speech
+balloon via a new `MessageEditor.tsx` — a `contentEditable` `<div>` (switched from an initial
+`<textarea>` mid-build so it inherits `SpeechBalloon`'s styling directly), read via an imperative
+handle threaded `ChatConversation` → `SpeechToText` → `MessageEditor`. Cancelling an edit lands on a
+third phase, `editingCancelled`, requiring one more deliberate action (Send/Edit again/Cancel)
+rather than auto-sending the original transcript. `ChatStage` gained two new stages
 (`userEditStage`/`editCancelledStage`) and the four pre-existing stage names were renamed with a
 `Stage` suffix (`aiTurnFlow`→`aiTurnStage`, etc.) for consistency. **Implementation diverged from the
-2026-08-19 design in several ways — see decisions.md for the full list** — the most consequential
-being that the edit-submit path reuses the existing `TRANSCRIPT_CREATED` action rather than the
-planned `EDIT_SUBMITTED`, leaving a `SEND_EDITED_MESSAGE` action defined but never dispatched (dead
-code), and that path also skips the empty-transcript guard the real-STT path has, so clearing the
-edit box and hitting Send currently sends an empty message. Also left over from this branch: a
-`console.log` debug line in `SpeechToText.tsx`, and several new handler/prop names
-(`handlesendAfterEditCancelled` and siblings) that don't follow the project's `handleX`/`onX`
-capitalization convention. **Not yet fixed, not yet merged to `main`** — see "What's open" below.
+2026-08-19 design in several ways — see decisions.md for the full list.** Edit-submit initially
+reused the existing `TRANSCRIPT_CREATED` action rather than the planned `EDIT_SUBMITTED`, which left
+a `SEND_EDITED_MESSAGE` action defined but undispatched and skipped the empty-transcript guard the
+real-STT path has — both **fixed same-branch on 2026-08-20**: `editingUserReply` now dispatches its
+own `SEND_EDITED_MESSAGE`/`EDITED_MESSAGE_EMPTY` action pair, mirroring the real-STT
+`TRANSCRIPT_CREATED`/`TRANSCRIPT_EMPTY` empty-guard behavior. The `console.log` debug line in
+`SpeechToText.tsx` and the non-conforming `handlesendAfterEditCancelled`-style handler/prop names
+were also fixed same-branch. **All known gaps from this feature are resolved; implemented on branch
+`edit-message`, not yet merged to `main`** — see "What's open" below.
 
 ---
 

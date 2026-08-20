@@ -72,8 +72,8 @@ wired to the mock for all UI dev.
 
 - add lang attribute to speech output elements
 - ~~add Edit option~~ — **implemented 2026-08-19–2026-08-20**, branch `edit-message`, not yet merged
-  (see decisions.md, "STT transcript edit capability: implemented," and status.md). A few gaps are
-  tracked to fix before merge — see status.md, "What's open."
+  (see decisions.md, "STT transcript edit capability: implemented," and status.md). All known gaps
+  from this feature were fixed same-branch on 2026-08-20 — see status.md, "What's open."
 - ~~add icons to buttons~~ — **done 2026-08-17**, branch `button-icons` (see decisions.md, "Icons
   added to buttons," and status.md)
 
