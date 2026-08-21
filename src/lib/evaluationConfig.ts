@@ -1,13 +1,37 @@
-import { englishCEFRLevel, getSharedInstructionContext } from '@/lib/getSharedInstructionContext';
+import {
+  englishCEFRLevel,
+  getSharedInstructions,
+  type SharedInstructions,
+} from '@/lib/getSharedInstructions';
 import type { Language, LanguageLevel } from '@/lib/language';
 
-export function getEvaluationSystemInstruction(
+export type EvaluationConfig = {
+  systemInstruction: string;
+  input: string;
+};
+
+export function getEvaluationConfig(
   language: Language,
   level: LanguageLevel,
   aiStartingPrompt: string
-): string {
+): EvaluationConfig {
+  const sharedInstructions: SharedInstructions = getSharedInstructions(
+    language,
+    level,
+    aiStartingPrompt
+  );
+
+  const systemInstruction = getSystemInstruction(language, sharedInstructions.context);
+  const input = getEvaluationInput(language, level, sharedInstructions.constraints);
+
+  return {
+    systemInstruction,
+    input,
+  };
+}
+
+function getSystemInstruction(language: Language, sharedContext: string): string {
   const languageTag = language.languageTag;
-  const sharedInstructionContext = getSharedInstructionContext(language, level, aiStartingPrompt);
 
   // instruction: general instruction on the persona, that will hold true for all tasks this persona should do
   // e.g. if we would later add a prompt to ask for book recommendations, everything in instruction should still stand
@@ -23,12 +47,16 @@ export function getEvaluationSystemInstruction(
 
 ## Context
 
-${sharedInstructionContext}`;
+${sharedContext}`;
 
   return instruction;
 }
 
-export function getEvaluationInput(language: Language, level: LanguageLevel): string {
+function getEvaluationInput(
+  language: Language,
+  level: LanguageLevel,
+  sharedConstraints: string
+): string {
   const languageTag = language.languageTag;
   const cefrLevel = level.cefrLevel;
   // prompt/input instructions that apply specifically for this task of generating an evaluation
@@ -53,6 +81,7 @@ export function getEvaluationInput(language: Language, level: LanguageLevel): st
 
 ## Constraints
 
+${sharedConstraints}
 - Your answer should always be in English at CEFR level ${englishCEFRLevel}. Only include words or phrases in ${languageTag} when referring to specific mistakes or when giving an example.
 - Your evaluation should be seen as a final one-way message.
 - Do not point out things that are correct.

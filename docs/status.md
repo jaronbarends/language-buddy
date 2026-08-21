@@ -223,6 +223,22 @@ one lever, alongside `lang`, that plausibly affects Safari's inline spellcheck/a
 practice language — unverified across iOS versions. iOS does not switch the on-screen keyboard
 language based on `lang`, and no fix for that exists short of a custom on-screen keyboard; noted as
 a known unfixable UX gap, not a backlog item.
+**Shared constraints added alongside shared context (2026-08-20, branch `add-shared-constraints`,
+see decisions.md, "Shared constraints added alongside shared context"):** supersedes the 2026-08-18
+"Persona context deduplicated" entry above. `getSharedInstructionContext.ts` is renamed to
+`getSharedInstructions.ts`; its function now returns `{ context, constraints }` instead of a bare
+string, adding a shared `## Constraints` bullet list (currently one rule: refer to the user's input
+as spoken, not written) consumed by both `getChatBaseInstruction.ts` and `evaluationConfig.ts`, the
+same way both already consumed shared `context`. `evaluationConfig.ts` is restructured around one
+new exported `getEvaluationConfig` (returning `{ systemInstruction, input }`) instead of two
+separate exports (`getEvaluationSystemInstruction`/`getEvaluationInput`, each independently calling
+the shared-instructions function) — so the shared context/constraints strings are computed once per
+config build, not twice. Verified via `tsc --noEmit` and `eslint` (clean on all four touched files)
+and by tracing the interpolated template output.
+
+**Remaining or broken work:** None identified for this change.
+**Open questions or decisions:** None.
+**Next step:** Select the next item from `docs/backlog.md`.
 
 ---
 

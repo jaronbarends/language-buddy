@@ -2,7 +2,7 @@ import { getChatBaseInstruction } from '@/lib/getChatBaseInstruction';
 import type { Language, LanguageLevel } from '@/lib/language';
 import type { Scenario, Starter } from '@/lib/scenarios';
 
-import { getEvaluationSystemInstruction, getEvaluationInput } from './evaluationConfig';
+import { getEvaluationConfig } from './evaluationConfig';
 
 export type ConversationConfig = {
   language: Language;
@@ -27,18 +27,14 @@ export function getConversationConfig(
 
   const baseInstruction = getChatBaseInstruction(language, languageLevel, aiStartingPrompt);
   const chatSystemInstruction = `${baseInstruction}${scenario.instructionText}`;
-  const evaluationSystemInstruction = getEvaluationSystemInstruction(
-    language,
-    languageLevel,
-    aiStartingPrompt
-  );
-  const evaluationInput = getEvaluationInput(language, languageLevel);
+
+  const evaluationConfig = getEvaluationConfig(language, languageLevel, aiStartingPrompt);
 
   return {
     language,
     chatSystemInstruction,
-    evaluationSystemInstruction,
-    evaluationInput,
+    evaluationSystemInstruction: evaluationConfig.systemInstruction,
+    evaluationInput: evaluationConfig.input,
     starter: scenario.starter,
   };
 }

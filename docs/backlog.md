@@ -80,6 +80,8 @@ wired to the mock for all UI dev.
 - ~~add icons to buttons~~ — **done 2026-08-17**, branch `button-icons` (see decisions.md, "Icons
   added to buttons," and status.md)
 
+- When auto scrolling threadview, scroll at the furthest until the last item is at the top of the viewport, never further.
+
 ---
 
 ## Postponed (decided, not built)

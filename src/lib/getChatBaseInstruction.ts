@@ -1,4 +1,4 @@
-import { getSharedInstructionContext } from '@/lib/getSharedInstructionContext';
+import { getSharedInstructions, type SharedInstructions } from '@/lib/getSharedInstructions';
 import type { Language, LanguageLevel } from '@/lib/language';
 
 export function getChatBaseInstruction(
@@ -8,7 +8,11 @@ export function getChatBaseInstruction(
 ): string {
   const languageTag = language.languageTag;
   const cefrLevel = level.cefrLevel;
-  const sharedInstructionContext = getSharedInstructionContext(language, level, aiStartingPrompt);
+  const sharedInstructions: SharedInstructions = getSharedInstructions(
+    language,
+    level,
+    aiStartingPrompt
+  );
   const chatBaseInstruction = `
 ## Role/persona
 
@@ -23,10 +27,11 @@ export function getChatBaseInstruction(
 
 ## Context
 
-${sharedInstructionContext}
+${sharedInstructions.context}
 
 ## Constraints
 
+${sharedInstructions.constraints}
 - Answer in ${languageTag} at language level ${cefrLevel}, even if addressed in another language.
 - Max 2-3 short sentences per reply.
 - Ask at most one question per turn.

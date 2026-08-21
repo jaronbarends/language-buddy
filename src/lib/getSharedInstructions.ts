@@ -2,11 +2,16 @@ import type { Language, LanguageLevel } from '@/lib/language';
 
 export const englishCEFRLevel = `B2/C1`;
 
-export function getSharedInstructionContext(
+export type SharedInstructions = {
+  context: string;
+  constraints: string;
+};
+
+export function getSharedInstructions(
   language: Language,
   level: LanguageLevel,
   aiStartingPrompt: string
-): string {
+): SharedInstructions {
   const languageTag = language.languageTag;
   const cefrLevel = level.cefrLevel;
 
@@ -21,5 +26,12 @@ export function getSharedInstructionContext(
 - Only treat the learner's own messages as their language production. Do not attribute anything you (the AI) said earlier in the conversation to the learner.
 `;
 
-  return sharedContext;
+  const sharedConstraints = `
+- Always refer to the user's input as spoken, never as written (e.g. say "what you said," not "what you wrote").
+`;
+
+  return {
+    context: sharedContext,
+    constraints: sharedConstraints,
+  };
 }
