@@ -236,6 +236,10 @@ the shared-instructions function) — so the shared context/constraints strings 
 config build, not twice. Verified via `tsc --noEmit` and `eslint` (clean on all four touched files)
 and by tracing the interpolated template output.
 
+**Remaining or broken work:** None identified for this change.
+**Open questions or decisions:** None.
+**Next step:** Select the next item from `docs/backlog.md`.
+
 ---
 
 ## What exists
