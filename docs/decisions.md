@@ -3011,3 +3011,41 @@ it twice (once per old exported function) would have computed the same shared co
 strings redundantly. Bundling both fields behind one call mirrors how `getChatBaseInstruction` already
 only needs one `getSharedInstructions` call for its single output string.
 **Status:** Done.
+
+---
+
+## ThreadView autoscroll target changed to top of last item (2026-08-21)
+
+### Autoscroll now scrolls to the top of the last thread item, not the bottom of the thread
+
+**Date:** 2026-08-21
+**Decision:** `ThreadView.tsx`'s autoscroll effect no longer scrolls `.threadView` to `scrollHeight`
+(the bottom of the whole thread). A new `scrollToLastItem` function reads the last child of the
+`threadItems` list's `offsetTop` and scrolls `.threadView` to `top - 16px` (a fixed margin) instead.
+`chatReducer.ts`'s `shouldAutoScrollThread` also now fires on `waitingForEvaluation`, not just
+`aiTurnSpeaking`/`waitingForAI`/`evaluation`.
+**Rationale:** Scrolling to the bottom of the thread meant a long last item (e.g. a long AI reply or
+evaluation comment) scrolled past its own beginning — the user landed partway through it instead of
+at its start. Scrolling to the last item's top keeps the start of new content in view regardless of
+its length.
+**Implementation note:** `offsetTop` is measured relative to the nearest positioned ancestor, so
+`.threadView` gained `position: relative` in `ThreadView.module.css` to make it that ancestor.
+`threadView`/`threadItems` also gained `id` attributes (dev/debugging aid).
+**Status:** Done, uncommitted at time of writing.
+
+## SpeechResults gets an internal scroller for long content (2026-08-21)
+
+### Long recognition/edit balloon now scrolls internally instead of growing unbounded
+
+**Date:** 2026-08-21
+**Decision:** `SpeechResults.tsx`'s balloon content is now wrapped in a new `.scroller` div
+(`overflow-y: auto`, `max-height: 40vh`) instead of letting the balloon (live recognition preview or
+`MessageEditor` edit view) grow to fit arbitrarily long content. `.scroller` is a separate element
+from `.balloonContent` specifically so `overflow-y: auto` doesn't also clip `overflow-x` — which
+would cut off the `ListeningIndicator`.
+**Rationale:** A long recognition preview or edited message was pushing the whole `ThreadView` off
+screen, which was unwanted.
+**New shared tokens:** `--scrollbar-color`/`--scrollbar-color-hover` added to
+`src/styles/settings/colors.css`, replacing scrollbar-color values previously hardcoded inline in
+`ThreadView.module.css` — `.scroller` and `.threadView` now read the same tokens.
+**Status:** Done, uncommitted at time of writing.

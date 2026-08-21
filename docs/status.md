@@ -1,6 +1,6 @@
 # Project status
 
-**Last updated:** 2026-08-20
+**Last updated:** 2026-08-21
 **Current phase:** Early build. Concept locked (scenario-library-based conversational sparring
 partner, Norwegian, multi-turn sessions + async structured evaluation). MVP scoping in progress;
 Spikes 1–4 all complete. AI provider decided (Gemini). State machine now runs the full happy path
@@ -236,6 +236,20 @@ the shared-instructions function) — so the shared context/constraints strings 
 config build, not twice. Verified via `tsc --noEmit` and `eslint` (clean on all four touched files)
 and by tracing the interpolated template output.
 
+**Autoscroll target changed; long recognition/edit content now scrolls internally (2026-08-21, see
+decisions.md, "ThreadView autoscroll target changed to top of last item" and "SpeechResults gets an
+internal scroller for long content"):** two related but separately-decided fixes for long content.
+`ThreadView.tsx`'s autoscroll now scrolls to the top of the last thread item (`scrollToLastItem`,
+via the last item's `offsetTop`) instead of to the bottom of the thread (`scrollHeight`) — scrolling
+to the bottom meant a long last item (long AI reply, long evaluation comment) scrolled past its own
+beginning. `shouldAutoScrollThread` (`chatReducer.ts`) now also fires on `waitingForEvaluation`.
+Separately, `SpeechResults.tsx`'s balloon content (live recognition preview / `MessageEditor` edit
+view) is now wrapped in a new `.scroller` div (`overflow-y: auto`, `max-height: 40vh`) instead of
+growing unbounded — a long balloon was pushing the whole `ThreadView` off screen. New shared tokens
+`--scrollbar-color`/`--scrollbar-color-hover` (`src/styles/settings/colors.css`) back both this
+scroller and `ThreadView`'s existing scrollbar styling, replacing values previously hardcoded inline.
+**Uncommitted at time of writing.**
+
 **Remaining or broken work:** None identified for this change.
 **Open questions or decisions:** None.
 **Next step:** Select the next item from `docs/backlog.md`.
@@ -342,7 +356,11 @@ primary: 'send', secondary: 'cancel' }`, `evaluation`/`error`: `{ primary: 'endS
   the TTS playback trigger (see "Real TTS wired up" below) via a `useEffect` keyed on
   `phase.status === 'aiTurnSpeaking'`. **Renders evaluation items too, as of 2026-08-13–2026-08-14**
   (see below) — branches on `item.type` (`'message'` → `SpeechBalloon`, `'evaluation'` → the new
-  `Evaluation` component); `shouldAutoScrollThread` now also fires on `phase.status === 'evaluation'`.
+  `Evaluation` component); `shouldAutoScrollThread` now also fires on `phase.status === 'evaluation'`
+  (and, as of 2026-08-21, `'waitingForEvaluation'` too). **Autoscroll target changed 2026-08-21** (see
+  decisions.md, "ThreadView autoscroll target changed to top of last item"): scrolls to the top of the
+  last thread item (`scrollToLastItem`) instead of the bottom of the thread, so a long last item no
+  longer scrolls past its own beginning.
 - **Evaluation: first working implementation (2026-08-13–2026-08-14, see decisions.md, "Evaluation:
   first working implementation"):** an "Evaluate" secondary button (`ControlsArea`, `aiTurnFlow`
   stage — see above) dispatches `REQUEST_EVALUATION`, walking `requestEvaluation` →

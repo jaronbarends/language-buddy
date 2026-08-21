@@ -449,6 +449,7 @@ export function shouldAutoScrollThread(phase: ChatPhase): boolean {
   return (
     phase.status === 'aiTurnSpeaking' ||
     phase.status === 'waitingForAI' ||
+    phase.status === 'waitingForEvaluation' ||
     phase.status === 'evaluation'
   );
 }

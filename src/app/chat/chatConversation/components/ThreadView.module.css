@@ -1,15 +1,16 @@
 .threadView {
+  position: relative; /* necessary to get item's offsetTop for scrolling */
   display: flex;
   flex-direction: column;
   gap: var(--size-16);
   overflow-y: scroll;
   scrollbar-gutter: stable;
-  scrollbar-color: transparent transparent;
+  scrollbar-color: var(--scrollbar-color);
   border-bottom: var(--border-default) var(--color-border-neutral);
   padding-block: var(--size-16);
 
   &:hover {
-    scrollbar-color: var(--color-bg-neutral) transparent;
+    scrollbar-color: var(--scrollbar-color-hover);
   }
 }
 

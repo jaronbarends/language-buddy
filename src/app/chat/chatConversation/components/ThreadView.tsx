@@ -34,6 +34,7 @@ export default function ThreadView({
   onAISpeechEnd,
 }: ThreadViewProps) {
   const threadViewRef = useRef<HTMLDivElement>(null);
+  const threadItemsRef = useRef<HTMLOListElement>(null);
   const showFakeBalloons = false;
 
   useEffect(() => {
@@ -69,20 +70,21 @@ export default function ThreadView({
 
   useEffect(() => {
     if (shouldAutoScrollThread(phase)) {
-      scrollToEnd();
+      scrollToLastItem();
       // we need to scroll again when bounce-animation is done. This is hard to get right, so call scroll multiple time
       for (let i = 1; i <= 3; i++) {
         setTimeout(() => {
-          scrollToEnd();
+          scrollToLastItem();
         }, 100 * i);
       }
     }
   }, [phase, threadItems]);
 
   return (
-    <div className={styles.threadView} ref={threadViewRef}>
+    <div id="threadView" className={styles.threadView} ref={threadViewRef}>
       {openingHint && <Feedback type="info">{openingHint}</Feedback>}
-      <ol className={styles.threadItems} lang={languageTag}>
+      <ol id="threadItems" className={styles.threadItems} lang={languageTag} ref={threadItemsRef}>
+        {showFakeBalloons && <FakeBalloons />}
         {threadItems.map((item, idx) => {
           if (item.type === 'message') {
             return (
@@ -98,16 +100,20 @@ export default function ThreadView({
             );
           }
         })}
-
-        {showFakeBalloons && <FakeBalloons />}
         {isWaitingForEvaluation(phase) && <EvaluationLoader />}
       </ol>
     </div>
   );
 
-  function scrollToEnd() {
+  function scrollToLastItem() {
+    const lastItem = threadItemsRef.current?.lastChild as HTMLLIElement;
+    if (!lastItem) {
+      return;
+    }
+    const top = lastItem.offsetTop;
+    const margin = 16;
     threadViewRef.current?.scrollTo({
-      top: threadViewRef.current?.scrollHeight,
+      top: top - margin,
       behavior: 'smooth',
     });
   }

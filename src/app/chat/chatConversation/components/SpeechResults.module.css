@@ -7,6 +7,19 @@
   gap: var(--size-8);
 }
 
+.scroller {
+  /* we need scroller because we can not set overflow-y: auto on balloonContent, because that will also impact overflow-x, cutting of the listeningIndicator */
+  overflow-y: auto;
+  gap: var(--size-8);
+  max-height: 40vh;
+  scrollbar-gutter: stable;
+  scrollbar-color: var(--scrollbar-color);
+
+  &:hover {
+    scrollbar-color: var(--scrollbar-color-hover);
+  }
+}
+
 @keyframes pulse {
   0% {
     scale: 1;
