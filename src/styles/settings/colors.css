@@ -94,4 +94,7 @@
   --color-text-default: var(--color-text-neutral);
   --color-text-label: var(--color-text-neutral-subtle);
   --color-focus-outline: var(--color-text-default);
+
+  --scrollbar-color: transparent transparent;
+  --scrollbar-color-hover: var(--color-bg-neutral) transparent;
 }
