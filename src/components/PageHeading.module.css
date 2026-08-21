@@ -5,7 +5,7 @@
   gap: var(--size-12);
 }
 
-.logo {
+/* .logo {
   position: relative;
   width: var(--size-36);
   height: var(--size-36);
@@ -24,4 +24,4 @@
     background-color: var(--color-bg-primary);
     translate: -50% -50%;
   }
-}
+} */
