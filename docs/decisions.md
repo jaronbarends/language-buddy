@@ -1793,6 +1793,29 @@ meaningfully between Beginner and Intermediate — no automated evaluation exist
 regressions here.
 **Status:** Done — reflects current file layout as of PR #20; no code change made by this entry.
 
+### Beginner level narrowed from A1/A2 to A1 only
+
+**Date:** 2026-08-22
+**Decision:** `languageLevels`'s Beginner entry (`src/lib/language.ts`) changes `cefrLevel` from
+`'A1/A2'` to `'A1'`. Intermediate (`B1/B2`) is unchanged.
+**Rationale:** Project owner judged A2 too difficult to sit under the same "Beginner" label as A1 —
+manual use surfaced this, not a spike or automated check. Consistent with the "manual verification,
+not automated" caveat already logged for this picker (see entry above): no regression test exists
+to catch level-band drift, so this is a direct judgment call, not a measured one.
+**Status:** Done. Uncommitted at time of writing.
+
+### Language swapped: French out, Italian in
+
+**Date:** 2026-08-22
+**Decision:** `supportedLanguages` (`src/lib/languages.ts`) drops French (`fr-FR`) from the active
+list — commented out, alongside the already-commented English/German entries, not deleted — and adds
+Italian (`it-IT`), active. A new `it.svg` flag icon (`src/assets/icons/flags/it.svg`) and a
+`'flag-it'` entry in `FLAG_ICONS` (`src/lib/getIconByName.ts`) back the new language in
+`LanguagePicker`.
+**Rationale:** Not recorded beyond "switched" — no stated reason for dropping French specifically in
+favor of Italian.
+**Status:** Done. Uncommitted at time of writing.
+
 ---
 
 ## Freeform scenarios generalized into an array; scenario-driven opening hint (2026-08-11)
