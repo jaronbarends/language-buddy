@@ -17,12 +17,14 @@ import de from '@/assets/icons/flags/de.svg';
 import es from '@/assets/icons/flags/es.svg';
 import fr from '@/assets/icons/flags/fr.svg';
 import gb from '@/assets/icons/flags/gb.svg';
+import it from '@/assets/icons/flags/it.svg';
 import nl from '@/assets/icons/flags/nl.svg';
 import no from '@/assets/icons/flags/no.svg';
 
 const FLAG_ICONS = {
   'flag-de': de,
   'flag-gb': gb,
+  'flag-it': it,
   'flag-es': es,
   'flag-fr': fr,
   'flag-nl': nl,

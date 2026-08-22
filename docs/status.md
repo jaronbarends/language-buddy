@@ -70,7 +70,9 @@ durations) landed first, then a small shared component set (`Button`, `Loader`, 
   Intermediate (CEFR B1/B2) in the setup screen (`SetupForm`'s new `SegmentedControl`, defaulting to
   Intermediate); the selected level's `cefrLevel` is threaded through `getChatConfig`/
   `getBaseInstruction` into the AI's system instruction. A third level (Expert/C1/C2) was drafted
-  then pulled back out before committing — deliberately postponed, not shipped.
+  then pulled back out before committing — deliberately postponed, not shipped. **Beginner narrowed
+  to A1 only (2026-08-22, see decisions.md):** `cefrLevel` for Beginner is now `A1`, not `A1/A2` — A2
+  was judged too difficult for the "Beginner" label.
   **Freeform scenarios generalized into an array; scenario-driven opening hint added (2026-08-11, see
   decisions.md):** `scenarios.ts` now exports `freeformScenarios: Scenario[]` (the two freeform
   scenario objects, now private consts) instead of exporting `freeformChatWithAIStart`/
@@ -249,6 +251,15 @@ growing unbounded — a long balloon was pushing the whole `ThreadView` off scre
 `--scrollbar-color`/`--scrollbar-color-hover` (`src/styles/settings/colors.css`) back both this
 scroller and `ThreadView`'s existing scrollbar styling, replacing values previously hardcoded inline.
 **Uncommitted at time of writing.**
+
+**Supported language swapped; Beginner CEFR band narrowed (2026-08-22, see decisions.md, "Beginner
+level narrowed from A1/A2 to A1 only" and "Language swapped: French out, Italian in"):** French
+(`fr-FR`) is removed from the active `supportedLanguages` list (`src/lib/languages.ts`) — commented
+out, not deleted, matching the already-commented English/German entries — and Italian (`it-IT`) is
+added, active, backed by a new `it.svg` flag icon and `'flag-it'` entry in `FLAG_ICONS`
+(`src/lib/getIconByName.ts`). Separately, `languageLevels`'s Beginner entry (`src/lib/language.ts`)
+narrows from CEFR `A1/A2` to `A1` only — Intermediate (`B1/B2`) is unchanged. **Uncommitted at time
+of writing.**
 
 **Remaining or broken work:** None identified for this change.
 **Open questions or decisions:** None.
@@ -559,8 +570,8 @@ respondAfterDelay.ts`). **Dev convenience added same round:** both mock routes n
   instead of first checking `MockSTT`'s textarea.
 - **Language level picker (2026-08-10, see decisions.md):** `language.ts` exports
   `LanguageLevelName`/`LanguageLevel`/`languageLevels`/`getLanguageLevelByName`. `languageLevels`
-  holds two entries — Beginner (`A1/A2`), Intermediate (`B1/B2`); Expert (`C1/C2`) was drafted then
-  deliberately left out. `ChatContainer` owns `level` state (default: Intermediate), passed as
+  holds two entries — Beginner (`A1` as of 2026-08-22, was `A1/A2`), Intermediate (`B1/B2`); Expert
+  (`C1/C2`) was drafted then deliberately left out. `ChatContainer` owns `level` state (default: Intermediate), passed as
   `selectedLevel`/`onChangeLevel` through `ChatSetup` → `SetupForm`, rendered as a
   `SegmentedControl`. `level.cefrLevel` flows into `getConversationConfig` → `getChatBaseInstruction`
   (renamed 2026-08-18 from `getChatConfig`/`getBaseInstruction`, see decisions.md), which writes it
