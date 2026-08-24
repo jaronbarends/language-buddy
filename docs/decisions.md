@@ -3011,3 +3011,8 @@ it twice (once per old exported function) would have computed the same shared co
 strings redundantly. Bundling both fields behind one call mirrors how `getChatBaseInstruction` already
 only needs one `getSharedInstructions` call for its single output string.
 **Status:** Done.
+
+**Date:** 2026-08-24
+**Decision:** Update logo and favicon. For favicons, use version with background for web-app-manifest and apple-touch-icon; use version without bg for favicon.svg, favicon.ico, favicon-96x96.png
+**Rationale** in browser tab, we don't want bg, but rather have slightly bigger balloon; on mobile home screens, you do want a background
+**Status** Done.

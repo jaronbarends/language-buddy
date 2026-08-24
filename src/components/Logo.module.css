@@ -1,43 +1,4 @@
-.logoOld {
+.logo {
   width: var(--size-36);
   height: var(--size-36);
-  border-radius: var(--radius-circle);
-  background: var(--color-bg-primary-subtle);
-}
-
-.logo {
-  position: relative;
-  anchor-scope: all;
-}
-
-.balloon {
-  anchor-name: --balloon;
-  color: white;
-  background: var(--color-bg-primary);
-  width: 3em;
-  padding: 0.2em 0.5em 0;
-  padding: 10% 20% 5% 25%;
-  border-radius: 15%;
-  position: relative;
-
-  * {
-    --icon-size: 100% !important;
-  }
-}
-
-.arrow {
-  position: absolute;
-  z-index: -1;
-  position-anchor: --balloon;
-  --factor: 0.175;
-  --size: calc(var(--factor) * anchor-size(--balloon width));
-  width: var(--size);
-  height: var(--size);
-  left: calc(0.2 * anchor-size(--balloon width));
-  top: calc(anchor-size(--balloon height));
-  /* rotate: 90deg; */
-  transform: skewY(-45deg);
-  translate: 0 -50%;
-  background: var(--color-bg-primary);
-  /* background-color: black; */
 }
