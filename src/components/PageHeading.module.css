@@ -4,24 +4,3 @@
   align-items: center;
   gap: var(--size-12);
 }
-
-.logo {
-  position: relative;
-  width: var(--size-36);
-  height: var(--size-36);
-  border-radius: var(--radius-circle);
-  background: var(--color-bg-primary-subtle);
-
-  &::after {
-    display: block;
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: var(--size-16);
-    height: var(--size-16);
-    border-radius: var(--radius-circle);
-    background-color: var(--color-bg-primary);
-    translate: -50% -50%;
-  }
-}

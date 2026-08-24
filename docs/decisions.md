@@ -3072,3 +3072,10 @@ screen, which was unwanted.
 `src/styles/settings/colors.css`, replacing scrollbar-color values previously hardcoded inline in
 `ThreadView.module.css` — `.scroller` and `.threadView` now read the same tokens.
 **Status:** Done, uncommitted at time of writing.
+
+## Update logo (2026-08-24)
+
+**Date:** 2026-08-24
+**Decision:** Update logo and favicon. For favicons, use version with background for web-app-manifest and apple-touch-icon; use version without bg for favicon.svg, favicon.ico, favicon-96x96.png
+**Rationale** in browser tab, we don't want bg, but rather have slightly bigger balloon; on mobile home screens, you do want a background
+**Status** Done.
