@@ -15,7 +15,7 @@ export type LanguageLevel = {
 };
 
 export const languageLevels = [
-  { name: 'Beginner', cefrLevel: 'A1/A2' },
+  { name: 'Beginner', cefrLevel: 'A1' },
   { name: 'Intermediate', cefrLevel: 'B1/B2' },
 ] as const satisfies readonly LanguageLevel[];
 

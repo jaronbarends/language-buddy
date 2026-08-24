@@ -2,12 +2,24 @@ import { type Language } from './language';
 
 export const supportedLanguages: Language[] = [
   {
-    name: 'French',
-    languageTag: 'fr-FR',
-  },
-  {
     name: 'Dutch',
     languageTag: 'nl-NL',
+  },
+  // {
+  //   name: 'English',
+  //   languageTag: 'en-GB',
+  // },
+  // {
+  //   name: 'French',
+  //   languageTag: 'fr-FR',
+  // },
+  // {
+  //   name: 'German',
+  //   languageTag: 'de-DE',
+  // },
+  {
+    name: 'Italian',
+    languageTag: 'it-IT',
   },
   {
     name: 'Norwegian',
@@ -23,12 +35,4 @@ export const supportedLanguages: Language[] = [
     name: 'Spanish',
     languageTag: 'es-ES',
   },
-  // {
-  //   name: 'English',
-  //   languageTag: 'en-GB',
-  // },
-  // {
-  //   name: 'German',
-  //   languageTag: 'de-DE',
-  // },
 ];

@@ -1793,6 +1793,29 @@ meaningfully between Beginner and Intermediate — no automated evaluation exist
 regressions here.
 **Status:** Done — reflects current file layout as of PR #20; no code change made by this entry.
 
+### Beginner level narrowed from A1/A2 to A1 only
+
+**Date:** 2026-08-22
+**Decision:** `languageLevels`'s Beginner entry (`src/lib/language.ts`) changes `cefrLevel` from
+`'A1/A2'` to `'A1'`. Intermediate (`B1/B2`) is unchanged.
+**Rationale:** Project owner judged A2 too difficult to sit under the same "Beginner" label as A1 —
+manual use surfaced this, not a spike or automated check. Consistent with the "manual verification,
+not automated" caveat already logged for this picker (see entry above): no regression test exists
+to catch level-band drift, so this is a direct judgment call, not a measured one.
+**Status:** Done. Uncommitted at time of writing.
+
+### Language swapped: French out, Italian in
+
+**Date:** 2026-08-22
+**Decision:** `supportedLanguages` (`src/lib/languages.ts`) drops French (`fr-FR`) from the active
+list — commented out, alongside the already-commented English/German entries, not deleted — and adds
+Italian (`it-IT`), active. A new `it.svg` flag icon (`src/assets/icons/flags/it.svg`) and a
+`'flag-it'` entry in `FLAG_ICONS` (`src/lib/getIconByName.ts`) back the new language in
+`LanguagePicker`.
+**Rationale:** Not recorded beyond "switched" — no stated reason for dropping French specifically in
+favor of Italian.
+**Status:** Done. Uncommitted at time of writing.
+
 ---
 
 ## Freeform scenarios generalized into an array; scenario-driven opening hint (2026-08-11)
@@ -3011,6 +3034,46 @@ it twice (once per old exported function) would have computed the same shared co
 strings redundantly. Bundling both fields behind one call mirrors how `getChatBaseInstruction` already
 only needs one `getSharedInstructions` call for its single output string.
 **Status:** Done.
+
+---
+
+## ThreadView autoscroll target changed to top of last item (2026-08-21)
+
+### Autoscroll now scrolls to the top of the last thread item, not the bottom of the thread
+
+**Date:** 2026-08-21
+**Decision:** `ThreadView.tsx`'s autoscroll effect no longer scrolls `.threadView` to `scrollHeight`
+(the bottom of the whole thread). A new `scrollToLastItem` function reads the last child of the
+`threadItems` list's `offsetTop` and scrolls `.threadView` to `top - 16px` (a fixed margin) instead.
+`chatReducer.ts`'s `shouldAutoScrollThread` also now fires on `waitingForEvaluation`, not just
+`aiTurnSpeaking`/`waitingForAI`/`evaluation`.
+**Rationale:** Scrolling to the bottom of the thread meant a long last item (e.g. a long AI reply or
+evaluation comment) scrolled past its own beginning — the user landed partway through it instead of
+at its start. Scrolling to the last item's top keeps the start of new content in view regardless of
+its length.
+**Implementation note:** `offsetTop` is measured relative to the nearest positioned ancestor, so
+`.threadView` gained `position: relative` in `ThreadView.module.css` to make it that ancestor.
+`threadView`/`threadItems` also gained `id` attributes (dev/debugging aid).
+**Status:** Done, uncommitted at time of writing.
+
+## SpeechResults gets an internal scroller for long content (2026-08-21)
+
+### Long recognition/edit balloon now scrolls internally instead of growing unbounded
+
+**Date:** 2026-08-21
+**Decision:** `SpeechResults.tsx`'s balloon content is now wrapped in a new `.scroller` div
+(`overflow-y: auto`, `max-height: 40vh`) instead of letting the balloon (live recognition preview or
+`MessageEditor` edit view) grow to fit arbitrarily long content. `.scroller` is a separate element
+from `.balloonContent` specifically so `overflow-y: auto` doesn't also clip `overflow-x` — which
+would cut off the `ListeningIndicator`.
+**Rationale:** A long recognition preview or edited message was pushing the whole `ThreadView` off
+screen, which was unwanted.
+**New shared tokens:** `--scrollbar-color`/`--scrollbar-color-hover` added to
+`src/styles/settings/colors.css`, replacing scrollbar-color values previously hardcoded inline in
+`ThreadView.module.css` — `.scroller` and `.threadView` now read the same tokens.
+**Status:** Done, uncommitted at time of writing.
+
+## Update logo (2026-08-24)
 
 **Date:** 2026-08-24
 **Decision:** Update logo and favicon. For favicons, use version with background for web-app-manifest and apple-touch-icon; use version without bg for favicon.svg, favicon.ico, favicon-96x96.png

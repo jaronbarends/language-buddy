@@ -39,18 +39,20 @@ export default function SpeechResults({
       <SpeechBalloon author="user" tag="div">
         <div className={styles.balloonContent}>
           {userIsInInputFlow(phase) && <ListeningIndicator phase={phase} />}
-          {messageCanBeEdited(phase) ?
-            <MessageEditor
-              key={phase.userMessage}
-              onMessageChange={onMessageChange}
-              initialValue={phase.userMessage}
-              languageTag={languageTag}
-            />
-          : <div role="status" aria-live="polite" aria-atomic="true">
-              {phase.status === 'sendingUserReply' ? phase.userMessage : liveTranscript}
-              {suffix}
-            </div>
-          }
+          <div className={styles.scroller}>
+            {messageCanBeEdited(phase) ?
+              <MessageEditor
+                key={phase.userMessage}
+                onMessageChange={onMessageChange}
+                initialValue={phase.userMessage}
+                languageTag={languageTag}
+              />
+            : <div role="status" aria-live="polite" aria-atomic="true">
+                {phase.status === 'sendingUserReply' ? phase.userMessage : liveTranscript}
+                {suffix}
+              </div>
+            }
+          </div>
         </div>
       </SpeechBalloon>
     </div>

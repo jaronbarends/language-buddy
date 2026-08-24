@@ -1,6 +1,6 @@
 # Project status
 
-**Last updated:** 2026-08-20
+**Last updated:** 2026-08-21
 **Current phase:** Early build. Concept locked (scenario-library-based conversational sparring
 partner, Norwegian, multi-turn sessions + async structured evaluation). MVP scoping in progress;
 Spikes 1–4 all complete. AI provider decided (Gemini). State machine now runs the full happy path
@@ -70,7 +70,9 @@ durations) landed first, then a small shared component set (`Button`, `Loader`, 
   Intermediate (CEFR B1/B2) in the setup screen (`SetupForm`'s new `SegmentedControl`, defaulting to
   Intermediate); the selected level's `cefrLevel` is threaded through `getChatConfig`/
   `getBaseInstruction` into the AI's system instruction. A third level (Expert/C1/C2) was drafted
-  then pulled back out before committing — deliberately postponed, not shipped.
+  then pulled back out before committing — deliberately postponed, not shipped. **Beginner narrowed
+  to A1 only (2026-08-22, see decisions.md):** `cefrLevel` for Beginner is now `A1`, not `A1/A2` — A2
+  was judged too difficult for the "Beginner" label.
   **Freeform scenarios generalized into an array; scenario-driven opening hint added (2026-08-11, see
   decisions.md):** `scenarios.ts` now exports `freeformScenarios: Scenario[]` (the two freeform
   scenario objects, now private consts) instead of exporting `freeformChatWithAIStart`/
@@ -236,6 +238,29 @@ the shared-instructions function) — so the shared context/constraints strings 
 config build, not twice. Verified via `tsc --noEmit` and `eslint` (clean on all four touched files)
 and by tracing the interpolated template output.
 
+**Autoscroll target changed; long recognition/edit content now scrolls internally (2026-08-21, see
+decisions.md, "ThreadView autoscroll target changed to top of last item" and "SpeechResults gets an
+internal scroller for long content"):** two related but separately-decided fixes for long content.
+`ThreadView.tsx`'s autoscroll now scrolls to the top of the last thread item (`scrollToLastItem`,
+via the last item's `offsetTop`) instead of to the bottom of the thread (`scrollHeight`) — scrolling
+to the bottom meant a long last item (long AI reply, long evaluation comment) scrolled past its own
+beginning. `shouldAutoScrollThread` (`chatReducer.ts`) now also fires on `waitingForEvaluation`.
+Separately, `SpeechResults.tsx`'s balloon content (live recognition preview / `MessageEditor` edit
+view) is now wrapped in a new `.scroller` div (`overflow-y: auto`, `max-height: 40vh`) instead of
+growing unbounded — a long balloon was pushing the whole `ThreadView` off screen. New shared tokens
+`--scrollbar-color`/`--scrollbar-color-hover` (`src/styles/settings/colors.css`) back both this
+scroller and `ThreadView`'s existing scrollbar styling, replacing values previously hardcoded inline.
+**Uncommitted at time of writing.**
+
+**Supported language swapped; Beginner CEFR band narrowed (2026-08-22, see decisions.md, "Beginner
+level narrowed from A1/A2 to A1 only" and "Language swapped: French out, Italian in"):** French
+(`fr-FR`) is removed from the active `supportedLanguages` list (`src/lib/languages.ts`) — commented
+out, not deleted, matching the already-commented English/German entries — and Italian (`it-IT`) is
+added, active, backed by a new `it.svg` flag icon and `'flag-it'` entry in `FLAG_ICONS`
+(`src/lib/getIconByName.ts`). Separately, `languageLevels`'s Beginner entry (`src/lib/language.ts`)
+narrows from CEFR `A1/A2` to `A1` only — Intermediate (`B1/B2`) is unchanged. **Uncommitted at time
+of writing.**
+
 **Remaining or broken work:** None identified for this change.
 **Open questions or decisions:** None.
 **Next step:** Select the next item from `docs/backlog.md`.
@@ -342,7 +367,11 @@ primary: 'send', secondary: 'cancel' }`, `evaluation`/`error`: `{ primary: 'endS
   the TTS playback trigger (see "Real TTS wired up" below) via a `useEffect` keyed on
   `phase.status === 'aiTurnSpeaking'`. **Renders evaluation items too, as of 2026-08-13–2026-08-14**
   (see below) — branches on `item.type` (`'message'` → `SpeechBalloon`, `'evaluation'` → the new
-  `Evaluation` component); `shouldAutoScrollThread` now also fires on `phase.status === 'evaluation'`.
+  `Evaluation` component); `shouldAutoScrollThread` now also fires on `phase.status === 'evaluation'`
+  (and, as of 2026-08-21, `'waitingForEvaluation'` too). **Autoscroll target changed 2026-08-21** (see
+  decisions.md, "ThreadView autoscroll target changed to top of last item"): scrolls to the top of the
+  last thread item (`scrollToLastItem`) instead of the bottom of the thread, so a long last item no
+  longer scrolls past its own beginning.
 - **Evaluation: first working implementation (2026-08-13–2026-08-14, see decisions.md, "Evaluation:
   first working implementation"):** an "Evaluate" secondary button (`ControlsArea`, `aiTurnFlow`
   stage — see above) dispatches `REQUEST_EVALUATION`, walking `requestEvaluation` →
@@ -541,8 +570,8 @@ respondAfterDelay.ts`). **Dev convenience added same round:** both mock routes n
   instead of first checking `MockSTT`'s textarea.
 - **Language level picker (2026-08-10, see decisions.md):** `language.ts` exports
   `LanguageLevelName`/`LanguageLevel`/`languageLevels`/`getLanguageLevelByName`. `languageLevels`
-  holds two entries — Beginner (`A1/A2`), Intermediate (`B1/B2`); Expert (`C1/C2`) was drafted then
-  deliberately left out. `ChatContainer` owns `level` state (default: Intermediate), passed as
+  holds two entries — Beginner (`A1` as of 2026-08-22, was `A1/A2`), Intermediate (`B1/B2`); Expert
+  (`C1/C2`) was drafted then deliberately left out. `ChatContainer` owns `level` state (default: Intermediate), passed as
   `selectedLevel`/`onChangeLevel` through `ChatSetup` → `SetupForm`, rendered as a
   `SegmentedControl`. `level.cefrLevel` flows into `getConversationConfig` → `getChatBaseInstruction`
   (renamed 2026-08-18 from `getChatConfig`/`getBaseInstruction`, see decisions.md), which writes it
