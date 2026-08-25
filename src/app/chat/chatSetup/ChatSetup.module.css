@@ -10,6 +10,7 @@
 }
 
 .payoff {
+  margin-top: calc(-1 * var(--size-4));
   color: var(--color-text-neutral-subtle);
   font-size: var(--font-size-minor);
 }

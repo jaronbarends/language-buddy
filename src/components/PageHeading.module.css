@@ -2,5 +2,5 @@
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
-  gap: var(--size-12);
+  gap: var(--size-8);
 }

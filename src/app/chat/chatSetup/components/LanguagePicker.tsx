@@ -50,7 +50,7 @@ export default function LanguagePicker({
               )}
               {language.name}
               {speechSupportIsChecked && !languageHasVoice(language) && (
-                <span
+                <div
                   className={styles.hasNoVoiceWarning}
                   role="img"
                   aria-label={`Speech is unavailable for ${language.name}`}
@@ -59,7 +59,7 @@ export default function LanguagePicker({
                     <Icon iconName="volumeMute" />
                   </div>
                   <Tooltip>Speech is not available for {language.name}</Tooltip>
-                </span>
+                </div>
               )}
             </label>
           );

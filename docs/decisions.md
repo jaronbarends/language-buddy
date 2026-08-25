@@ -3079,3 +3079,32 @@ screen, which was unwanted.
 **Decision:** Update logo and favicon. For favicons, use version with background for web-app-manifest and apple-touch-icon; use version without bg for favicon.svg, favicon.ico, favicon-96x96.png
 **Rationale** in browser tab, we don't want bg, but rather have slightly bigger balloon; on mobile home screens, you do want a background
 **Status** Done.
+
+## LanguagePicker restyled: vertical layout, tooltip replaces title (2026-08-25)
+
+### `.languageOption`s laid out vertically; no-voice warning uses a hover `Tooltip` instead of the native `title` attribute
+
+**Date:** 2026-08-25
+**Decision:** Two related restyles to `LanguagePicker`, on branch `language-picker-restyle`:
+
+- **Vertical layout (`f57b803`):** `.languageOptions`'s grid `minmax` narrows from `10rem` to
+  `6rem`, and each `.languageOption` switches from a horizontal flex row to a vertical column
+  (`flex-direction: column`) — fitting more language options per row now that flag/label stack
+  instead of sitting side by side. The `.hasNoVoiceWarning` icon becomes `position: absolute`,
+  pinned top-right of the option, instead of sitting inline in the row.
+- **Tooltip replaces `title` (`92795fa`):** the no-voice warning's native `title` attribute is
+  removed and replaced by a new shared `Tooltip` component (`src/components/Tooltip.tsx`) — a plain
+  `<div>` styled via `Tooltip.module.css`, shown on hover using the CSS anchor positioning API:
+  the icon's wrapper gets `anchor-name: --tooltip-anchor`, the tooltip gets `position-anchor:
+--tooltip-anchor` + `position-area: top` (with `position-try` fallbacks), and visibility is toggled
+  by a `--tooltip-visible` custom property set on `:hover` of the icon's container, read via
+  `@container style(--tooltip-visible: 1)`. `role="img"`/`aria-label` stay on the warning icon
+  unchanged, so its accessible name doesn't depend on the tooltip being visible. New token:
+  `--color-bg-tooltip` (`src/styles/settings/colors.css`).
+
+**Rationale:** Not stated explicitly in commit messages beyond "make language pickers vertical" /
+"add tooltip to language picker" — read from the diffs. A custom tooltip replaces the native
+`title` because native tooltips are slow to appear, unstyleable, and don't work on touch — moving
+to a component gives control over timing/appearance and matches the rest of the app's design-token
+styling instead of the browser's default tooltip look.
+**Status:** Done, committed (`f57b803`, `92795fa`), not yet merged to `main`.
