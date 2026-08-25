@@ -3129,3 +3129,80 @@ each supported count needs its own enumerated selector/breakpoint combination. I
 grows past 6, this needs a different technique (JS-computed columns, most likely) rather than more
 enumeration.
 **Status:** Done.
+
+---
+
+## Level-specific instruction constraints; CEFR levels expanded to four (2026-08-25)
+
+### `getLevelInstructions.ts` added: structural constraints + style reference per CEFR level
+
+**Date:** 2026-08-25
+**Decision:** New file `src/lib/getLevelInstructions.ts` exports `getLevelInstructions(cefrLevel:
+CEFRLevel)`, backed by a `Record<CEFRLevel, LevelInstructions>` map with one entry per level
+(`A1`/`A2`/`B1`/`B2`). Each entry has:
+
+- `constraints` — a bullet list of concrete structural rules: clause/subordination limits (e.g. A1
+  bans subordinate clauses entirely and caps replies at one clause per sentence; B2 allows relative
+  clauses, passive voice, and stacked subordination), max words/sentences per reply, and vocabulary
+  register.
+- `styleReference` — a short English-language example paragraph illustrating the target sentence
+  complexity. English on purpose: the rules and example are meant to be language-agnostic and apply
+  regardless of which practice language (Norwegian, Dutch, etc.) is currently selected.
+
+`getChatBaseInstruction.ts` now calls `getLevelInstructions(cefrLevel)` and injects both
+`constraints` and `styleReference` into the assembled system instruction, alongside the shared
+constraints from `getSharedInstructions.ts`. The previously hardcoded, level-agnostic
+`Max 2-3 short sentences per reply` / `Ask at most one question per turn` lines are removed from the
+base template — sentence-count and question-frequency limits are now level-owned (each level's own
+`constraints` sets its own sentence-count cap and repeats an "ask at most one question per turn"
+rule at the appropriate complexity).
+`getSharedInstructions.ts` is unchanged — confirmed by diff (last touched 2026-08-20, "add shared
+constraints") — it still only holds constraints/context genuinely shared across all levels (the
+"refer to input as spoken" rule, the ASR-transcription-error caveat), not level-specific content.
+
+**Rationale:** A single CEFR label alone (e.g. "answer at language level A1") wasn't reliably
+constraining AI output — observed conversational transcripts drifted toward more complex sentence
+structure (subordinate clauses, longer sentences) than true A1 within a handful of turns. Likely
+cause: unconstrained "natural" model output skews toward a higher register than graded-reader text,
+and multi-turn context compounds small deviations turn over turn. Explicit structural rules (clause
+bans, word/sentence-count caps) plus a concrete style-reference example give the model a harder
+anchor than the label alone.
+**Status:** Done. `CEFRLevel` type (`'A1' | 'A2' | 'B1' | 'B2'`) added to `src/lib/language.ts`,
+replacing the previous plain `cefrLevel: string` field on `LanguageLevel`.
+
+### `LanguageLevelName`/`languageLevels` expanded to four CEFR-aligned levels
+
+**Date:** 2026-08-25
+**Decision:** `LanguageLevelName` widens from `'Beginner' | 'Intermediate'` to `'Beginner' |
+'Elementary' | 'Intermediate' | 'Upper intermediate'`. `languageLevels` gains two entries —
+`Elementary` → `A2`, `Upper intermediate` → `B2` — alongside the existing `Beginner` → `A1` and
+`Intermediate` → `B1` (previously `B1/B2`, narrowed to the single `B1` value now that `B2` has its
+own named level). Each of the four now maps 1:1 to one `CEFRLevel`, closing the "Intermediate =
+B1/B2" ambiguity the two-level picker carried since 2026-08-10 (parallel to the narrower "Beginner =
+A1/A2" ambiguity already resolved for Beginner alone on 2026-08-22, see "Supported language swapped;
+Beginner CEFR band narrowed" above).
+**Rationale:** `getLevelInstructions.ts`'s per-level constraints (added same day, see above) are
+only meaningful if each selectable level maps to exactly one `CEFRLevel` — a picker option covering
+two CEFR levels (e.g. the old `B1/B2` Intermediate) can't be given one coherent constraint set.
+Adding the two missing named levels as first-class picker options, rather than only building the
+A2/B2 constraint entries for hypothetical future use, makes all four levels drafted in
+`getLevelInstructions.ts` actually reachable from the UI.
+**Does not affect:** the 2026-08-10 decision to postpone Expert (C1/C2) — that remains postponed,
+untouched by this change (see backlog.md, "Postponed").
+**Status:** Done.
+
+### Level picker now labels options by raw CEFR code, not level name
+
+**Date:** 2026-08-25
+**Decision:** `SetupForm.tsx`'s level `SegmentedControl` options now use `label: level.cefrLevel`
+(e.g. "A1", "B2") instead of `label: level.name` (e.g. "Beginner", "Upper intermediate"). Supporting
+layout tweaks landed in the same commit: `SegmentedControl.module.css`'s grid `minmax` narrows from
+`10rem` to `2rem` (four short CEFR-code options need far less width per cell than the longer name
+labels did), and `SegmentedControl.tsx`'s `<fieldset>` drops its `styles.segmentedControl` class.
+**Rationale:** Not stated explicitly in the commit message ("add levels A2 and B2") — read from the
+diff. Four full level names ("Upper intermediate" in particular) don't fit a four-option segmented
+control as cleanly as four two-character CEFR codes do.
+**Consequence:** CEFR codes are now shown directly in the UI with no explanation of what they mean
+to a user unfamiliar with the CEFR scale — flagged as a backlog item, not resolved here (see
+backlog.md).
+**Status:** Done, same commit (`d2ab971`) as the four-level expansion above.
