@@ -5,7 +5,7 @@ export type LevelInstructions = {
   styleReference: string;
 };
 
-const levelInstructionsByCefrLevel: Record<CEFRLevel, LevelInstructions> = {
+const levelInstructionsByCefrLevel = {
   A1: {
     constraints: `
 - One clause per sentence only. No subordinate or relative clauses, no conjunctions 
@@ -90,7 +90,7 @@ willing to help if you ask. I've noticed that the way meetings are run here is
 quite different from what I was used to before, which took some getting used to."
 `,
   },
-};
+} satisfies Record<CEFRLevel, LevelInstructions>;
 
 export function getLevelInstructions(cefrLevel: CEFRLevel): LevelInstructions {
   return levelInstructionsByCefrLevel[cefrLevel];
