@@ -4,16 +4,7 @@
 
 .languageOptions {
   --column-count: auto-fit;
-  --flex-direction: column;
-  --padding-bottom-for-row: var(--size-12);
-  --padding-bottom-for-col: var(--size-4);
-  --padding-bottom-label: var(--padding-bottom-for-col);
-  --gap-for-row: var(--size-8);
-  --gap-for-col: var(--size-4);
-  --gap-label: var(--gap-for-col);
-  --no-voice-warning-position-for-row: static;
-  --no-voice-warning-position-for-col: absolute;
-  --no-voice-warning-position: var(--no-voice-warning-position-for-col);
+  --label-layout: vertical; /* define this var here, so we can use style container query to query it */
 
   display: grid;
   grid-template-columns: repeat(var(--column-count), minmax(6rem, 1fr));
@@ -30,10 +21,7 @@
     &:has(.label:last-child:nth-child(2)),
     &:has(.label:last-child:nth-child(4)) {
       --column-count: 2;
-      --flex-direction: row;
-      --padding-bottom-label: var(--padding-bottom-for-row);
-      --gap-label: var(--gap-for-row);
-      --no-voice-warning-position: var(--no-voice-warning-position-for-row);
+      --label-layout: horizontal;
     }
 
     &:has(.label:last-child:nth-child(3)),
@@ -47,10 +35,14 @@
     &:has(.label:last-child:nth-child(4)) {
       /* make sure to redeclare all props from 21rem breakpoint */
       --column-count: 4;
-      --flex-direction: column;
-      --padding-bottom-label: var(--padding-bottom-for-col);
-      --gap-label: var(--gap-for-col);
-      --no-voice-warning-position: var(--no-voice-warning-position-for-col);
+      --label-layout: vertical;
+    }
+  }
+
+  @media screen and (min-width: 35rem) {
+    &:has(.label:last-child:nth-child(3)),
+    &:has(.label:nth-child(5)) {
+      --label-layout: horizontal;
     }
   }
 }
@@ -58,19 +50,28 @@
 .label {
   --border-width: var(--border-width-2);
   --bevel: var(--bevel-small);
+  --no-voice-warning-position: absolute;
 
   position: relative;
   display: flex;
-  flex-direction: var(--flex-direction);
+  flex-direction: column;
   align-items: center;
-  gap: var(--gap-label);
+  gap: var(--size-4);
   border: var(--border-width) solid var(--color-border-neutral);
   border-bottom-width: calc(var(--border-width) + var(--bevel));
   border-radius: var(--radius-12);
-  padding: var(--size-12) var(--size-16) var(--padding-bottom-label);
+  padding: var(--size-12) var(--size-16) var(--size-4);
   background: var(--color-bg-default);
   font-size: var(--font-size-16);
   font-family: var(--font-family-display);
+
+  /* adjust styling for labels with horizontal layout */
+  @container style(--label-layout: horizontal) {
+    flex-direction: row;
+    padding-bottom: var(--size-12);
+    gap: var(--size-8);
+    --no-voice-warning-position: static;
+  }
 }
 
 .label:hover,
