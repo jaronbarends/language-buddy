@@ -128,6 +128,12 @@ rather than dropping it.
 - **listening-timeout value under reconsideration (2026-08-02)** — see decisions.md, "Reply-phase
   UX flagged for redesign." May be dropped entirely rather than built.
 - open app with vocab suggestion of the day
+- CEFR labels (A1/A2/B1/B2) are shown bare in the level picker (`SetupForm`'s level
+  `SegmentedControl`, since 2026-08-25 — see decisions.md, "Level picker now labels options by raw
+  CEFR code") with no explanation of what they mean — may not be meaningful to a user unfamiliar
+  with the CEFR scale. Add an explanation (e.g. a tooltip, mirroring the `Tooltip` component already
+  used for the no-voice warning — see decisions.md, "LanguagePicker restyled," 2026-08-25) if this
+  proves confusing in practice.
 - ~~be able to choose language level~~ — **resolved 2026-08-10**: Beginner/Intermediate picker
   added in `SetupForm`, CEFR level threaded into the AI system instruction (see decisions.md,
   "Language level picker added").

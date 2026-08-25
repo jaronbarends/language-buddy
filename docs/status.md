@@ -272,7 +272,26 @@ browser's native tooltip — `role="img"`/`aria-label` on the icon are unchanged
 name doesn't depend on the tooltip being visible. New token: `--color-bg-tooltip`
 (`src/styles/settings/colors.css`). Committed (`f57b803`, `92795fa`), not yet merged to `main`.
 
-**Remaining or broken work:** None identified for either change.
+**Level-specific instruction constraints added; CEFR level picker expanded to four levels
+(2026-08-25, commits `c1277af`/`d2ab971`, see decisions.md, "Level-specific instruction constraints;
+CEFR levels expanded to four"):** new `src/lib/getLevelInstructions.ts` gives each CEFR level
+(`A1`/`A2`/`B1`/`B2`) its own structural constraints (clause/subordination rules, sentence-count
+caps, vocabulary register) plus an English-language style-reference paragraph, replacing the
+previous single hardcoded `Max 2-3 short sentences per reply`/`Ask at most one question per turn`
+pair in `getChatBaseInstruction.ts` — sentence-count limits are now level-owned. `CEFRLevel` is a
+literal union (`'A1' | 'A2' | 'B1' | 'B2'`) on `src/lib/language.ts`, no longer a plain `string`.
+`languageLevels`/`LanguageLevelName` expand from two entries (Beginner→A1, Intermediate→B1/B2) to
+four, each mapping 1:1 to a `CEFRLevel`: Beginner→A1, Elementary→A2 (new), Intermediate→B1 (narrowed
+from B1/B2), Upper intermediate→B2 (new). `SetupForm`'s level `SegmentedControl` now labels options
+by raw CEFR code (`level.cefrLevel`, e.g. "A1") instead of the level name, with supporting layout
+changes to fit four short labels. `getSharedInstructions.ts` is unchanged — confirmed still holding
+only genuinely cross-level content. **Known gap, not resolved by this change:** the CEFR codes now
+shown in the UI have no explanation for users unfamiliar with the CEFR scale — tracked in
+backlog.md.
+
+**Remaining or broken work:** None identified for the LanguagePicker restyle/grid work. The bare
+CEFR-code labels in the level picker are a known, tracked gap (see backlog.md), not a broken/
+remaining-work item.
 **Open questions or decisions:** None.
 **Next step:** Select the next item from `docs/backlog.md`.
 
@@ -579,14 +598,21 @@ respondAfterDelay.ts`). **Dev convenience added same round:** both mock routes n
   with the env var and `SpeechToText.tsx`'s fallback read of it in `handleEnd`. `TRANSCRIPT_EMPTY`
   handling is unaffected — an empty real-STT transcript now goes straight to the silent-retry path
   instead of first checking `MockSTT`'s textarea.
-- **Language level picker (2026-08-10, see decisions.md):** `language.ts` exports
-  `LanguageLevelName`/`LanguageLevel`/`languageLevels`/`getLanguageLevelByName`. `languageLevels`
-  holds two entries — Beginner (`A1` as of 2026-08-22, was `A1/A2`), Intermediate (`B1/B2`); Expert
-  (`C1/C2`) was drafted then deliberately left out. `ChatContainer` owns `level` state (default: Intermediate), passed as
-  `selectedLevel`/`onChangeLevel` through `ChatSetup` → `SetupForm`, rendered as a
-  `SegmentedControl`. `level.cefrLevel` flows into `getConversationConfig` → `getChatBaseInstruction`
-  (renamed 2026-08-18 from `getChatConfig`/`getBaseInstruction`, see decisions.md), which writes it
-  directly into the AI's system instruction.
+- **Language level picker (2026-08-10, see decisions.md; expanded to four CEFR-aligned levels
+  2026-08-25):** `language.ts` exports `LanguageLevelName`/`CEFRLevel`/`LanguageLevel`/
+  `languageLevels`/`getLanguageLevelByName`. `languageLevels` now holds four entries, each mapping
+  1:1 to a `CEFRLevel` (`'A1' | 'A2' | 'B1' | 'B2'`, a literal union as of 2026-08-25, previously a
+  plain `string` field): Beginner→A1, Elementary→A2, Intermediate→B1 (narrowed from `B1/B2`), Upper
+  intermediate→B2. Expert (`C1/C2`) was drafted then deliberately left out (2026-08-10), unaffected
+  by the four-level expansion (see decisions.md and backlog.md, "Postponed"). `ChatContainer` owns
+  `level` state (default: Intermediate), passed as `selectedLevel`/`onChangeLevel` through
+  `ChatSetup` → `SetupForm`, rendered as a `SegmentedControl` whose options are now labeled by raw
+  CEFR code (`level.cefrLevel`, e.g. "A1") rather than level name. `level.cefrLevel` flows into
+  `getConversationConfig` → `getChatBaseInstruction` (renamed 2026-08-18 from `getChatConfig`/
+  `getBaseInstruction`, see decisions.md), which as of 2026-08-25 also calls a new
+  `getLevelInstructions.ts` for level-specific structural constraints and a style-reference example
+  (see decisions.md, "Level-specific instruction constraints; CEFR levels expanded to four") instead
+  of writing only the bare CEFR code into the system instruction.
 
 ## What's decided
 
@@ -704,11 +730,14 @@ respondAfterDelay.ts`). **Dev convenience added same round:** both mock routes n
   "Visual/UI design phase sequenced after core loop" and the new "Visual/UI design pass" section).
   `ErrorArea` now uses `Feedback` too (2026-08-09, see decisions.md). A dedicated accessibility pass
   is not part of this pass — still open (see "What's open" below).
-- **Language level: user can pick Beginner or Intermediate (2026-08-10, implemented)** — not a
-  scoped backlog item, built directly (see decisions.md). CEFR level is threaded into the AI's
-  system instruction; manually confirmed to change model behavior meaningfully between the two
-  levels, no automated check exists yet. Expert (C1/C2) deliberately postponed, not scaffolded in
-  code (see decisions.md).
+- **Language level: user can pick from four CEFR-aligned levels — Beginner (A1), Elementary (A2),
+  Intermediate (B1), Upper intermediate (B2) (2026-08-10, implemented; expanded from two levels to
+  four 2026-08-25, see decisions.md)** — not a scoped backlog item, built directly. CEFR level is
+  threaded into the AI's system instruction, now paired with level-specific structural constraints
+  and a style reference (`getLevelInstructions.ts`, added 2026-08-25 — see decisions.md) rather than
+  the bare CEFR code alone; manually confirmed to change model behavior meaningfully, no automated
+  check exists. Expert (C1/C2) remains deliberately postponed, not scaffolded in code (see
+  decisions.md).
 - **"Stop chat" brought back; ending a session is a dispatched `END_SESSION` action again
   (2026-08-12, implemented)** — reverses the 2026-08-04 decision to drop `STOP_CHAT`/`chatEnded`
   entirely and the 2026-07-30 decision that ending a session is a direct `onEndSession()` prop call
