@@ -1,0 +1,40 @@
+/* to control tooltip:
+- on parent: add 
+  anchor-scope: all;
+  &:hover {
+  --tooltip-visible: 1;
+  }
+- on sibling: add anchor-name: --tooltip-anchor; 
+*/
+.tooltip {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  position-anchor: --tooltip-anchor;
+  position-area: top;
+  position-try:
+    flip-inline,
+    flip-block,
+    flip-inline flip-block;
+  border-radius: var(--radius-4);
+  padding: var(--size-4) var(--size-8);
+  background: var(--color-bg-tooltip);
+  max-width: 8em;
+  color: var(--color-text-on-dark);
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-14);
+  line-height: var(--line-height-body-tight);
+  transition: var(--duration-fast) ease-in-out;
+  transition-property: display, opacity;
+  transition-behavior: allow-discrete;
+  opacity: 0;
+
+  @container style(--tooltip-visible: 1) {
+    display: block;
+    opacity: 1;
+
+    @starting-style {
+      opacity: 0;
+    }
+  }
+}

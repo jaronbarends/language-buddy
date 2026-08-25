@@ -1,3 +1,4 @@
+import Tooltip from '@/components/Tooltip';
 import Icon from '@/components/icon/Icon';
 import { getFlagIconName, type FlagIconName } from '@/lib/getIconByName';
 import { SupportedLanguageVoices, type Language } from '@/lib/language';
@@ -49,14 +50,16 @@ export default function LanguagePicker({
               )}
               {language.name}
               {speechSupportIsChecked && !languageHasVoice(language) && (
-                <span
+                <div
                   className={styles.hasNoVoiceWarning}
                   role="img"
                   aria-label={`Speech is unavailable for ${language.name}`}
-                  title={`Speech is unavailable for ${language.name}`}
                 >
-                  <Icon iconName="volumeMute" />
-                </span>
+                  <div className={styles.iconContainer}>
+                    <Icon iconName="volumeMute" />
+                  </div>
+                  <Tooltip>Speech is not available for {language.name}</Tooltip>
+                </div>
               )}
             </label>
           );

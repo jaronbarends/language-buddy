@@ -1,6 +1,6 @@
 # Project status
 
-**Last updated:** 2026-08-21
+**Last updated:** 2026-08-25
 **Current phase:** Early build. Concept locked (scenario-library-based conversational sparring
 partner, Norwegian, multi-turn sessions + async structured evaluation). MVP scoping in progress;
 Spikes 1–4 all complete. AI provider decided (Gemini). State machine now runs the full happy path
@@ -261,7 +261,18 @@ added, active, backed by a new `it.svg` flag icon and `'flag-it'` entry in `FLAG
 narrows from CEFR `A1/A2` to `A1` only — Intermediate (`B1/B2`) is unchanged. **Uncommitted at time
 of writing.**
 
-**Remaining or broken work:** None identified for this change.
+**`LanguagePicker` restyled: vertical layout, tooltip replaces `title` (2026-08-25, branch
+`language-picker-restyle`, see decisions.md, "LanguagePicker restyled: vertical layout, tooltip
+replaces title"):** `.languageOptions`'s grid `minmax` narrows from `10rem` to `6rem` and each
+`.languageOption` switches from a horizontal row to a vertical column, fitting more languages per
+row. The no-voice warning icon's native `title` attribute is replaced by a new shared `Tooltip`
+component (`src/components/Tooltip.tsx`), shown on hover via CSS anchor positioning
+(`anchor-name`/`position-anchor` + a `@container style(--tooltip-visible: 1)` toggle) instead of the
+browser's native tooltip — `role="img"`/`aria-label` on the icon are unchanged, so its accessible
+name doesn't depend on the tooltip being visible. New token: `--color-bg-tooltip`
+(`src/styles/settings/colors.css`). Committed (`f57b803`, `92795fa`), not yet merged to `main`.
+
+**Remaining or broken work:** None identified for either change.
 **Open questions or decisions:** None.
 **Next step:** Select the next item from `docs/backlog.md`.
 
