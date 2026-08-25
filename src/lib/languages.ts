@@ -9,14 +9,14 @@ export const supportedLanguages: Language[] = [
   //   name: 'English',
   //   languageTag: 'en-GB',
   // },
-  // {
-  //   name: 'French',
-  //   languageTag: 'fr-FR',
-  // },
-  // {
-  //   name: 'German',
-  //   languageTag: 'de-DE',
-  // },
+  {
+    name: 'French',
+    languageTag: 'fr-FR',
+  },
+  {
+    name: 'German',
+    languageTag: 'de-DE',
+  },
   {
     name: 'Italian',
     languageTag: 'it-IT',
