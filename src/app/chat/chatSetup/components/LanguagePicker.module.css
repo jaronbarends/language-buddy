@@ -21,6 +21,11 @@
   align-items: end;
   --color-border-highlight: var(--color-border-primary-subtle);
 
+  /*
+  layout is adjusted depending on screen width and number of items (counted using :has) in 2 ways:
+  - number of columns
+  - orientation within label (horizontal vs vertical)
+  */
   @media screen and (min-width: 21rem) {
     &:has(.label:last-child:nth-child(2)),
     &:has(.label:last-child:nth-child(4)) {
@@ -33,37 +38,19 @@
 
     &:has(.label:last-child:nth-child(3)),
     &:has(.label:nth-child(5)) {
+      /* nth-child(5) also handles 6); if we should get more than 6 items, we probably want a different UI */
       --column-count: 3;
     }
   }
 
   @media screen and (min-width: 30rem) {
-    &:has(.label:last-child:nth-child(2)) {
-      --column-count: 2;
-    }
-
-    &:has(.label:last-child:nth-child(3)),
-    &:has(.label:nth-child(5)) {
-      --column-count: 3;
-    }
-
     &:has(.label:last-child:nth-child(4)) {
+      /* make sure to redeclare all props from 21rem breakpoint */
       --column-count: 4;
       --flex-direction: column;
       --padding-bottom-label: var(--padding-bottom-for-col);
       --gap-label: var(--gap-for-col);
       --no-voice-warning-position: var(--no-voice-warning-position-for-col);
-    }
-  }
-
-  @media screen and (min-width: 35rem) {
-    &:has(.label:last-child:nth-child(3)),
-    &:has(.label:nth-child(5)) {
-      --column-count: 3;
-      --flex-direction: row;
-      --padding-bottom-label: var(--padding-bottom-for-row);
-      --gap-label: var(--gap-for-row);
-      --no-voice-warning-position: var(--no-voice-warning-position-for-row);
     }
   }
 }
