@@ -58,5 +58,14 @@
   display: grid;
   top: 0.375rem;
   right: 0.5rem;
+  anchor-scope: all;
+
+  &:hover {
+    --tooltip-visible: 1;
+  }
+}
+
+.iconContainer {
+  anchor-name: --tooltip-anchor;
   opacity: 0.6;
 }

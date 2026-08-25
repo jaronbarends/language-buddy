@@ -61,6 +61,7 @@
   --color-text-neutral-subtle: var(--color-gray-400);
   --color-text-error: var(--color-red);
   --color-text-info: var(--color-text-secondary-subtle);
+  --color-text-on-dark: var(--color-white);
 
   /* semantic colors - background */
 
@@ -94,6 +95,7 @@
   --color-text-default: var(--color-text-neutral);
   --color-text-label: var(--color-text-neutral-subtle);
   --color-focus-outline: var(--color-text-default);
+  --color-bg-tooltip: rgba(from var(--color-gray-100) r g b / 0.9);
 
   --scrollbar-color: transparent transparent;
   --scrollbar-color-hover: var(--color-bg-neutral) transparent;
