@@ -47,7 +47,7 @@ export default function SetupForm({
   const speechRecognitionIsSupportedClientSide = useSpeechRecognitionIsSupported();
 
   const levelOptions: SegmentedControlOption<LanguageLevelName>[] = languageLevels.map((level) => ({
-    label: level.name,
+    label: level.cefrLevel,
     value: level.name,
   }));
 
@@ -113,7 +113,11 @@ export default function SetupForm({
   function handleSubmit(evt: React.SubmitEvent<HTMLFormElement>) {
     evt.preventDefault();
 
-    const conversationConfig = getConversationConfig(selectedLanguage, selectedLevel, selectedScenario);
+    const conversationConfig = getConversationConfig(
+      selectedLanguage,
+      selectedLevel,
+      selectedScenario
+    );
 
     onStartSession(conversationConfig);
   }

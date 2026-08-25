@@ -76,7 +76,7 @@ is nice, we sometimes go for a walk along the river."
   clause per sentence is fine.
 - Vocabulary can include mild abstraction, opinions, and hedging ("it seems," 
   "I've noticed that"). Still avoid technical or specialist vocabulary.
-- Max 4-5 sentences per reply.
+- Max 3-4 sentences per reply.
 - Ask at most one question per turn.
 `,
     styleReference: `
