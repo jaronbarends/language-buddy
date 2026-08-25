@@ -1,3 +1,4 @@
+import { getLevelInstructions, type LevelInstructions } from '@/lib/getLevelInstructions';
 import { getSharedInstructions, type SharedInstructions } from '@/lib/getSharedInstructions';
 import type { Language, LanguageLevel } from '@/lib/language';
 
@@ -13,6 +14,7 @@ export function getChatBaseInstruction(
     level,
     aiStartingPrompt
   );
+  const levelInstructions: LevelInstructions = getLevelInstructions(cefrLevel);
   const chatBaseInstruction = `
 ## Role/persona
 
@@ -33,9 +35,12 @@ ${sharedInstructions.context}
 
 ${sharedInstructions.constraints}
 - Answer in ${languageTag} at language level ${cefrLevel}, even if addressed in another language.
-- Max 2-3 short sentences per reply.
-- Ask at most one question per turn.
 - Write your reply as natural spoken language — no lists, headings, or other written-text formatting. The text will be read aloud via text-to-speech.
+${levelInstructions.constraints}
+
+### Style reference
+
+${levelInstructions.styleReference}
 
 `; // baseInstruction should end with empty line for formatting purposes when scenario gets injected
 
