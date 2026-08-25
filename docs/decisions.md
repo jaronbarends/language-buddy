@@ -3108,3 +3108,24 @@ screen, which was unwanted.
 to a component gives control over timing/appearance and matches the rest of the app's design-token
 styling instead of the browser's default tooltip look.
 **Status:** Done, committed (`f57b803`, `92795fa`), not yet merged to `main`.
+
+## LanguagePicker item-count-responsive grid (2026-08-25)
+
+### Column count and label orientation driven by item count via `:has()`, not just viewport width
+
+**Date:** 2026-08-25
+**Decision:** `.languageOptions`'s grid column count and `.label`'s internal flex-direction
+(row vs. column) are now controlled by CSS custom properties set via `:has(.label:nth-child(N))` /
+`:has(.label:last-child:nth-child(N))` selectors, tuned per breakpoint (21rem, 30rem) for item
+counts 2 through 6. `:has(.label:nth-child(5))` intentionally also catches 6 items — both land on
+3 columns (3+2 or 3+3), which reads as balanced enough not to need a separate rule.
+**Rationale:** Plain `repeat(auto-fit, minmax(...))` is a greedy algorithm with no lookahead at
+total item count, so it can't balance rows — e.g. 6 items at a width fitting 5 columns produced a
+5+1 split. `grid-template-rows: masonry` would solve this but is Firefox-only, not baseline. A
+JS-computed column count was considered and rejected in favor of a pure-CSS `:has()`-based
+approach, since the item-count range is small and bounded (see below).
+**Constraint:** This approach assumes a max of 6 languages. It does not generalize to arbitrary N —
+each supported count needs its own enumerated selector/breakpoint combination. If the language list
+grows past 6, this needs a different technique (JS-computed columns, most likely) rather than more
+enumeration.
+**Status:** Done.
