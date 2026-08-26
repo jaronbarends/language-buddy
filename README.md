@@ -1,36 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Language buddy
 
-## Getting Started
+An AI conversation tool to practice speaking in another language. Practicing is in the form of a chat, where the user's speech is transformed to text with `SpeechRecognition`; AI's response is transformed to speech with `SpeechSynthesis`.
+
+Can handle multiple languages and levels of proficiency.
+
+## Tech stack
+
+|                         |                                                                                                  |
+| ----------------------- | ------------------------------------------------------------------------------------------------ |
+| Next.js 15 (App Router) | Framework — chosen deliberately for learning purposes, rather than reach for a simpler SPA setup |
+| TypeScript              |                                                                                                  |
+| Gemini API              | AI provider                                                                                      |
+| Vercel                  | Hosting                                                                                          |
+
+## Setup
+
+Create `.env.local`. (The public vars are for dev purposes only)
+
+```env
+GEMINI_API_KEY=
+
+# NEXT_PUBLIC_USE_MOCK_AI=true
+# NEXT_PUBLIC_DISABLE_AI_SPEECH=true
+# NEXT_PUBLIC_INITIAL_LANGUAGE_DUTCH=true
+# NEXT_PUBLIC_SHOW_DEV_HELPER=true
+```
+
+## Getting Started ## Getting Started
+
+Install dependencies:
+
+```bash
+npm install
+```
 
 First, run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Testing on mobile
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+ngrok http 3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+[ngrok quickstart](https://ngrok.com/docs/getting-started)
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## Troubleshooting
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### "Speech recognition service permission check has failed" on iOs
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+If you get the error "Speech recognition service permission check has failed" on iOs: Settings → Privacy & Security → Speech Recognition — is Safari toggled on there?
 
-## Deploy on Vercel
+### Unsupported SpeechSynthesis voices
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The languages supported for Text To Speech varies per computer and per browser.
+When you do `speechSynthesis.getVoices()`, you'll get the list of possible voices.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+#### Add Voices on Windows
+
+- Open the Start Menu and go to Settings.
+- Click on Time & Language, then select Speech.
+- Look for Manage voices and click the Add voices button.
+- Search for the language or voice pack you want, select it, and click Add.
+- Restart your browser to load the new voices into `window.speechSynthesis`
+
+#### Add Voices on macOS
+
+(Not tested)
+
+- Open the Apple Menu and go to System Settings.
+- Click on Accessibility, then select Read & Speak.
+- Click the Info (ⓘ) button next to System voice.
+- Download and check the specific voice or language pack you want to install.
+- Restart your browser so the web page can detect the updated list.
+
+On older macOS versions, this setting is under Accessibility → Spoken Content, with a Manage/Customise dropdown next to System voice instead.
