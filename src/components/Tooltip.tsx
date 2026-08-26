@@ -34,7 +34,12 @@ export default function Tooltip({
         style={{ '--anchor-name': anchorName } as CSSPropertiesWithVars}
       >
         {children}
-        <button type="button" className={styles.closeButton} onClick={closeTooltip}>
+        <button
+          type="button"
+          className={styles.closeButton}
+          onClick={closeTooltip}
+          aria-label="Close tooltip"
+        >
           <Icon iconName="close" />
         </button>
       </div>

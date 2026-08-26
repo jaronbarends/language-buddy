@@ -138,7 +138,7 @@ export default function SetupForm({
 
 function LevelTooltip() {
   return (
-    <TooltipIcon>
+    <TooltipIcon ariaLabel="What do the level codes mean?">
       <dl className={styles.levelsList}>
         {languageLevels.map((level) => (
           <Fragment key={level.cefrLevel}>

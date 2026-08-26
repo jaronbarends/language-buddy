@@ -10,10 +10,15 @@ import styles from './TooltipIcon.module.css';
 
 type TooltipIconProps = {
   iconName?: IconName;
+  ariaLabel: string;
   children: ReactNode;
 };
 
-export default function TooltipIcon({ iconName = 'question', children }: TooltipIconProps) {
+export default function TooltipIcon({
+  iconName = 'question',
+  ariaLabel,
+  children,
+}: TooltipIconProps) {
   const anchorName = `--anchor-${useId().replace(/:/g, '')}`;
   const tooltipRef = useRef<TooltipHandle>(null);
 
@@ -23,6 +28,7 @@ export default function TooltipIcon({ iconName = 'question', children }: Tooltip
         className={clsx(styles.tooltipIcon)}
         type="button"
         onClick={toggleTooltip}
+        aria-label={ariaLabel}
         style={{ '--anchor-name': anchorName } as CSSPropertiesWithVars}
       >
         <Icon iconName={iconName} />
