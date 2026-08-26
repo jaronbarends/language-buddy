@@ -26,7 +26,7 @@ GEMINI_API_KEY=
 # NEXT_PUBLIC_SHOW_DEV_HELPER=true
 ```
 
-## Getting Started ## Getting Started
+## Getting Started
 
 Install dependencies:
 
@@ -47,8 +47,6 @@ ngrok http 3000
 ```
 
 [ngrok quickstart](https://ngrok.com/docs/getting-started)
-
----
 
 ## Troubleshooting
 
@@ -71,7 +69,7 @@ When you do `speechSynthesis.getVoices()`, you'll get the list of possible voice
 
 #### Add Voices on macOS
 
-(Not tested)
+(Not tested by me)
 
 - Open the Apple Menu and go to System Settings.
 - Click on Accessibility, then select Read & Speak.
