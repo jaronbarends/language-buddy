@@ -5,12 +5,7 @@ import Feedback from '@/components/Feedback';
 import TooltipIcon from '@/components/TooltipIcon';
 import Button from '@/components/button/Button';
 import { type ConversationConfig, getConversationConfig } from '@/lib/conversationConfig';
-import {
-  languageLevels,
-  type Language,
-  type LanguageLevelName,
-  type LanguageLevel,
-} from '@/lib/language';
+import { languageLevels, type Language, type LanguageLevel, CEFRLevel } from '@/lib/language';
 import { type SupportedLanguageVoices } from '@/lib/language';
 import { type Starter } from '@/lib/scenarios';
 import { type Scenario } from '@/lib/scenarios';
@@ -18,6 +13,7 @@ import { useSpeechRecognitionIsSupported } from '@/lib/speechRecognition';
 
 import LanguagePicker from './LanguagePicker';
 import SegmentedControl, { type SegmentedControlOption } from './SegmentedControl';
+import SelectBox, { type SelectBoxOption } from './SelectBox';
 
 import styles from './SetupForm.module.css';
 
@@ -26,7 +22,7 @@ type SetupFormProps = {
   selectedLanguage: Language;
   onChangeLanguage: (language: Language) => void;
   selectedLevel: LanguageLevel;
-  onChangeLevel: (levelName: LanguageLevelName) => void;
+  onChangeLevel: (cefrLevel: CEFRLevel) => void;
   freeformScenarios: Scenario[];
   selectedScenario: Scenario;
   onChangeScenario: (scenario: Scenario) => void;
@@ -50,9 +46,14 @@ export default function SetupForm({
 }: SetupFormProps) {
   const speechRecognitionIsSupportedClientSide = useSpeechRecognitionIsSupported();
 
-  const levelOptions: SegmentedControlOption<LanguageLevelName>[] = languageLevels.map((level) => ({
+  const levelOptions: SegmentedControlOption<CEFRLevel>[] = languageLevels.map((level) => ({
     label: level.cefrLevel,
-    value: level.name,
+    value: level.cefrLevel,
+  }));
+
+  const levelSelectOptions: SelectBoxOption<CEFRLevel>[] = languageLevels.map((level) => ({
+    label: `${level.name} (${level.cefrLevel})`,
+    value: level.cefrLevel,
   }));
 
   const starterOptions: SegmentedControlOption<Starter>[] = [
@@ -74,12 +75,23 @@ export default function SetupForm({
       </fieldset>
       <fieldset>
         <legend className={clsx(styles.legend, styles.levelLegend)}>
+          What is your language level?
+        </legend>
+        <SelectBox
+          options={levelSelectOptions}
+          name="languageLevel"
+          selectedValue={selectedLevel.cefrLevel}
+          onChange={onChangeLevel}
+        />
+      </fieldset>
+      <fieldset>
+        <legend className={clsx(styles.legend, styles.levelLegend)}>
           What is your level? <LevelTooltip />
         </legend>
         <SegmentedControl
           groupName="level"
           options={levelOptions}
-          selectedValue={selectedLevel.name}
+          selectedValue={selectedLevel.cefrLevel}
           onSelect={onChangeLevel}
         />
       </fieldset>

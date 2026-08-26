@@ -29,3 +29,9 @@ h1 {
 main {
   padding-bottom: var(--size-32);
 }
+
+input,
+textarea,
+select {
+  color: inherit;
+}

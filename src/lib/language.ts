@@ -27,3 +27,9 @@ export function getLanguageLevelByName(name: LanguageLevelName): LanguageLevel {
   // fallback; should never happen
   return level || languageLevels[0];
 }
+
+export function getLanguageLevelByCEFRLevel(cefrLevel: CEFRLevel): LanguageLevel {
+  const level = languageLevels.find((l) => l.cefrLevel === cefrLevel);
+  // fallback; should never happen
+  return level || languageLevels[0];
+}

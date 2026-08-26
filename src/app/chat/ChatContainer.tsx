@@ -2,11 +2,12 @@
 import { useState, useEffect } from 'react';
 
 import { type ConversationConfig } from '@/lib/conversationConfig';
-import { LanguageLevelName, type Language, type LanguageVoice } from '@/lib/language';
+import { CEFRLevel, type Language, type LanguageVoice } from '@/lib/language';
 import {
   type SupportedLanguageVoices,
   type LanguageLevel,
   getLanguageLevelByName,
+  getLanguageLevelByCEFRLevel,
 } from '@/lib/language';
 import { supportedLanguages } from '@/lib/languages';
 import { freeformScenarios, type Scenario } from '@/lib/scenarios';
@@ -16,8 +17,7 @@ import ChatConversation from './chatConversation/ChatConversation';
 import ChatSetup from './chatSetup/ChatSetup';
 
 type ContainerState =
-  | { status: 'setup' }
-  | { status: 'conversation'; conversationConfig: ConversationConfig };
+  { status: 'setup' } | { status: 'conversation'; conversationConfig: ConversationConfig };
 
 export default function ChatContainer() {
   const [containerState, setContainerState] = useState<ContainerState>({ status: 'setup' });
@@ -124,8 +124,10 @@ export default function ChatContainer() {
     return freeformScenarios[0];
   }
 
-  function handleChangeLevel(name: LanguageLevelName) {
-    const level = getLanguageLevelByName(name);
+  // function handleChangeLevel(name: LanguageLevelName) {
+  function handleChangeLevel(cefrLevel: CEFRLevel) {
+    // const level = getLanguageLevelByName(name);
+    const level = getLanguageLevelByCEFRLevel(cefrLevel);
     setLevel(level);
   }
 }

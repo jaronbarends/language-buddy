@@ -57,11 +57,11 @@
   flex-direction: column;
   align-items: center;
   gap: var(--size-4);
-  border: var(--border-width) solid var(--color-border-neutral);
+  border: var(--border-width) solid var(--color-border-input);
   border-bottom-width: calc(var(--border-width) + var(--bevel));
-  border-radius: var(--radius-12);
+  border-radius: var(--radius-input);
   padding: var(--size-12) var(--size-16) var(--size-4);
-  background: var(--color-bg-default);
+  background: var(--color-bg-input);
   font-size: var(--font-size-16);
   font-family: var(--font-family-display);
 
