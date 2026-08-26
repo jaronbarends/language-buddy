@@ -61,6 +61,8 @@ export default function SetupForm({
     { label: 'Me', value: 'user', iconName: 'user' },
   ];
 
+  const useSelectBoxForLanguageLevel = true;
+
   return (
     <form onSubmit={handleSubmit} className={styles.setupForm}>
       <fieldset>
@@ -73,28 +75,30 @@ export default function SetupForm({
           speechSupportIsChecked={speechSupportIsChecked}
         />
       </fieldset>
-      <fieldset>
-        <legend className={clsx(styles.legend, styles.levelLegend)}>
-          What is your language level?
-        </legend>
-        <SelectBox
-          options={levelSelectOptions}
-          name="languageLevel"
-          selectedValue={selectedLevel.cefrLevel}
-          onChange={onChangeLevel}
-        />
-      </fieldset>
-      <fieldset>
-        <legend className={clsx(styles.legend, styles.levelLegend)}>
-          What is your level? <LevelTooltip />
-        </legend>
-        <SegmentedControl
-          groupName="level"
-          options={levelOptions}
-          selectedValue={selectedLevel.cefrLevel}
-          onSelect={onChangeLevel}
-        />
-      </fieldset>
+      {useSelectBoxForLanguageLevel ?
+        <fieldset>
+          <legend className={clsx(styles.legend, styles.levelLegend)}>
+            What is your language level?
+          </legend>
+          <SelectBox
+            options={levelSelectOptions}
+            name="languageLevel"
+            selectedValue={selectedLevel.cefrLevel}
+            onChange={onChangeLevel}
+          />
+        </fieldset>
+      : <fieldset>
+          <legend className={clsx(styles.legend, styles.levelLegend)}>
+            What is your level? <LevelTooltip />
+          </legend>
+          <SegmentedControl
+            groupName="level"
+            options={levelOptions}
+            selectedValue={selectedLevel.cefrLevel}
+            onSelect={onChangeLevel}
+          />
+        </fieldset>
+      }
       <fieldset>
         <legend className={styles.legend}>Who should start the conversation?</legend>
         <SegmentedControl

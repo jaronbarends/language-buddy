@@ -124,9 +124,7 @@ export default function ChatContainer() {
     return freeformScenarios[0];
   }
 
-  // function handleChangeLevel(name: LanguageLevelName) {
   function handleChangeLevel(cefrLevel: CEFRLevel) {
-    // const level = getLanguageLevelByName(name);
     const level = getLanguageLevelByCEFRLevel(cefrLevel);
     setLevel(level);
   }

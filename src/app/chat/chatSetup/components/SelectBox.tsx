@@ -26,14 +26,10 @@ export default function SelectBox<T>({
         onChange={(event) => {
           onChange(event.target.value as T);
         }}
+        value={String(selectedValue)}
       >
         {options.map((option, idx) => (
-          <option
-            key={idx}
-            className={styles.option}
-            value={String(option.value)}
-            selected={selectedValue === option.value}
-          >
+          <option key={idx} className={styles.option} value={String(option.value)}>
             {option.label}
           </option>
         ))}
