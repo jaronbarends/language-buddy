@@ -1,0 +1,42 @@
+.selectBox {
+  --padding-inline: var(--size-16);
+  --arrow-size: var(--size-16);
+  --svg-url: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 16 16"><path fill="currentColor" d="M12.59 4 8 8.58 3.41 4 2 5.41l6 6 6-6L12.59 4Z"/></svg>');
+
+  position: relative;
+
+  &::after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 50%;
+    right: var(--padding-inline);
+    width: var(--arrow-size);
+    height: var(--arrow-size);
+    background-color: currentcolor;
+    mask: var(--svg-url);
+    translate: 0 -50%;
+    pointer-events: none;
+  }
+}
+
+.select {
+  appearance: none;
+  display: block;
+  border: var(--border-default) var(--color-border-input);
+  width: 100%;
+  padding: var(--size-12) var(--size-16);
+  padding-right: calc(2 * var(--padding-inline) + var(--arrow-size));
+  border-radius: var(--radius-input);
+  background: var(--color-bg-input);
+  font-weight: var(--font-weight-semibold);
+}
+
+.option {
+  font-weight: var(--font-weight-regular);
+
+  &:checked {
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-on-secondary);
+  }
+}

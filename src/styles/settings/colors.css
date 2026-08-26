@@ -96,6 +96,8 @@
   --color-text-label: var(--color-text-neutral-subtle);
   --color-focus-outline: var(--color-text-default);
   --color-bg-tooltip: rgba(from var(--color-gray-100) r g b / 0.9);
+  --color-bg-input: var(--color-bg-default);
+  --color-border-input: var(--color-border-neutral);
 
   --scrollbar-color: transparent transparent;
   --scrollbar-color-hover: var(--color-bg-neutral) transparent;

@@ -3,20 +3,20 @@ import { type IconName } from '@/lib/getIconByName';
 
 import styles from './SegmentedControl.module.css';
 
-export type SegmentedControlOption<T> = {
+export type SegmentedControlOption<T extends string> = {
   label: string;
   value: T;
   iconName?: IconName;
 };
 
-export type SegmentedControlProps<T> = {
+export type SegmentedControlProps<T extends string> = {
   groupName: string;
   options: SegmentedControlOption<T>[];
   selectedValue: T;
   onSelect: (value: T) => void;
 };
 
-export default function SegmentedControl<T>({
+export default function SegmentedControl<T extends string>({
   groupName,
   options,
   selectedValue,
@@ -29,7 +29,7 @@ export default function SegmentedControl<T>({
           <label key={idx} className={styles.label}>
             <input
               type="radio"
-              value={String(option.value)}
+              value={option.value}
               name={groupName}
               checked={option.value === selectedValue}
               onChange={(event) => {

@@ -1,6 +1,6 @@
 import PageHeading from '@/components/PageHeading';
 import { type ConversationConfig } from '@/lib/conversationConfig';
-import { type Language, LanguageLevel, LanguageLevelName } from '@/lib/language';
+import { CEFRLevel, type Language, LanguageLevel } from '@/lib/language';
 import { type SupportedLanguageVoices } from '@/lib/language';
 import { type Scenario } from '@/lib/scenarios';
 
@@ -13,7 +13,7 @@ type ChatSetupProps = {
   selectedLanguage: Language;
   onChangeLanguage: (language: Language) => void;
   selectedLevel: LanguageLevel;
-  onChangeLevel: (levelName: LanguageLevelName) => void;
+  onChangeLevel: (cefrLevel: CEFRLevel) => void;
   freeformScenarios: Scenario[];
   selectedScenario: Scenario;
   onChangeScenario: (scenario: Scenario) => void;

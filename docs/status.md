@@ -311,10 +311,41 @@ setup fields (language, level, starter) in its own fieldsets, giving it a place 
 legend's tooltip without threading tooltip content down into `SegmentedControl`. Committed
 (`84b6c6d`), not yet merged to `main`.
 
+**Reusable `SelectBox` component added; level picker now toggles between it and `SegmentedControl`
+via a hardcoded const (2026-08-26, commits `77ed5af`/`70b880d`, branch `level-selectbox`):** a new
+generic `SelectBox<T>` (`src/app/chat/chatSetup/components/SelectBox.tsx`) wraps a native `<select>`,
+styled via `SelectBox.module.css` to match the app's input-role tokens. `SetupForm.tsx`'s level field
+now has two parallel implementations — the existing `SegmentedControl` and the new `SelectBox` —
+switched by a local `useSelectBoxForLanguageLevel` const (currently `true`), deliberately not wired to
+any UI toggle: this is a side-by-side comparison to decide which interaction the level picker should
+use, not a shipped feature choice. New shared tokens back the input look: `--color-bg-input`/
+`--color-border-input` (`src/styles/settings/colors.css`, both currently aliasing the existing
+neutral/default tokens) and `--radius-input` (`src/styles/settings/borders.css`, aliasing
+`--radius-12`) — `LanguagePicker` and `SegmentedControl` are restyled to consume these instead of
+`--color-bg-default`/`--color-border-neutral`/`--radius-12` directly, so all three controls share one
+input-role token set. The `--radius-*` primitives themselves moved from `sizes.css` to `borders.css`
+(reorganization, same values, no scale change). A new global rule, `input, textarea, select { color:
+inherit }` (`src/styles/elements.css`), fixes `<select>` text not otherwise inheriting the app's
+text-color tokens. Level lookup by name (`getLanguageLevelByName`, still used for the initial default)
+is joined by a new `getLanguageLevelByCEFRLevel` (`src/lib/language.ts`) — `SelectBox`'s option values
+are typed `CEFRLevel`, not `LanguageLevelName`, so `onChangeLevel`'s signature changed from `(levelName:
+LanguageLevelName)` to `(cefrLevel: CEFRLevel)` across `ChatContainer`/`ChatSetup`/`SetupForm`.
+**Deliberate asymmetry in the comparison:** the `LevelTooltip`/CEFR-explainer (added 2026-08-25, see
+above) only renders in the `SegmentedControl` branch of the toggle — the `SelectBox` branch's legend
+has no tooltip. This is intentional, not a gap: `SelectBox`'s option labels already spell out both
+the level name and its CEFR code (e.g. "Intermediate (B1)"), so the tooltip's name↔code mapping would
+be redundant there. Committed (`77ed5af`, `70b880d`), not yet merged to `main`.
+
 **Remaining or broken work:** None identified for the LanguagePicker restyle/grid work or the
-tooltip rework. The CEFR-code-labels gap noted above is now resolved (tooltip added), not open.
-**Open questions or decisions:** None.
-**Next step:** Select the next item from `docs/backlog.md`.
+tooltip rework. The CEFR-code-labels gap noted above is now resolved (tooltip added), not open. The
+level-selectbox comparison has no known remaining work.
+**Open questions or decisions:** Which control the level picker should ship with —
+`SegmentedControl` (current default in `main`) or the new `SelectBox` — is undecided.
+`useSelectBoxForLanguageLevel` in `SetupForm.tsx` is a manual code-level toggle for trying both live,
+not a resolution; whichever loses should be deleted, not left dead behind the flag.
+**Next step:** Decide the level-selection control (above) by using both in the running app, then
+remove the toggle and the losing implementation before merging `level-selectbox`. After that, select
+the next item from `docs/backlog.md`.
 
 ---
 
