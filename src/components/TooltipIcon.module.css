@@ -1,0 +1,9 @@
+.tooltipIcon {
+  > :first-child {
+    anchor-name: var(--anchor-name);
+  }
+}
+
+.tooltipLayout {
+  margin-bottom: var(--size-4);
+}

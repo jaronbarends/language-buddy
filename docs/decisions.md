@@ -3107,7 +3107,10 @@ screen, which was unwanted.
 `title` because native tooltips are slow to appear, unstyleable, and don't work on touch — moving
 to a component gives control over timing/appearance and matches the rest of the app's design-token
 styling instead of the browser's default tooltip look.
-**Status:** Done, committed (`f57b803`, `92795fa`), not yet merged to `main`.
+**Status:** Superseded 2026-08-26 — see "Language-level tooltip added; LanguagePicker tooltip
+removed" below. The hover interaction built here wasn't liked in practice (project owner) and the
+`Tooltip` component itself was reworked from hover to click-toggle; the no-voice warning on
+`LanguagePicker` no longer has a tooltip at all — the icon alone is judged sufficient.
 
 ## LanguagePicker item-count-responsive grid (2026-08-25)
 
@@ -3205,4 +3208,51 @@ control as cleanly as four two-character CEFR codes do.
 **Consequence:** CEFR codes are now shown directly in the UI with no explanation of what they mean
 to a user unfamiliar with the CEFR scale — flagged as a backlog item, not resolved here (see
 backlog.md).
-**Status:** Done, same commit (`d2ab971`) as the four-level expansion above.
+**Status:** Done, same commit (`d2ab971`) as the four-level expansion above. The "no explanation"
+gap this left open is resolved 2026-08-26 — see next section.
+
+---
+
+## Language-level tooltip added; LanguagePicker tooltip removed (2026-08-26)
+
+### `Tooltip` reworked from hover to click-toggle; no longer used on `LanguagePicker`
+
+**Date:** 2026-08-26
+**Decision:** On the same branch/commit (`84b6c6d`):
+
+- `LanguagePicker`'s no-voice-warning `Tooltip` (added 2026-08-25, see "LanguagePicker restyled"
+  above) is removed. The warning icon — `role="img"`/`aria-label` unchanged — is now the only
+  no-voice indicator; no hover/click affordance for more detail.
+- `Tooltip.tsx` is reworked from a hover-shown, singleton-anchor `<div>` (`--tooltip-anchor`
+  hardcoded, visibility via `:hover` setting `--tooltip-visible` read through
+  `@container style(...)`) into a click-toggled component: `isActive` state, a visible close
+  button (`FaCircleXmark`), and an imperative handle (`TooltipHandle.toggle()`) exposed via a new
+  `tooltipRef` prop so a parent button can drive open/closed state. The CSS anchor name is now a
+  per-instance prop (`anchorName`, typed via a new `CSSPropertiesWithVars` in `src/types/css.ts`)
+  instead of a single hardcoded `--tooltip-anchor` — multiple independent `Tooltip`s can now exist
+  on the same page.
+- New `TooltipIcon.tsx` (`src/components/`) pairs a question-mark icon button with a `Tooltip`,
+  generating a unique anchor name via `useId()` and owning the click-to-toggle wiring, so callers
+  just render `<TooltipIcon>{content}</TooltipIcon>` without touching the anchor-name plumbing
+  directly.
+- `SetupForm.tsx`'s level `<fieldset>` legend becomes "What is your level? `<TooltipIcon>`", where
+  the tooltip content is a `<dl>` mapping each `languageLevels` entry's `cefrLevel` to its `name`
+  (e.g. "A1: Beginner", "B2: Upper intermediate") — closes the "bare CEFR codes have no
+  explanation" gap flagged in the previous entry.
+- Fieldset/legend ownership moves up a level: `LanguagePicker` and `SegmentedControl` no longer
+  render their own `<fieldset>`/`<legend>` — `SegmentedControl` drops its `groupLabel` prop
+  entirely. `SetupForm` now wraps all three setup fields (language picker, level picker, starter
+  picker) in its own `<fieldset>`s, since the level fieldset needed a legend built from more than a
+  plain label string (label text + a `TooltipIcon`) and hoisting all three keeps the pattern
+  consistent rather than special-casing just the level one.
+- Two new icons registered in `getIconByName.ts`: `close` (`FaCircleXmark`) and `question`
+  (`FaRegCircleQuestion`, `TooltipIcon`'s default icon).
+
+**Rationale:** Direct from the project owner: the hover interaction on `LanguagePicker` (shipped
+2026-08-25) wasn't liked, and the no-voice icon alone was judged clear enough without it — so
+rather than just swapping hover for click on the same tooltip, it was dropped there entirely. The
+level picker's bare CEFR codes (shipped same week, 2026-08-25) had the opposite problem — genuinely
+unexplained to users unfamiliar with the CEFR scale — so a tooltip was added there instead, but as
+an explicit click-triggered affordance (a visible "?" icon + close button) rather than hover, so
+its presence doesn't depend on a pointer device and it doesn't fire by accident.
+**Status:** Done. Committed (`84b6c6d`), not yet merged to `main`.

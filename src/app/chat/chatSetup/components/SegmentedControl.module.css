@@ -1,8 +1,4 @@
-.legend {
-  margin-bottom: var(--label-gap);
-}
-
-.wrapper {
+.segmentedControl {
   --label-height: var(--size-48);
   --padding: var(--size-4);
   --indicator-duration: var(--duration-near-instant);

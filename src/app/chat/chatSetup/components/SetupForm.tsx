@@ -1,4 +1,8 @@
+import clsx from 'clsx';
+import { Fragment } from 'react';
+
 import Feedback from '@/components/Feedback';
+import TooltipIcon from '@/components/TooltipIcon';
 import Button from '@/components/button/Button';
 import { type ConversationConfig, getConversationConfig } from '@/lib/conversationConfig';
 import {
@@ -58,27 +62,36 @@ export default function SetupForm({
 
   return (
     <form onSubmit={handleSubmit} className={styles.setupForm}>
-      <LanguagePicker
-        languages={languages}
-        selectedLanguage={selectedLanguage}
-        onChangeLanguage={onChangeLanguage}
-        supportedLanguageVoices={supportedLanguageVoices}
-        speechSupportIsChecked={speechSupportIsChecked}
-      />
-      <SegmentedControl
-        groupName="level"
-        groupLabel="What is your level?"
-        options={levelOptions}
-        selectedValue={selectedLevel.name}
-        onSelect={onChangeLevel}
-      />
-      <SegmentedControl
-        groupName="starter"
-        groupLabel="Who should start the conversation?"
-        options={starterOptions}
-        selectedValue={selectedScenario.starter}
-        onSelect={handleSelectFreeformScenario}
-      />
+      <fieldset>
+        <legend className={styles.legend}>Choose your practice language</legend>
+        <LanguagePicker
+          languages={languages}
+          selectedLanguage={selectedLanguage}
+          onChangeLanguage={onChangeLanguage}
+          supportedLanguageVoices={supportedLanguageVoices}
+          speechSupportIsChecked={speechSupportIsChecked}
+        />
+      </fieldset>
+      <fieldset>
+        <legend className={clsx(styles.legend, styles.levelLegend)}>
+          What is your level? <LevelTooltip />
+        </legend>
+        <SegmentedControl
+          groupName="level"
+          options={levelOptions}
+          selectedValue={selectedLevel.name}
+          onSelect={onChangeLevel}
+        />
+      </fieldset>
+      <fieldset>
+        <legend className={styles.legend}>Who should start the conversation?</legend>
+        <SegmentedControl
+          groupName="starter"
+          options={starterOptions}
+          selectedValue={selectedScenario.starter}
+          onSelect={handleSelectFreeformScenario}
+        />
+      </fieldset>
       {speechSupportIsChecked && !speechRecognitionIsSupportedClientSide && (
         <Feedback type="error">
           <div role="alert">
@@ -121,4 +134,19 @@ export default function SetupForm({
 
     onStartSession(conversationConfig);
   }
+}
+
+function LevelTooltip() {
+  return (
+    <TooltipIcon>
+      <dl className={styles.levelsList}>
+        {languageLevels.map((level) => (
+          <Fragment key={level.cefrLevel}>
+            <dt>{level.cefrLevel}:</dt>
+            <dd>{level.name}</dd>
+          </Fragment>
+        ))}
+      </dl>
+    </TooltipIcon>
+  );
 }
