@@ -1,7 +1,55 @@
-import { type ReactNode } from 'react';
+import clsx from 'clsx';
+import { type ReactNode, useImperativeHandle, useState, type Ref } from 'react';
+
+import Icon from '@/components/icon/Icon';
+import { CSSPropertiesWithVars } from '@/types/css';
 
 import styles from './Tooltip.module.css';
 
-export default function Tooltip({ children }: { children: ReactNode }) {
-  return <div className={styles.tooltip}>{children}</div>;
+type TooltipProps = {
+  layoutClassName?: string;
+  anchorName: string;
+  tooltipRef: Ref<TooltipHandle>;
+  children: ReactNode;
+};
+
+export type TooltipHandle = {
+  toggle: () => void;
+};
+
+export default function Tooltip({
+  layoutClassName,
+  anchorName,
+  tooltipRef,
+  children,
+}: TooltipProps) {
+  const [isActive, setIsActive] = useState<boolean>(false);
+  useImperativeHandle(tooltipRef, () => ({
+    toggle: toggleTooltip,
+  }));
+
+  return isActive ?
+      <div
+        className={clsx(styles.tooltip, layoutClassName, isActive && styles.isActive)}
+        style={{ '--anchor-name': anchorName } as CSSPropertiesWithVars}
+      >
+        {children}
+        <button
+          type="button"
+          className={styles.closeButton}
+          onClick={closeTooltip}
+          aria-label="Close tooltip"
+        >
+          <Icon iconName="close" />
+        </button>
+      </div>
+    : null;
+
+  function toggleTooltip() {
+    setIsActive(!isActive);
+  }
+
+  function closeTooltip() {
+    setIsActive(false);
+  }
 }

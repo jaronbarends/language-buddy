@@ -289,9 +289,30 @@ only genuinely cross-level content. **Known gap, not resolved by this change:** 
 shown in the UI have no explanation for users unfamiliar with the CEFR scale — tracked in
 backlog.md.
 
-**Remaining or broken work:** None identified for the LanguagePicker restyle/grid work. The bare
-CEFR-code labels in the level picker are a known, tracked gap (see backlog.md), not a broken/
-remaining-work item.
+**Tooltip reworked from hover to click-toggle; moved from `LanguagePicker` to the level picker
+(2026-08-26, commit `84b6c6d`, see decisions.md, "Language-level tooltip added; LanguagePicker
+tooltip removed"):** closes the "bare CEFR codes have no explanation" gap flagged just above.
+`LanguagePicker`'s no-voice-warning tooltip is removed entirely — the warning icon (with its
+existing `role="img"`/`aria-label`) is judged sufficient on its own; the hover interaction added
+2026-08-25 wasn't liked in practice. `Tooltip.tsx` is reworked from a hover-shown, singleton-anchor
+`<div>` into a click-toggled component (`isActive` state, a close button, an imperative
+`toggle()` handle) with a per-instance CSS anchor name (`--anchor-{useId()}`) instead of one
+hardcoded `--tooltip-anchor`, so more than one `Tooltip` can exist on a page. A new
+`TooltipIcon.tsx` (`src/components/`) pairs a question-mark icon button with a `Tooltip` and owns
+the anchor-name plumbing between them. `SetupForm.tsx`'s level `<fieldset>` legend now reads "What
+is your level?" followed by a `TooltipIcon` whose content is a `cefrLevel`→`name` `<dl>` built from
+`languageLevels` (e.g. "A1: Beginner"). Two new icons registered in `getIconByName.ts`: `close`
+(`FaCircleXmark`, the tooltip's close button) and `question` (`FaRegCircleQuestion`, `TooltipIcon`'s
+default icon). New shared type `CSSPropertiesWithVars` (`src/types/css.ts`) types the
+`--anchor-name` CSS custom property passed through inline `style` props. Fieldset/legend ownership
+also moved: `LanguagePicker` and `SegmentedControl` no longer render their own `<fieldset>`/
+`<legend>` (`SegmentedControl` drops its `groupLabel` prop) — `SetupForm` now wraps all three
+setup fields (language, level, starter) in its own fieldsets, giving it a place to add the level
+legend's tooltip without threading tooltip content down into `SegmentedControl`. Committed
+(`84b6c6d`), not yet merged to `main`.
+
+**Remaining or broken work:** None identified for the LanguagePicker restyle/grid work or the
+tooltip rework. The CEFR-code-labels gap noted above is now resolved (tooltip added), not open.
 **Open questions or decisions:** None.
 **Next step:** Select the next item from `docs/backlog.md`.
 

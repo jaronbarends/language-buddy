@@ -17,3 +17,19 @@
     --flex-basis: 80%;
   }
 }
+
+.legend {
+  margin-bottom: var(--label-gap);
+}
+
+.levelLegend {
+  display: flex;
+  gap: var(--size-8);
+}
+
+.levelsList {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--size-8);
+  justify-items: start;
+}

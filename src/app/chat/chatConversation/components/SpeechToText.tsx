@@ -81,13 +81,11 @@ export default function SpeechToText({
     }
   }, [phase]);
 
-  useImperativeHandle(editorRef, () => {
-    return {
-      getEditedMessage() {
-        return editedMessageRef.current ?? '';
-      },
-    };
-  });
+  useImperativeHandle(editorRef, () => ({
+    getEditedMessage() {
+      return editedMessageRef.current ?? '';
+    },
+  }));
 
   return (
     <>

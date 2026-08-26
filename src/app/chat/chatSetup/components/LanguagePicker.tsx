@@ -1,4 +1,3 @@
-import Tooltip from '@/components/Tooltip';
 import Icon from '@/components/icon/Icon';
 import { getFlagIconName, type FlagIconName } from '@/lib/getIconByName';
 import { SupportedLanguageVoices, type Language } from '@/lib/language';
@@ -22,49 +21,45 @@ export default function LanguagePicker({
 }: LanguagePickerProps) {
   const sortedLanguages = [...languages].sort((a, b) => a.name.localeCompare(b.name));
   return (
-    <fieldset>
-      <legend className={styles.legend}>Choose your practice language</legend>
-      <div className={styles.languageOptions}>
-        {sortedLanguages.map((language, idx) => {
-          const languageHasVoice = (language: Language) => {
-            return supportedLanguageVoices[language.languageTag] !== undefined;
-          };
-          const flagIconName: FlagIconName | undefined = getFlagIconName(language.languageTag);
-          return (
-            <label key={idx} className={styles.label}>
-              <input
-                type="radio"
-                value={language.languageTag}
-                name="language"
-                checked={language === selectedLanguage}
-                onChange={() => {
-                  onChangeLanguage(language);
-                }}
-                className="u-hidden-form-control"
-              />
+    <div className={styles.languageOptions}>
+      {sortedLanguages.map((language, idx) => {
+        const languageHasVoice = (language: Language) => {
+          return supportedLanguageVoices[language.languageTag] !== undefined;
+        };
+        const flagIconName: FlagIconName | undefined = getFlagIconName(language.languageTag);
+        return (
+          <label key={idx} className={styles.label}>
+            <input
+              type="radio"
+              value={language.languageTag}
+              name="language"
+              checked={language === selectedLanguage}
+              onChange={() => {
+                onChangeLanguage(language);
+              }}
+              className="u-hidden-form-control"
+            />
 
-              {flagIconName && (
-                <div className={styles.flagIcon}>
-                  <Icon iconName={flagIconName} iconSize={32} isFlagIcon />
+            {flagIconName && (
+              <div className={styles.flagIcon}>
+                <Icon iconName={flagIconName} iconSize={32} isFlagIcon />
+              </div>
+            )}
+            {language.name}
+            {speechSupportIsChecked && !languageHasVoice(language) && (
+              <div
+                className={styles.hasNoVoiceWarning}
+                role="img"
+                aria-label={`Speech is unavailable for ${language.name}`}
+              >
+                <div className={styles.iconContainer}>
+                  <Icon iconName="volumeMute" />
                 </div>
-              )}
-              {language.name}
-              {speechSupportIsChecked && !languageHasVoice(language) && (
-                <div
-                  className={styles.hasNoVoiceWarning}
-                  role="img"
-                  aria-label={`Speech is unavailable for ${language.name}`}
-                >
-                  <div className={styles.iconContainer}>
-                    <Icon iconName="volumeMute" />
-                  </div>
-                  <Tooltip>Speech is not available for {language.name}</Tooltip>
-                </div>
-              )}
-            </label>
-          );
-        })}
-      </div>
-    </fieldset>
+              </div>
+            )}
+          </label>
+        );
+      })}
+    </div>
   );
 }
