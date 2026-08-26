@@ -15,7 +15,6 @@
     height: var(--arrow-size);
     background-color: currentcolor;
     mask: var(--svg-url);
-
     translate: 0 -50%;
     pointer-events: none;
   }

@@ -1,18 +1,18 @@
 import styles from './SelectBox.module.css';
 
-export type SelectBoxOption<T> = {
+export type SelectBoxOption<T extends string> = {
   label: string;
   value: T;
 };
 
-type SelectBoxProps<T> = {
+type SelectBoxProps<T extends string> = {
   name: string;
   options: SelectBoxOption<T>[];
   selectedValue: T;
   onChange: (value: T) => void;
 };
 
-export default function SelectBox<T>({
+export default function SelectBox<T extends string>({
   name,
   options,
   selectedValue,
@@ -26,10 +26,10 @@ export default function SelectBox<T>({
         onChange={(event) => {
           onChange(event.target.value as T);
         }}
-        value={String(selectedValue)}
+        value={selectedValue}
       >
         {options.map((option, idx) => (
-          <option key={idx} className={styles.option} value={String(option.value)}>
+          <option key={idx} className={styles.option} value={option.value}>
             {option.label}
           </option>
         ))}
