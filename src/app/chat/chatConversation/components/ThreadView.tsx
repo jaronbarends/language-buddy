@@ -88,7 +88,12 @@ export default function ThreadView({
         {threadItems.map((item, idx) => {
           if (item.type === 'message') {
             return (
-              <SpeechBalloon key={idx} author={item.author} tag="li" isPending={item.isPending}>
+              <SpeechBalloon
+                key={idx}
+                author={item.author}
+                tag="li"
+                isPending={item.author === 'ai' && item.isPending}
+              >
                 {item.message}
               </SpeechBalloon>
             );

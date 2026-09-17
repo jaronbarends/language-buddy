@@ -3,12 +3,16 @@ import { type AIError } from '@/lib/aiService';
 
 export type ThreadItem = ChatMessageItem | EvaluationItem;
 
-export type ChatMessageItem = {
-  type: 'message';
-  message: string;
-  author: 'ai' | 'user';
-  isPending?: boolean;
-};
+// export type ChatMessageItem = {
+//   type: 'message';
+//   message: string;
+//   author: 'ai' | 'user';
+//   isPending?: boolean;
+// };
+
+export type ChatMessageItem =
+  | { type: 'message'; message: string; author: 'user' }
+  | { type: 'message'; message: string; author: 'ai'; isPending: boolean };
 
 export type EvaluationItem = {
   type: 'evaluation';
@@ -20,7 +24,7 @@ export type ChatState = {
   phase: ChatPhase;
 };
 
-type StopIntent = 'send' | 'edit';
+export type StopIntent = 'send' | 'edit';
 
 export type ChatPhase =
   | { status: 'chatStartPending' }
@@ -74,7 +78,7 @@ export type ChatAction =
   | { type: 'END_SESSION' }
   | { type: 'ERROR'; payload: { error: AIError } };
 
-const loadingAIItem: ThreadItem = {
+export const loadingAIItem: ThreadItem = {
   type: 'message',
   message: '',
   author: 'ai',
@@ -129,7 +133,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         case 'AI_RESPONSE_RECEIVED': {
           // turn update pending item
           const updatedItems = state.threadItems.map((item) =>
-            item.type === 'message' && item.isPending ?
+            item.type === 'message' && item.author === 'ai' && item.isPending ?
               { ...item, message: action.payload.message, isPending: false }
             : item
           );
@@ -241,7 +245,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
           };
         case 'EDIT_CANCELLED':
           if (state.phase.userMessage === '') {
-            // editing was started without any speech input; we don't want to end up with an empty balloonnow
+            // editing was started without any speech input; we don't want to end up with an empty balloon now
             return {
               threadItems: state.threadItems,
               phase: { status: 'readyForUserReply' },
@@ -408,10 +412,9 @@ export function sessionShouldEnd(phase: ChatPhase): boolean {
 
 export function canRequestEvaluation(phase: ChatPhase, messageCount: number): boolean {
   // WARNING: don't include 'waitingForAI' here. See comment in requestsShouldBeAborted
-
   return (
     (phase.status === 'aiTurnSpeaking' || phase.status === 'readyForUserReply') &&
-    chatContainsUserMessage(messageCount)
+    chatContainsUserAndAIMessage(messageCount)
   );
 }
 
@@ -493,10 +496,12 @@ export function getChatStage(phase: ChatPhase): ChatStage {
 }
 
 function removePendingAIItems(threadItems: ThreadItem[]): ThreadItem[] {
-  return threadItems.filter((item) => item.type !== 'message' || !item.isPending);
+  return threadItems.filter(
+    (item) => !(item.type === 'message' && item.author === 'ai' && item.isPending)
+  );
 }
 
-function chatContainsUserMessage(messageCount: number) {
+function chatContainsUserAndAIMessage(messageCount: number) {
   // 2 possible scenarios; for both we need at least 2 items:
   // 1. ai starts, then user's message is item #2
   // 2. user starts; user's message is item #1. For evaluation, we need previousInteractionId. We only have that when AI's reply comes back from server; then AI's message is item #2
