@@ -1,5 +1,53 @@
 # Decision log
 
+## Testing infrastructure added (2026-09-15–2026-09-17)
+
+### Vitest + React Testing Library chosen for unit/component tests
+
+**Date:** 2026-09-15
+**Decision:** Vitest (not Jest) + jsdom + `@testing-library/react`/`user-event`/`jest-dom` for unit
+and component tests. `vitest.config.ts` sets `environment: 'jsdom'`, `resolve.tsconfigPaths`, and
+`setupFiles: ['./vitest.setup.ts']` (imports `@testing-library/jest-dom/vitest` matchers, runs
+`cleanup()` after each test via `afterEach`). `package.json` gains `"type": "module"` and a
+`"test": "vitest"` script.
+**Rationale (project owner):** recommended by Claude as the most commonly used option for this
+stack — not evaluated against Jest first-hand.
+**Status:** Done. First dummy test landed same commit (`ec84699`); real coverage follows below.
+
+### Unit tests added for `chatReducer`; `ChatMessageItem` narrowed into a discriminated union
+
+**Date:** 2026-09-16 (commit `6511416`)
+**Decision:** `chatReducer.test.ts` gets real coverage (happy-path AI-starts flow, more added since
+— see `chatReducer.test.ts`). While writing it, `ChatMessageItem` changed from one shape with an
+optional `isPending?: boolean` shared across both authors to a discriminated union:
+`{ type: 'message'; message: string; author: 'user' } | { type: 'message'; message: string;
+author: 'ai'; isPending: boolean }`.
+**Rationale:** `isPending` only ever has meaning for AI messages (the pending-AI-reply balloon) —
+letting it exist as an optional field on user messages too was a type-level looseness the tests
+surfaced. Narrowing it to the `author: 'ai'` branch means `isPending` is required (not optional)
+there and structurally absent on `author: 'user'`, so a caller can no longer construct or check a
+nonsensical `{ author: 'user', isPending: true }` state. Call sites (`chatReducer.ts`'s
+`AI_RESPONSE_RECEIVED`/`removePendingAIItems`, `ThreadView.tsx`) updated to check `item.author ===
+'ai' && item.isPending` instead of just `item.isPending`. `chatContainsUserMessage` renamed to
+`chatContainsUserAndAIMessage` (no behavior change, just a name that matches what it actually
+checks — see the existing comment above it in `chatReducer.ts`).
+**Status:** Done. An old commented-out copy of the pre-union `ChatMessageItem` type was
+accidentally left in `chatReducer.ts` during this change (lines 6–11) — caught during the
+2026-09-17 docs-update pass and deleted per project-owner decision (git history preserves it if
+ever needed), not left as tracked dead code.
+
+### Component tests added for `ControlsArea`
+
+**Date:** 2026-09-17 (commit `7a14574`)
+**Decision:** `ControlsArea.test.tsx` covers `aiTurnStage` (`readyForUserStart`, `waitingForAI`),
+`userEditStage` (`editingUserReply`), and the `sessionEndRequested` no-buttons case — asserting
+which buttons render, which are disabled, and that clicking calls the right handler prop.
+**Not yet covered:** `userTurnStage` (`listening`/`stoppingListening`/`cancellingListening`/
+`sendingUserReply`), `evaluation`, `error`, and `editCancelledStage` — no test file gap tracking
+was requested; noting here so it's not mistaken for exhaustive coverage.
+**Status:** Done for the stages covered.
+
+
 ## Concept & scope
 
 ### Scenario library from the start

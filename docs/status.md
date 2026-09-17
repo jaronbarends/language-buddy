@@ -1,6 +1,20 @@
 # Project status
 
-**Last updated:** 2026-08-25
+**Last updated:** 2026-09-17
+
+**Testing infrastructure added (2026-09-15–2026-09-17, see decisions.md, "Testing infrastructure
+added"):** Vitest + jsdom + React Testing Library (`@testing-library/react`/`user-event`/
+`jest-dom`), configured via `vitest.config.ts`/`vitest.setup.ts`, `npm test` runs it. Real coverage
+landed in two commits: `chatReducer.test.ts` (happy-path AI-starts flow and more; also prompted
+narrowing `ChatMessageItem` into a discriminated union so `isPending` only exists on `author: 'ai'`
+items — see decisions.md) and `ControlsArea.test.tsx` (covers `aiTurnStage`'s
+`readyForUserStart`/`waitingForAI`, `userEditStage`, and the no-buttons `sessionEndRequested` case;
+`userTurnStage`, `evaluation`, `error`, and `editCancelledStage` are not yet covered). A leftover
+commented-out copy of the pre-union `ChatMessageItem` type, accidentally left in `chatReducer.ts`
+during the union change, was found and deleted during this docs pass (project-owner decision — git
+history covers it, not tracked as backlog).
+
+**Previous update: 2026-08-25
 **Current phase:** Early build. Concept locked (scenario-library-based conversational sparring
 partner, Norwegian, multi-turn sessions + async structured evaluation). MVP scoping in progress;
 Spikes 1–4 all complete. AI provider decided (Gemini). State machine now runs the full happy path
@@ -1073,3 +1087,8 @@ Two calibration-only files still remain under `spikes/language-speech-rates/`
     renamed to `userMessage`, since the value can now be hand-edited and isn't necessarily a literal
     transcript anymore (see decisions.md, "`ChatPhase`'s `transcript` field renamed to
     `userMessage`"). No open items remain from this feature.
+20. **Testing infrastructure + first real coverage** — done, 2026-09-15–2026-09-17 (see decisions.md,
+    "Testing infrastructure added"): Vitest/RTL set up, `chatReducer.test.ts` and
+    `ControlsArea.test.tsx` added. Not a blocking gate for other work — remaining stage coverage on
+    `ControlsArea` (`userTurnStage`/`evaluation`/`error`/`editCancelledStage`) and tests for other
+    components are open-ended, pick up as convenient rather than as a scoped next step.
