@@ -3,13 +3,6 @@ import { type AIError } from '@/lib/aiService';
 
 export type ThreadItem = ChatMessageItem | EvaluationItem;
 
-// export type ChatMessageItem = {
-//   type: 'message';
-//   message: string;
-//   author: 'ai' | 'user';
-//   isPending?: boolean;
-// };
-
 export type ChatMessageItem =
   | { type: 'message'; message: string; author: 'user' }
   | { type: 'message'; message: string; author: 'ai'; isPending: boolean };
