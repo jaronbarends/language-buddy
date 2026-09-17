@@ -1850,7 +1850,8 @@ regressions here.
 manual use surfaced this, not a spike or automated check. Consistent with the "manual verification,
 not automated" caveat already logged for this picker (see entry above): no regression test exists
 to catch level-band drift, so this is a direct judgment call, not a measured one.
-**Status:** Done. Uncommitted at time of writing.
+**Status:** Done. Merged to `main` 2026-08-22 via PR #38 (`bb54ea5`, commit `3c0612c`) — corrected
+2026-09-17.
 
 ### Language swapped: French out, Italian in
 
@@ -1862,7 +1863,8 @@ Italian (`it-IT`), active. A new `it.svg` flag icon (`src/assets/icons/flags/it.
 `LanguagePicker`.
 **Rationale:** Not recorded beyond "switched" — no stated reason for dropping French specifically in
 favor of Italian.
-**Status:** Done. Uncommitted at time of writing.
+**Status:** Done. Merged to `main` 2026-08-22 via PR #38 (`bb54ea5`, commit `3c0612c`) — corrected
+2026-09-17.
 
 ---
 
@@ -2932,7 +2934,8 @@ implementation:
 - **`ChatPhase`'s `transcript` field renamed to `userMessage`** (and the matching action payload
   fields) — see "`ChatPhase`'s `transcript` field renamed to `userMessage`" below.
 
-**Status:** Implemented on branch `edit-message`, not yet merged to `main`. All known gaps from this
+**Status:** Implemented on branch `edit-message`, merged to `main` 2026-08-20 via PR #33 (`0ceb00a`)
+— corrected 2026-09-17. All known gaps from this
 feature are now resolved.
 
 ### `ChatPhase`'s `transcript` field renamed to `userMessage`
@@ -3013,7 +3016,8 @@ without this, practice-language text (e.g. Norwegian) would be read with the bro
 avoids repeating the attribute on every individual message/segment.
 **Not addressed by this change:** `aria-live` on output elements (the other half of the same backlog
 "Known gaps after this pass" note) remains open — see backlog.md.
-**Status:** Done. Implemented on branch `lang-attr`, not yet merged to `main`.
+**Status:** Done. Implemented on branch `lang-attr`, merged to `main` 2026-08-20 via PR #35
+(`d7d1bfa`) — corrected 2026-09-17.
 
 ## `spellcheck` enabled on message editor (2026-08-20)
 
@@ -3303,4 +3307,46 @@ level picker's bare CEFR codes (shipped same week, 2026-08-25) had the opposite 
 unexplained to users unfamiliar with the CEFR scale — so a tooltip was added there instead, but as
 an explicit click-triggered affordance (a visible "?" icon + close button) rather than hover, so
 its presence doesn't depend on a pointer device and it doesn't fire by accident.
-**Status:** Done. Committed (`84b6c6d`), not yet merged to `main`.
+**Status:** Done. Committed (`84b6c6d`), **merged to `main` 2026-08-26 via PR #44 (`f0a97a9`)** —
+corrected 2026-09-17.
+
+---
+
+## SelectBox added for language level; level-selectbox merged without resolving the comparison (2026-08-26–2026-09-17)
+
+### `SelectBox<T>` built as a live side-by-side alternative to `SegmentedControl` for the level picker
+
+**Date:** 2026-08-26
+**Decision:** New generic `SelectBox<T>` (`src/app/chat/chatSetup/components/SelectBox.tsx`, styled
+via `SelectBox.module.css`) wraps a native `<select>`. `SetupForm.tsx`'s level field gets two parallel
+implementations — the existing `SegmentedControl` and the new `SelectBox` — switched by a local
+`const useSelectBoxForLanguageLevel = true`, not wired to any UI. New shared input-role tokens
+(`--color-bg-input`/`--color-border-input` in `colors.css`, `--radius-input` in `borders.css`, the
+latter aliasing `--radius-12`) back the native-select look and are also adopted by `LanguagePicker`/
+`SegmentedControl`, so all three controls share one token set. `--radius-*` primitives move from
+`sizes.css` to `borders.css` (reorganization only). A new global rule, `input, textarea, select {
+color: inherit }` (`src/styles/elements.css`), fixes `<select>` text not inheriting the app's
+text-color tokens. `getLanguageLevelByCEFRLevel` (`src/lib/language.ts`) is added alongside the
+existing `getLanguageLevelByName`; `onChangeLevel`'s signature changes from `(levelName:
+LanguageLevelName)` to `(cefrLevel: CEFRLevel)` across `ChatContainer`/`ChatSetup`/`SetupForm`.
+Deliberate asymmetry: the `LevelTooltip` CEFR-explainer (added the day before, see previous entry)
+only renders in the `SegmentedControl` branch — `SelectBox`'s option labels already spell out both
+the level name and CEFR code, so the tooltip would be redundant there.
+**Rationale:** A live side-by-side comparison, not a shipped choice — meant to be tried both ways in
+the running app before deciding which the level picker should actually ship with.
+**Status:** Committed (`77ed5af`, `70b880d`, `62b97c4`), merged to `main` 2026-08-26 via PR #45
+(`616ed9d`).
+
+### Correction: merged with the comparison never resolved — dead code now live on `main`
+
+**Date:** 2026-09-17
+**Finding:** The entry above (and status.md's matching paragraph) explicitly planned to decide
+`SegmentedControl` vs. `SelectBox`, delete the loser, and remove the `useSelectBoxForLanguageLevel`
+toggle **before** merging `level-selectbox`. That step never happened — PR #45 merged the branch with
+the toggle and both implementations still in place. As of this docs pass, `SetupForm.tsx` still has
+`const useSelectBoxForLanguageLevel = true;` hardcoded, so `SelectBox` is what actually renders, but
+the `SegmentedControl` + `LevelTooltip` branch is now unreachable dead code on `main`, not a live
+comparison anyone is actually running.
+**Status:** Not resolved by this docs pass — flagged for a project-owner decision (keep `SelectBox`,
+revert to `SegmentedControl`+`LevelTooltip`, or something else), then delete the loser and the toggle.
+Tracked in backlog.md.

@@ -219,7 +219,8 @@ own `SEND_EDITED_MESSAGE`/`EDITED_MESSAGE_EMPTY` action pair, mirroring the real
 `TRANSCRIPT_CREATED`/`TRANSCRIPT_EMPTY` empty-guard behavior. The `console.log` debug line in
 `SpeechToText.tsx` and the non-conforming `handlesendAfterEditCancelled`-style handler/prop names
 were also fixed same-branch. **All known gaps from this feature are resolved; implemented on branch
-`edit-message`, not yet merged to `main`** — see "What's open" below.
+`edit-message`** — see "What's open" below. **Merged to `main` 2026-08-20 via PR #33 (`0ceb00a`)**
+— corrected 2026-09-17, this had been left saying "not yet merged" since the branch was documented.
 **`lang` attribute added to distinguish English UI from practice-language content (2026-08-20,
 branch `lang-attr`, see decisions.md, "`lang` attribute added to distinguish English UI from
 practice-language content"):** closes half of the accessibility gap open since the 2026-08-06–
@@ -231,8 +232,8 @@ Six elements get a `lang` attribute: `ThreadView`'s thread-item list, `SpeechRes
 `Evaluation`'s root gets `lang="en"` (commentary is English) with a new
 `isPracticeLanguage(segment)` check overriding individual `userInput`/`suggestion` segments back to
 `languageTag`; `EvaluationLoader`'s root also gets `lang="en"`, same reasoning. `aria-live` — the
-other half of the same gap — remains open (see backlog.md). Implemented on branch `lang-attr`, not
-yet merged to `main`.
+other half of the same gap — remains open (see backlog.md). Implemented on branch `lang-attr`,
+**merged to `main` 2026-08-20 via PR #35 (`d7d1bfa`)** — corrected 2026-09-17.
 **`spellcheck="true"` added to `MessageEditor`'s edit field (2026-08-20, see decisions.md,
 "`spellcheck` enabled on message editor"):** set explicitly (was relying on browser default) as the
 one lever, alongside `lang`, that plausibly affects Safari's inline spellcheck/autocorrect for the
@@ -250,7 +251,8 @@ new exported `getEvaluationConfig` (returning `{ systemInstruction, input }`) in
 separate exports (`getEvaluationSystemInstruction`/`getEvaluationInput`, each independently calling
 the shared-instructions function) — so the shared context/constraints strings are computed once per
 config build, not twice. Verified via `tsc --noEmit` and `eslint` (clean on all four touched files)
-and by tracing the interpolated template output.
+and by tracing the interpolated template output. **Merged to `main` 2026-08-21 via PR #36
+(`6681142`)** — added 2026-09-17, this branch's merge status had never been recorded.
 
 **Autoscroll target changed; long recognition/edit content now scrolls internally (2026-08-21, see
 decisions.md, "ThreadView autoscroll target changed to top of last item" and "SpeechResults gets an
@@ -264,7 +266,8 @@ view) is now wrapped in a new `.scroller` div (`overflow-y: auto`, `max-height: 
 growing unbounded — a long balloon was pushing the whole `ThreadView` off screen. New shared tokens
 `--scrollbar-color`/`--scrollbar-color-hover` (`src/styles/settings/colors.css`) back both this
 scroller and `ThreadView`'s existing scrollbar styling, replacing values previously hardcoded inline.
-**Uncommitted at time of writing.**
+**Merged to `main` 2026-08-21 via PR #37 (`3ffdceb`, commit `ebdca24`)** — corrected 2026-09-17, this
+had been left saying "uncommitted at time of writing."
 
 **Supported language swapped; Beginner CEFR band narrowed (2026-08-22, see decisions.md, "Beginner
 level narrowed from A1/A2 to A1 only" and "Language swapped: French out, Italian in"):** French
@@ -272,8 +275,9 @@ level narrowed from A1/A2 to A1 only" and "Language swapped: French out, Italian
 out, not deleted, matching the already-commented English/German entries — and Italian (`it-IT`) is
 added, active, backed by a new `it.svg` flag icon and `'flag-it'` entry in `FLAG_ICONS`
 (`src/lib/getIconByName.ts`). Separately, `languageLevels`'s Beginner entry (`src/lib/language.ts`)
-narrows from CEFR `A1/A2` to `A1` only — Intermediate (`B1/B2`) is unchanged. **Uncommitted at time
-of writing.**
+narrows from CEFR `A1/A2` to `A1` only — Intermediate (`B1/B2`) is unchanged. **Merged to `main`
+2026-08-22 via PR #38 (`bb54ea5`, commit `3c0612c`)** — corrected 2026-09-17, this had been left
+saying "uncommitted at time of writing."
 
 **`LanguagePicker` restyled: vertical layout, tooltip replaces `title` (2026-08-25, branch
 `language-picker-restyle`, see decisions.md, "LanguagePicker restyled: vertical layout, tooltip
@@ -284,7 +288,8 @@ component (`src/components/Tooltip.tsx`), shown on hover via CSS anchor position
 (`anchor-name`/`position-anchor` + a `@container style(--tooltip-visible: 1)` toggle) instead of the
 browser's native tooltip — `role="img"`/`aria-label` on the icon are unchanged, so its accessible
 name doesn't depend on the tooltip being visible. New token: `--color-bg-tooltip`
-(`src/styles/settings/colors.css`). Committed (`f57b803`, `92795fa`), not yet merged to `main`.
+(`src/styles/settings/colors.css`). Committed (`f57b803`, `92795fa`), **merged to `main` 2026-08-25
+via PR #40 (`12e77f3`)** — corrected 2026-09-17.
 
 **Level-specific instruction constraints added; CEFR level picker expanded to four levels
 (2026-08-25, commits `c1277af`/`d2ab971`, see decisions.md, "Level-specific instruction constraints;
@@ -323,7 +328,7 @@ also moved: `LanguagePicker` and `SegmentedControl` no longer render their own `
 `<legend>` (`SegmentedControl` drops its `groupLabel` prop) — `SetupForm` now wraps all three
 setup fields (language, level, starter) in its own fieldsets, giving it a place to add the level
 legend's tooltip without threading tooltip content down into `SegmentedControl`. Committed
-(`84b6c6d`), not yet merged to `main`.
+(`84b6c6d`), **merged to `main` 2026-08-26 via PR #44 (`f0a97a9`)** — corrected 2026-09-17.
 
 **Reusable `SelectBox` component added; level picker now toggles between it and `SegmentedControl`
 via a hardcoded const (2026-08-26, commits `77ed5af`/`70b880d`, branch `level-selectbox`):** a new
@@ -348,18 +353,28 @@ LanguageLevelName)` to `(cefrLevel: CEFRLevel)` across `ChatContainer`/`ChatSetu
 above) only renders in the `SegmentedControl` branch of the toggle — the `SelectBox` branch's legend
 has no tooltip. This is intentional, not a gap: `SelectBox`'s option labels already spell out both
 the level name and its CEFR code (e.g. "Intermediate (B1)"), so the tooltip's name↔code mapping would
-be redundant there. Committed (`77ed5af`, `70b880d`), not yet merged to `main`.
+be redundant there. Committed (`77ed5af`, `70b880d`, plus a same-day type fix `62b97c4` — "make
+selectbox type T extend string" — not otherwise described here), **merged to `main` 2026-08-26 via
+PR #45 (`616ed9d`)**.
 
-**Remaining or broken work:** None identified for the LanguagePicker restyle/grid work or the
-tooltip rework. The CEFR-code-labels gap noted above is now resolved (tooltip added), not open. The
-level-selectbox comparison has no known remaining work.
-**Open questions or decisions:** Which control the level picker should ship with —
-`SegmentedControl` (current default in `main`) or the new `SelectBox` — is undecided.
-`useSelectBoxForLanguageLevel` in `SetupForm.tsx` is a manual code-level toggle for trying both live,
-not a resolution; whichever loses should be deleted, not left dead behind the flag.
-**Next step:** Decide the level-selection control (above) by using both in the running app, then
-remove the toggle and the losing implementation before merging `level-selectbox`. After that, select
-the next item from `docs/backlog.md`.
+**Correction (2026-09-17):** the paragraph above and the "Next step" originally written under it said
+the plan was to decide `SegmentedControl` vs. `SelectBox` live, then delete the loser and the
+`useSelectBoxForLanguageLevel` toggle **before** merging `level-selectbox`. That didn't happen — the
+branch was merged as-is. As of this docs pass, `SetupForm.tsx` still has `const
+useSelectBoxForLanguageLevel = true;` hardcoded (not wired to any UI), with `SelectBox` live in the
+app and the `SegmentedControl`/`LevelTooltip` branch now dead, unreachable code — not the "no known
+remaining work" this section previously claimed. **This is flagged for a project-owner decision, not
+resolved by this docs pass** — see backlog.md.
+
+**Remaining or broken work:** The `useSelectBoxForLanguageLevel` dead-toggle cleanup above.
+Otherwise, none identified for the LanguagePicker restyle/grid work or the tooltip rework — the
+CEFR-code-labels gap is resolved (tooltip added), not open.
+**Open questions or decisions:** Same as above — which control the level picker should ship with is
+still genuinely undecided; the code currently defaults to `SelectBox` only because the const is
+hardcoded `true`, not because that was chosen.
+**Next step:** Decide the level-selection control, delete the loser (`SegmentedControl`+`LevelTooltip`
+or `SelectBox`) and the `useSelectBoxForLanguageLevel` toggle from `SetupForm.tsx`, then select the
+next item from `docs/backlog.md`.
 
 ---
 
@@ -1077,7 +1092,8 @@ Two calibration-only files still remain under `spikes/language-speech-rates/`
     rework"). Everything else carried forward from step 17 is now resolved too (see step 17 and
     "What's open") — no open items remain from the evaluation feature at this point.
 19. ~~Build the STT transcript edit capability~~ — implemented 2026-08-19–2026-08-20 on branch
-    `edit-message`, not yet merged (see decisions.md, "STT transcript edit capability: implemented"):
+    `edit-message`, merged to `main` 2026-08-20 via PR #33 (`0ceb00a`) — corrected 2026-09-17 (see
+    decisions.md, "STT transcript edit capability: implemented"):
     `editingUserReply`/`editingCancelled` phases, an "Edit" button added to the `listening` stage, and
     a new `MessageEditor.tsx` contentEditable component. Closes the "Dormant `intent: 'edit'`
     fallthrough" item that had been open since 2026-08-04. Follow-up fixes same day closed the

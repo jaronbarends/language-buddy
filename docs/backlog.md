@@ -61,6 +61,18 @@ refactor, not a deliberate decision — worth a direct answer: leave it dropped,
 `buttonsByStage.aiTurnFlow` alongside "Evaluate"?
 **Resolved 2026-08-18 (project owner):** leave it dropped — the drop was intentional. No longer open.
 
+### Decide level-picker control: `SegmentedControl`+`LevelTooltip` vs. `SelectBox`
+
+**Added:** 2026-09-17, found during a docs-vs-code pass (see decisions.md, "Correction: merged with
+the comparison never resolved — dead code now live on `main`"). The `level-selectbox` branch
+(2026-08-26) was meant to be a live comparison, decided before merging — instead it merged into
+`main` (PR #45, `616ed9d`) with the decision never made: `SetupForm.tsx` still hardcodes `const
+useSelectBoxForLanguageLevel = true`, so `SelectBox` renders in the app today, but the
+`SegmentedControl`+`LevelTooltip` branch is dead code sitting on `main`, not an active comparison.
+**Needs a project-owner decision:** keep `SelectBox` (delete `SegmentedControl`'s level-picker usage,
+`LevelTooltip`, and the toggle) or revert to `SegmentedControl`+`LevelTooltip` (delete `SelectBox` and
+the toggle) — either way, delete the loser and `useSelectBoxForLanguageLevel`.
+
 ### Mock LLM responses during dev
 
 **Added:** 2026-07-20
@@ -74,9 +86,10 @@ wired to the mock for all UI dev.
   decisions.md, "`lang` attribute added to distinguish English UI from practice-language content,"
   and status.md). `aria-live` (the other half of the same "Known gaps after this pass" note) remains
   open.
-- ~~add Edit option~~ — **implemented 2026-08-19–2026-08-20**, branch `edit-message`, not yet merged
-  (see decisions.md, "STT transcript edit capability: implemented," and status.md). All known gaps
-  from this feature were fixed same-branch on 2026-08-20 — see status.md, "What's open."
+- ~~add Edit option~~ — **implemented 2026-08-19–2026-08-20**, branch `edit-message`, merged to
+  `main` 2026-08-20 via PR #33 (`0ceb00a`) (see decisions.md, "STT transcript edit capability:
+  implemented," and status.md). All known gaps from this feature were fixed same-branch on
+  2026-08-20 — see status.md, "What's open."
 - ~~add icons to buttons~~ — **done 2026-08-17**, branch `button-icons` (see decisions.md, "Icons
   added to buttons," and status.md)
 
@@ -144,7 +157,11 @@ rather than dropping it.
   speed _across voice engines_ to a consistent baseline — it isn't a slower/faster control, see
   decisions.md)
 - use generation_config.thinking_level: "low" for genAI (https://ai.google.dev/gemini-api/docs/text-generation) in regular chat; omit it in evaluation
-- add cancel option to listening phase; call recognition.abort()
+- ~~add cancel option to listening phase; call recognition.abort()~~ — **done as part of the
+  2026-08-04 reply-phase UX redesign**: `Cancel` dispatches `CANCEL_LISTENING` into a
+  `cancellingListening` phase that waits on `recognition.abort()`'s real `onend` (see decisions.md,
+  "Reply-phase UX redesign implemented"). Found still listed as open during the 2026-09-17 docs pass;
+  corrected here, no code change needed.
 - ~~add lang attribute to speech output elements~~ — **done 2026-08-20**, see entry under "Medium
   priority" above.
 - once real scenarios exist in the `scenarios` array alongside the two freeform-chat `Scenario`
@@ -161,13 +178,16 @@ rather than dropping it.
   how `speechRatePairings` was derived
 - reveal ai text while being spoken. we can only approximate this. Divide text into words, then based on speech rate estimate total speaking time, use interval for showing words. create extra ChatAction ABORT_SPEECH and status abortingSpeech. that should reveal all text and dispatch AI_FINISHED_SPEAKING. ABORT_SPEECH can also be used in cleanup of useEffect that starts speech, and when we have no languageVoice. Maybe we need to add next chatAction to ABORT_SPEECH's payload to determine if it should go to user's turn, or end conversation.
 - ~~**STT transcript edit capability**~~ (reopened 2026-08-04) — **implemented 2026-08-19–2026-08-20**,
-  branch `edit-message`, not yet merged: hand-edit text chosen over re-running STT, via a new
+  branch `edit-message`, merged to `main` 2026-08-20 via PR #33 (`0ceb00a`): hand-edit text chosen over
+  re-running STT, via a new
   `editingUserReply`/`editingCancelled` phase pair and a `contentEditable`-based `MessageEditor`
   component (see decisions.md, "STT transcript edit capability: implemented," and status.md). The
   known landmine noted here (the `stoppingListening`/`TRANSCRIPT_CREATED` fallthrough for non-`'send'`
-  intents) is fixed. New gaps opened by the implementation itself — an empty edit bypassing the
-  empty-transcript guard, some dead code, and a naming-convention slip — are tracked in status.md,
-  "What's open," to close before merging. No longer an open idea.
+  intents) is fixed. The gaps opened by the implementation itself — an empty edit bypassing the
+  empty-transcript guard, the dead `SEND_EDITED_MESSAGE` action, a stray `console.log`, a
+  naming-convention slip, and commented-out grid CSS — were all fixed same-branch on 2026-08-20 (see
+  decisions.md, and status.md's numbered history, item 19). No open follow-up items remain. No longer
+  an open idea.
 
 ## Icebox
 
