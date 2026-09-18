@@ -1,7 +1,7 @@
 import 'dotenv/config';
 
 import { type AIChatRequestBody, AIEvaluationRequestBody } from '@/lib/aiRequest';
-import { AIEvaluationSchema, type AIEvaluation } from '@/lib/aiResponse';
+import { AIEvaluationSchema, type AIEvaluation } from '@/lib/aiEvaluationResponse';
 
 const CHAT_ENDPOINT =
   process.env.NEXT_PUBLIC_USE_MOCK_AI === 'true' ? '/api/aiMock/chat' : '/api/ai/chat';

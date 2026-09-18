@@ -1,4 +1,4 @@
-import type { AIEvaluation } from '@/lib/aiResponse';
+import type { AIEvaluation } from '@/lib/aiEvaluationResponse';
 import { type AIError } from '@/lib/aiService';
 
 export type ThreadItem = ChatMessageItem | EvaluationItem;

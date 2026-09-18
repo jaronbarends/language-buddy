@@ -1,6 +1,11 @@
 # Project status
 
-**Last updated:** 2026-09-17
+**Last updated:** 2026-09-18
+
+**`aiResponse.ts` renamed to `aiEvaluationResponse.ts` (2026-09-18, see decisions.md):** the file
+only ever held evaluation-specific schema/types, so the generic `aiResponse` name was stale — all
+five import sites updated, no behavior change. Earlier entries below referring to
+`src/lib/aiResponse.ts` describe it under its old name; `aiEvaluationResponse.ts` is current.
 
 **Testing infrastructure added (2026-09-15–2026-09-17, see decisions.md, "Testing infrastructure
 added"):** Vitest + jsdom + React Testing Library (`@testing-library/react`/`user-event`/

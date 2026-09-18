@@ -69,7 +69,7 @@ graph LR
   MockChatRoute["/api/aiMock/chat/route.ts"] --> RespondDelay["respondAfterDelay.ts"]
   MockEvalRoute["/api/aiMock/evaluation/route.ts"] --> RespondDelay
 
-  Gateway --> AiResponse["aiResponse.ts (AIEvaluationSchema, Zod validation)"]
+  Gateway --> AiResponse["aiEvaluationResponse.ts (AIEvaluationSchema, Zod validation)"]
 ```
 
 Notes:

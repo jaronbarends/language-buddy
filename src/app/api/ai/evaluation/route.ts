@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { AIEvaluationRequestBodySchema, getBodyValidationError } from '@/lib/aiRequest';
-import { AIEvaluationJSONSchema, type AIEvaluationJSONSchemaType } from '@/lib/aiResponse';
+import { AIEvaluationJSONSchema, type AIEvaluationJSONSchemaType } from '@/lib/aiEvaluationResponse';
 import { postToGemini } from '@/lib/geminiGateway';
 
 export type EvaluationInteractionConfig = {
