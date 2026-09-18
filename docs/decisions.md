@@ -3369,6 +3369,21 @@ which buttons render, which are disabled, and that clicking calls the right hand
 was requested; noting here so it's not mistaken for exhaustive coverage.
 **Status:** Done for the stages covered.
 
+## `aiResponse.ts` renamed to `aiEvaluationResponse.ts`
+
+**Date:** 2026-09-18
+**Decision:** `src/lib/aiResponse.ts` renamed to `src/lib/aiEvaluationResponse.ts`; all five import
+sites (`aiService.ts`, `chatReducer.ts`, `Evaluation.tsx`, `/api/ai/evaluation/route.ts`,
+`/api/aiMock/evaluation/route.ts`) updated to match. No behavior change.
+**Rationale:** The file only ever held evaluation-specific schema/types
+(`AIEvaluationSchema`/`AIEvaluationJSONSchema`/`AIEvaluation`) — `aiResponse` was a generic name left
+over from before the real/mock routes split back into chat vs. evaluation (see "Request/response
+types and routes split per role again," 2026-08-16); the name no longer matched what the file
+actually is.
+**Status:** Done. Verified via `tsc --noEmit` (clean). Earlier dated entries above that mention
+`src/lib/aiResponse.ts` describe the file under its name at the time and are left as written, per
+this log's append-only style — `aiEvaluationResponse.ts` is the current name as of this entry.
+
 ## Color ramps inverted: low step = light (2026-09-28)
 
 ### Primitive ramps renumbered so 50 is lightest and 950 darkest

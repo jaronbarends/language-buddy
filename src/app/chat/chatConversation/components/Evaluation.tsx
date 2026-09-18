@@ -1,5 +1,5 @@
 import Loader from '@/components/Loader';
-import { type AIEvaluation, type Segment } from '@/lib/aiResponse';
+import { type AIEvaluation, type Segment } from '@/lib/aiEvaluationResponse';
 
 import styles from './Evaluation.module.css';
 

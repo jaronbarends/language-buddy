@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { respondAfterDelay } from '@/app/api/aiMock/respondAfterDelay';
 import { AIEvaluationRequestBodySchema, getBodyValidationError } from '@/lib/aiRequest';
-import { AIEvaluation } from '@/lib/aiResponse';
+import { AIEvaluation } from '@/lib/aiEvaluationResponse';
 
 const MOCK_SCENARIOS = {
   success: 'success',
