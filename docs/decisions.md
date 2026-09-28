@@ -1,52 +1,5 @@
 # Decision log
 
-## Testing infrastructure added (2026-09-15–2026-09-17)
-
-### Vitest + React Testing Library chosen for unit/component tests
-
-**Date:** 2026-09-15
-**Decision:** Vitest (not Jest) + jsdom + `@testing-library/react`/`user-event`/`jest-dom` for unit
-and component tests. `vitest.config.ts` sets `environment: 'jsdom'`, `resolve.tsconfigPaths`, and
-`setupFiles: ['./vitest.setup.ts']` (imports `@testing-library/jest-dom/vitest` matchers, runs
-`cleanup()` after each test via `afterEach`). `package.json` gains `"type": "module"` and a
-`"test": "vitest"` script.
-**Rationale (project owner):** recommended by Claude as the most commonly used option for this
-stack — not evaluated against Jest first-hand.
-**Status:** Done. First dummy test landed same commit (`ec84699`); real coverage follows below.
-
-### Unit tests added for `chatReducer`; `ChatMessageItem` narrowed into a discriminated union
-
-**Date:** 2026-09-16 (commit `6511416`)
-**Decision:** `chatReducer.test.ts` gets real coverage (happy-path AI-starts flow, more added since
-— see `chatReducer.test.ts`). While writing it, `ChatMessageItem` changed from one shape with an
-optional `isPending?: boolean` shared across both authors to a discriminated union:
-`{ type: 'message'; message: string; author: 'user' } | { type: 'message'; message: string;
-author: 'ai'; isPending: boolean }`.
-**Rationale:** `isPending` only ever has meaning for AI messages (the pending-AI-reply balloon) —
-letting it exist as an optional field on user messages too was a type-level looseness the tests
-surfaced. Narrowing it to the `author: 'ai'` branch means `isPending` is required (not optional)
-there and structurally absent on `author: 'user'`, so a caller can no longer construct or check a
-nonsensical `{ author: 'user', isPending: true }` state. Call sites (`chatReducer.ts`'s
-`AI_RESPONSE_RECEIVED`/`removePendingAIItems`, `ThreadView.tsx`) updated to check `item.author ===
-'ai' && item.isPending` instead of just `item.isPending`. `chatContainsUserMessage` renamed to
-`chatContainsUserAndAIMessage` (no behavior change, just a name that matches what it actually
-checks — see the existing comment above it in `chatReducer.ts`).
-**Status:** Done. An old commented-out copy of the pre-union `ChatMessageItem` type was
-accidentally left in `chatReducer.ts` during this change (lines 6–11) — caught during the
-2026-09-17 docs-update pass and deleted per project-owner decision (git history preserves it if
-ever needed), not left as tracked dead code.
-
-### Component tests added for `ControlsArea`
-
-**Date:** 2026-09-17 (commit `7a14574`)
-**Decision:** `ControlsArea.test.tsx` covers `aiTurnStage` (`readyForUserStart`, `waitingForAI`),
-`userEditStage` (`editingUserReply`), and the `sessionEndRequested` no-buttons case — asserting
-which buttons render, which are disabled, and that clicking calls the right handler prop.
-**Not yet covered:** `userTurnStage` (`listening`/`stoppingListening`/`cancellingListening`/
-`sendingUserReply`), `evaluation`, `error`, and `editCancelledStage` — no test file gap tracking
-was requested; noting here so it's not mistaken for exhaustive coverage.
-**Status:** Done for the stages covered.
-
 ## Concept & scope
 
 ### Scenario library from the start
@@ -1620,7 +1573,7 @@ accessibility pass (see "Known gaps" at the end of this section).
   `--color-red-subtle`. Semantic tokens (`--color-text-*`, `--color-bg-*`, `--color-border-*`) map
   onto specific ramp steps; a further "component colors" tier (`--color-bg-page`,
   `--color-text-default`, `--color-text-label`, `--color-focus-outline`) maps semantic tokens onto
-  concrete component roles. Two ramp steps (`--color-pink-900`, `--color-gray-900`/`-950`) carry
+  concrete component roles. Two ramp steps (`--color-pink-100`, `--color-gray-100`/`-50`) carry
   inline comments recording hand-tuning against an original design reference — the generated OKLCH
   formula didn't match by eye, so specific values were nudged and the original formula-generated
   value kept in the comment.
@@ -1646,6 +1599,25 @@ primitive color space without a documented alternatives comparison in this log.
 **Status:** Done. This is the first `design.md`-equivalent content the project has — the "timing
 decided, content open" status this decision log carried since 2026-07-27 is now resolved. There is
 still no separate `design.md` file; token values live directly in `src/styles/settings/`.
+
+**Update (2026-09-28) — generator tool and OKLCH rationale, previously undocumented:** The three
+primitive ramps were generated with [oklch.fyi/create](https://oklch.fyi/create), 11 steps
+(50–950), from these seed colors taken from the original design reference:
+
+- pink: `#d84497`
+- blue: `#009ccf`
+- gray: `#69737d`
+
+Each seed lands exactly on its ramp's 500 step. A first 9-step pass (no 400/600) was discarded:
+several original design colors (e.g. pink dark/press `#970d63`, pink text `#8d2661`) had no nearby
+step, and re-generating with 11 steps gave them clean matches. The hand-tuned 100/50 steps noted
+above are what remained off after that.
+
+OKLCH was chosen over HSL-based generation because OKLCH produces more even color scales: HSL
+interpolation tends to desaturate colors partway through the ramp, giving muddy mid-tones, while
+OKLCH keeps perceived lightness and saturation consistent across steps. Alternatives considered:
+Tailwind's default palette (fixed ramps, so the brand seed colors wouldn't appear exactly) and
+Radix Colors' custom scale generator (suggested, not used).
 
 ### New shared component set: `Button`, `Loader`, `Feedback`, `Icon`, `PageHeading`, `Logo`
 
@@ -3350,21 +3322,66 @@ comparison anyone is actually running.
 revert to `SegmentedControl`+`LevelTooltip`, or something else), then delete the loser and the toggle.
 Tracked in backlog.md.
 
-**Update (2026-09-28) — generator tool and OKLCH rationale, previously undocumented:** The three
-primitive ramps were generated with [oklch.fyi/create](https://oklch.fyi/create), 11 steps
-(50–950), from these seed colors taken from the original design reference:
+## Testing infrastructure added (2026-09-15–2026-09-17)
 
-- pink: `#d84497`
-- blue: `#009ccf`
-- gray: `#69737d`
+### Vitest + React Testing Library chosen for unit/component tests
 
-Each seed lands exactly on its ramp's 500 step. A first 9-step pass (no 400/600) was discarded:
-several original design colors (e.g. pink dark/press `#970d63`, pink text `#8d2661`) had no nearby
-step, and re-generating with 11 steps gave them clean matches. The hand-tuned 900/950 steps noted
-above are what remained off after that.
+**Date:** 2026-09-15
+**Decision:** Vitest (not Jest) + jsdom + `@testing-library/react`/`user-event`/`jest-dom` for unit
+and component tests. `vitest.config.ts` sets `environment: 'jsdom'`, `resolve.tsconfigPaths`, and
+`setupFiles: ['./vitest.setup.ts']` (imports `@testing-library/jest-dom/vitest` matchers, runs
+`cleanup()` after each test via `afterEach`). `package.json` gains `"type": "module"` and a
+`"test": "vitest"` script.
+**Rationale (project owner):** recommended by Claude as the most commonly used option for this
+stack — not evaluated against Jest first-hand.
+**Status:** Done. First dummy test landed same commit (`ec84699`); real coverage follows below.
 
-OKLCH was chosen over HSL-based generation because OKLCH produces more even color scales: HSL
-interpolation tends to desaturate colors partway through the ramp, giving muddy mid-tones, while
-OKLCH keeps perceived lightness and saturation consistent across steps. Alternatives considered:
-Tailwind's default palette (fixed ramps, so the brand seed colors wouldn't appear exactly) and
-Radix Colors' custom scale generator (suggested, not used).
+### Unit tests added for `chatReducer`; `ChatMessageItem` narrowed into a discriminated union
+
+**Date:** 2026-09-16 (commit `6511416`)
+**Decision:** `chatReducer.test.ts` gets real coverage (happy-path AI-starts flow, more added since
+— see `chatReducer.test.ts`). While writing it, `ChatMessageItem` changed from one shape with an
+optional `isPending?: boolean` shared across both authors to a discriminated union:
+`{ type: 'message'; message: string; author: 'user' } | { type: 'message'; message: string;
+author: 'ai'; isPending: boolean }`.
+**Rationale:** `isPending` only ever has meaning for AI messages (the pending-AI-reply balloon) —
+letting it exist as an optional field on user messages too was a type-level looseness the tests
+surfaced. Narrowing it to the `author: 'ai'` branch means `isPending` is required (not optional)
+there and structurally absent on `author: 'user'`, so a caller can no longer construct or check a
+nonsensical `{ author: 'user', isPending: true }` state. Call sites (`chatReducer.ts`'s
+`AI_RESPONSE_RECEIVED`/`removePendingAIItems`, `ThreadView.tsx`) updated to check `item.author ===
+'ai' && item.isPending` instead of just `item.isPending`. `chatContainsUserMessage` renamed to
+`chatContainsUserAndAIMessage` (no behavior change, just a name that matches what it actually
+checks — see the existing comment above it in `chatReducer.ts`).
+**Status:** Done. An old commented-out copy of the pre-union `ChatMessageItem` type was
+accidentally left in `chatReducer.ts` during this change (lines 6–11) — caught during the
+2026-09-17 docs-update pass and deleted per project-owner decision (git history preserves it if
+ever needed), not left as tracked dead code.
+
+### Component tests added for `ControlsArea`
+
+**Date:** 2026-09-17 (commit `7a14574`)
+**Decision:** `ControlsArea.test.tsx` covers `aiTurnStage` (`readyForUserStart`, `waitingForAI`),
+`userEditStage` (`editingUserReply`), and the `sessionEndRequested` no-buttons case — asserting
+which buttons render, which are disabled, and that clicking calls the right handler prop.
+**Not yet covered:** `userTurnStage` (`listening`/`stoppingListening`/`cancellingListening`/
+`sendingUserReply`), `evaluation`, `error`, and `editCancelledStage` — no test file gap tracking
+was requested; noting here so it's not mistaken for exhaustive coverage.
+**Status:** Done for the stages covered.
+
+## Color ramps inverted: low step = light (2026-09-28)
+
+### Primitive ramps renumbered so 50 is lightest and 950 darkest
+
+**Date:** 2026-09-28
+**Decision:** The pink, blue and gray primitive ramps in `colors.css` were inverted: step N became
+step 1000−N (50↔950, 100↔900, … 500 unchanged). Every reference was remapped the same way —
+semantic tokens in `colors.css`, `Loader.module.css`, and the step names in this log — so every
+resolved color is unchanged (verified by resolving each semantic token against the old and new
+file and diffing the results). Hand-tuning comments moved with their values
+(`--color-pink-100`, `--color-gray-100`/`-50`).
+**Rationale:** The original ramps had the darkest color at 50, the reverse of the common convention
+(e.g. Tailwind), and of what oklch.fyi/create itself now outputs. Aligning with the convention
+means regenerating a ramp no longer requires a manual reversal, and the numbers read the way most
+developers expect.
+**Status:** Done. Pure rename — no visual change intended.
