@@ -47,7 +47,6 @@ which buttons render, which are disabled, and that clicking calls the right hand
 was requested; noting here so it's not mistaken for exhaustive coverage.
 **Status:** Done for the stages covered.
 
-
 ## Concept & scope
 
 ### Scenario library from the start
@@ -3350,3 +3349,22 @@ comparison anyone is actually running.
 **Status:** Not resolved by this docs pass — flagged for a project-owner decision (keep `SelectBox`,
 revert to `SegmentedControl`+`LevelTooltip`, or something else), then delete the loser and the toggle.
 Tracked in backlog.md.
+
+**Update (2026-09-28) — generator tool and OKLCH rationale, previously undocumented:** The three
+primitive ramps were generated with [oklch.fyi/create](https://oklch.fyi/create), 11 steps
+(50–950), from these seed colors taken from the original design reference:
+
+- pink: `#d84497`
+- blue: `#009ccf`
+- gray: `#69737d`
+
+Each seed lands exactly on its ramp's 500 step. A first 9-step pass (no 400/600) was discarded:
+several original design colors (e.g. pink dark/press `#970d63`, pink text `#8d2661`) had no nearby
+step, and re-generating with 11 steps gave them clean matches. The hand-tuned 900/950 steps noted
+above are what remained off after that.
+
+OKLCH was chosen over HSL-based generation because OKLCH produces more even color scales: HSL
+interpolation tends to desaturate colors partway through the ramp, giving muddy mid-tones, while
+OKLCH keeps perceived lightness and saturation consistent across steps. Alternatives considered:
+Tailwind's default palette (fixed ramps, so the brand seed colors wouldn't appear exactly) and
+Radix Colors' custom scale generator (suggested, not used).
